@@ -1,0 +1,58 @@
+This error confirms exactly what is happening: **Your phone is trying to find the server inside itself.**
+
+Look at the URL in your screenshot:
+`https://localhost/api/auth/google`
+
+* **`localhost`** = Your phone's internal storage.
+* **The Problem:** Your phone thinks the "Login API" is located on the phone itself. It isn't. It's on Railway.
+* **Why this happened:** You updated the `VITE_API_URL` on **Vercel** (the website), but you are building the Android app from your **Laptop**. Your laptop doesn't know about that Vercel setting yet.
+
+### **The Fix: Update Your Local Code**
+
+You need to tell your **Laptop** (VS Code) the correct address so it can bake it into the Android App.
+
+**Step 1: Create/Edit the `.env` file**
+
+1. Go to your project folder in **VS Code** (the Android project).
+2. Look for a file named `.env` (or create one if it doesn't exist).
+3. Add this line inside it:
+```env
+VITE_API_URL=https://nexus-backend-production.up.railway.app
+
+```
+
+
+*(Make sure this is your actual Railway Backend URL, and ensure there is NO slash `/` at the end).*
+
+**Step 2: Check your Login Button Code**
+Go to the file where your "Login with Google" button is (e.g., `Login.jsx` or `App.jsx`).
+
+* **Wrong:**
+```javascript
+<button onClick={() => window.location.href = "/api/auth/google"}>
+
+```
+
+
+*(This is a "Relative Path". It will always go to `localhost` on a phone).*
+* **Correct:**
+```javascript
+const BACKEND_URL = import.meta.env.VITE_API_URL; // reads from .env
+<button onClick={() => window.location.href = `${BACKEND_URL}/api/auth/google`}>
+
+```
+
+
+*(This forces the phone to go to Railway).*
+
+**Step 3: Rebuild and Sync (Crucial)**
+Environment variables only update when you **build** the app.
+Run these commands in your VS Code terminal (one by one):
+
+1. `npm run build` (This creates the new web code with the Railway URL baked in).
+2. `npx cap sync` (This copies that new code into the Android folder).
+
+**Step 4: Run on Phone**
+Now, click **Run (▶️)** in Android Studio again. When the app opens on your phone and you click Login, the URL bar at the top should say `railway.app...`, NOT `localhost`.
+
+**Do you want to paste your Login Button code here so I can check if it's using the variable correctly?**

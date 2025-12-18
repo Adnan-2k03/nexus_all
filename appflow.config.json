@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "appId": "de5afe88",
+      "webBuildCommand": "npm run build:frontend && npx cap sync",
+      "defaultPlatform": "android"
+    }
+  ]
+}

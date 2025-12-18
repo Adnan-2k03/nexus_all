@@ -1,0 +1,29 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.env
+.env.local
+.env.production
+.env.*.local
+*.log
+migrations
+uploads
+
+# Replit
+.replit
+.replit.secrets.json
+
+# Capacitor
+android/
+ios/
+.capacitor/
+
+# Android Keystore & Secrets (NEVER COMMIT THESE!)
+*.jks
+*.keystore
+android/keystore.properties
+android/app/*.jks
+android/app/*.keystore
