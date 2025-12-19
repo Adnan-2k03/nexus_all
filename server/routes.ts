@@ -87,8 +87,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!verifyResponse.ok) {
+        const errorText = await verifyResponse.text();
         console.error("[Auth] Firebase verification HTTP error:", verifyResponse.status, verifyResponse.statusText);
-        return res.status(401).json({ error: "Failed to verify token with Firebase" });
+        console.error("[Auth] Firebase error response:", errorText);
+        return res.status(401).json({ 
+          error: "Failed to verify token with Firebase",
+          status: verifyResponse.status,
+          details: errorText 
+        });
       }
 
       const data = await verifyResponse.json();
@@ -96,7 +102,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If Firebase rejects it, log the error but don't crash
       if (data.error || !data.users || data.users.length === 0) {
         console.error("[Auth] Firebase verification failed:", data.error?.message || "Unknown error");
-        return res.status(401).json({ error: "Invalid Firebase Token", details: data.error?.message });
+        console.error("[Auth] Full Firebase response:", JSON.stringify(data));
+        return res.status(401).json({ 
+          error: "Invalid Firebase Token", 
+          details: data.error?.message || "Unknown error"
+        });
       }
 
       // 2. Extract Verified User Data from Firebase Response
