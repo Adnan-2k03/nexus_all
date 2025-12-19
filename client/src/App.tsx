@@ -157,7 +157,7 @@ function Router() {
 
   const handleAuthSuccess = () => {
     // Invalidate auth query to refetch user data without page reload
-    queryClient.invalidateQueries({ queryKey: ["/api/authauth/user"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     setShowAuthPage(false);
     
     // Check if there's a pending invite code from pre-login attempt
