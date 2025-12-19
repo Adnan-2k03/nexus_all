@@ -47,17 +47,32 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         // 2. Get the User's ID Token
         const idToken = result.credential?.idToken;
 
-        if (idToken) {
-          // SUCCESS! We have the user.
-          // (Optional: In a full production app, you would send this 'idToken' 
-          // to your backend here to create a session cookie, similar to handleVerifyCode).
-          
-          toast({
-            title: "Welcome!",
-            description: "Logged in with Google successfully.",
-          });
-          onAuthSuccess(); // Tell the app we are logged in!
+        if (!idToken) {
+          throw new Error("No ID token received from Firebase");
         }
+        // 3. Send token to backend to create session
+        const response = await fetch(getApiUrl("/api/auth/native-login"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // CRITICAL: This allows the server to set the session cookie
+          body: JSON.stringify({ 
+            idToken,
+            user: result.user 
+          })
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Backend authentication failed");
+        }
+        const user = await response.json();
+        
+        toast({
+          title: "Welcome!",
+          description: `Logged in as ${user.gamertag}`,
+        });
+        
+        // 4. Invalidate auth cache and update UI
+        onAuthSuccess();
       } catch (error: any) {
         console.error("Native Google Login Error:", error);
         toast({
@@ -69,7 +84,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         setIsLoading(false);
       }
     } else {
-      // FALBACK: We are on the Web (Computer), so use the old redirect method.
+      // FALLBACK: We are on the Web (Computer), so use the old redirect method.
       window.location.href = getApiUrl("/api/auth/google");
     }
   };
