@@ -60,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
 
-// --- PASTE THIS NEW ROUTE ---
+// --- OFFICIAL NATIVE LOGIN ROUTE (FIREBASE) ---
   app.post("/api/auth/native-login", async (req, res) => {
     try {
       const { idToken, user: nativeUser } = req.body;
@@ -69,34 +69,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing ID Token" });
       }
 
-      // 1. Verify token with Google
-      const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      // 1. VERIFY WITH FIREBASE IDENTITY TOOLKIT
+      // We use your Project's API Key to verify the token with Firebase directly
+      // This is much more reliable than the generic Google OAuth endpoint
+      const FIREBASE_API_KEY = "AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U";
+      
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken })
+      });
+
       const data = await response.json();
 
-      if (data.error) {
-        return res.status(401).json({ error: "Invalid Token" });
+      // If Firebase rejects it, log the error but don't crash
+      if (data.error || !data.users || data.users.length === 0) {
+        console.error("Firebase verification failed:", data.error);
+        return res.status(401).json({ error: "Invalid Firebase Token" });
       }
 
-      // 2. Find or Create User (ADJUST 'storage' TO MATCH YOUR CODE)
-      // Look at how your other routes use 'storage.' or 'db.'
-      let user = await storage.getUserByGoogleId(data.sub);
+      // 2. Extract Verified User Data
+      const firebaseUser = data.users[0];
+      const googleId = firebaseUser.localId; // The unique ID verified by Google
+      const email = firebaseUser.email;
+      
+      // Use photo from Firebase, or fallback to what the phone sent
+      const avatarUrl = firebaseUser.photoUrl || nativeUser?.photoUrl;
+      // Use name from phone (often better formatted) or email
+      const username = nativeUser?.displayName || email?.split('@')[0] || "Gamer";
+
+      // 3. Find or Create User in Database
+      let user = await storage.getUserByGoogleId(googleId);
 
       if (!user) {
         user = await storage.createUser({
-          username: nativeUser.displayName || data.name,
-          email: data.email,
-          googleId: data.sub,
-          avatarUrl: nativeUser.photoUrl || data.picture,
+          username: username,
+          email: email,
+          googleId: googleId,
+          avatarUrl: avatarUrl,
         });
       }
 
-      // 3. Create the Session
+      // 4. Create Real Session
       req.login(user, (err) => {
-        if (err) return res.status(500).json({ error: "Login failed" });
+        if (err) return res.status(500).json({ error: "Session creation failed" });
         req.session.save(() => res.json(user));
       });
 
     } catch (error) {
+      console.error("Native login error:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   });

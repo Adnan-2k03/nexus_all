@@ -7,7 +7,6 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 export function useAuth() {
   const queryClient = useQueryClient();
 
-  // Standard query to check current user status
   const { data: user, isLoading, isFetching } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -27,54 +26,61 @@ export function useAuth() {
         }
         return null;
       } catch (error) {
-        console.error("Auth check failed:", error);
         return null;
       }
     },
   });
 
-  // --- REAL AUTH LISTENER (Token Exchange) ---
+  // --- REAL AUTH LISTENER (Fixed Token Fetching) ---
   useEffect(() => {
     const setupListener = async () => {
-      // 1. Clear any old listeners so we don't duplicate events
       await FirebaseAuthentication.removeAllListeners();
 
-      // 2. Listen for the phone's login success
       await FirebaseAuthentication.addListener('authStateChange', async (change) => {
         if (change.user) {
-          console.log("📱 Native Login Detected! Exchanging Token with Server...");
+          console.log("📱 Native Login Detected! Fetching fresh token...");
 
           try {
-            // 3. Send the Google Token to your NEW Server Route
-            // This connects the phone login to the Railway server session
+            // 1. GET THE TOKEN EXPLICITLY (The Fix)
+            // We don't trust change.user.idToken anymore. We ask for a fresh one.
+            const tokenResult = await FirebaseAuthentication.getIdToken();
+            const idToken = tokenResult.token;
+
+            if (!idToken) {
+              console.error("❌ No ID Token found even after fetching!");
+              return;
+            }
+
+            console.log("✅ Got Token. sending to server...");
+
+            // 2. Send the fresh token to Railway
             const res = await fetch(getApiUrl("/api/auth/native-login"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              credentials: "include", // <--- CRITICAL: This allows the server to set the cookie
+              credentials: "include", // CRITICAL: This allows the server to set the cookie
               body: JSON.stringify({ 
-                idToken: change.user.idToken,
+                idToken: idToken, 
                 user: change.user 
               })
             });
 
             if (res.ok) {
-              console.log("✅ Server Session Created! Refreshing App...");
-              // 4. Force React to re-check the user status (now that the cookie is set)
+              console.log("✅ Server Session Created! Entering App...");
+              // 3. Force React to re-check the user status
               await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
               await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
             } else {
-              console.error("❌ Server rejected the token. Check server logs.");
+              const errorText = await res.text();
+              console.error("❌ Server rejected the token:", errorText);
             }
           } catch (err) {
-            console.error("Failed to contact server:", err);
+            console.error("Failed to perform native login:", err);
           }
         }
       });
     };
 
     setupListener();
-    
-    // Cleanup when the component unmounts
     return () => { FirebaseAuthentication.removeAllListeners(); };
   }, [queryClient]);
 
