@@ -76,6 +76,10 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 // Gaming-focused storage interface with real-time capabilities
 export interface IStorage {
+
+  // Add this inside interface IStorage
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByGamertag(gamertag: string): Promise<User | undefined>;
@@ -200,6 +204,12 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
+  }
+  
+  // Add this inside DatabaseStorage class
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    return user;
   }
 
   async getAllUsers(filters?: { search?: string; gender?: string; language?: string; game?: string; rank?: string; latitude?: number; longitude?: number; maxDistance?: number; page?: number; limit?: number; excludeUserId?: string; excludeUserIds?: string[] }): Promise<{ users: User[]; total: number; page: number; limit: number; totalPages: number }> {
