@@ -70,54 +70,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 1. VERIFY WITH FIREBASE IDENTITY TOOLKIT
-      // We use your Project's API Key to verify the token with Firebase directly
+      // We use Firebase API Key to verify the ID token directly with Firebase
       // This is much more reliable than the generic Google OAuth endpoint
-      const FIREBASE_API_KEY = "AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U";
+      const firebaseApiKey = process.env.FIREBASE_WEB_API_KEY;
       
-      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`, {
+      if (!firebaseApiKey) {
+        console.error("[Auth] FIREBASE_WEB_API_KEY is not configured");
+        return res.status(503).json({ error: "Firebase authentication is not configured on the server" });
+      }
+      
+      const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`;
+      const verifyResponse = await fetch(verifyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken })
       });
 
-      const data = await response.json();
+      if (!verifyResponse.ok) {
+        console.error("[Auth] Firebase verification HTTP error:", verifyResponse.status, verifyResponse.statusText);
+        return res.status(401).json({ error: "Failed to verify token with Firebase" });
+      }
+
+      const data = await verifyResponse.json();
 
       // If Firebase rejects it, log the error but don't crash
       if (data.error || !data.users || data.users.length === 0) {
-        console.error("Firebase verification failed:", data.error);
-        return res.status(401).json({ error: "Invalid Firebase Token" });
+        console.error("[Auth] Firebase verification failed:", data.error?.message || "Unknown error");
+        return res.status(401).json({ error: "Invalid Firebase Token", details: data.error?.message });
       }
 
-      // 2. Extract Verified User Data
+      // 2. Extract Verified User Data from Firebase Response
       const firebaseUser = data.users[0];
       const googleId = firebaseUser.localId; // The unique ID verified by Google
       const email = firebaseUser.email;
       
-      // Use photo from Firebase, or fallback to what the phone sent
-      const avatarUrl = firebaseUser.photoUrl || nativeUser?.photoUrl;
-      // Use name from phone (often better formatted) or email
-      const username = nativeUser?.displayName || email?.split('@')[0] || "Gamer";
-
-      // 3. Find or Create User in Database
-      let user = await storage.getUserByGoogleId(googleId);
-
-      if (!user) {
-        user = await storage.createUser({
-          username: username,
-          email: email,
-          googleId: googleId,
-          avatarUrl: avatarUrl,
-        });
+      if (!email) {
+        console.error("[Auth] Firebase response missing email");
+        return res.status(400).json({ error: "Email is required from Firebase" });
       }
 
-      // 4. Create Real Session
-      req.login(user, (err) => {
-        if (err) return res.status(500).json({ error: "Session creation failed" });
-        req.session.save(() => res.json(user));
+      // Use profile photo from Firebase first, fallback to native user photo
+      const profileImageUrl = firebaseUser.photoUrl || nativeUser?.photoUrl || undefined;
+      const firstName = nativeUser?.displayName?.split(' ')[0] || firebaseUser.displayName?.split(' ')[0] || undefined;
+      const lastName = nativeUser?.displayName?.split(' ')[1] || firebaseUser.displayName?.split(' ')[1] || undefined;
+
+      // 3. Find or Create User in Database using upsertUserByGoogleId
+      // This automatically generates a unique gamertag based on email
+      const user = await storage.upsertUserByGoogleId({
+        googleId,
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        profileImageUrl: profileImageUrl || null,
+      });
+
+      if (!user) {
+        console.error("[Auth] Failed to create or fetch user from database");
+        return res.status(500).json({ error: "Failed to create user session" });
+      }
+
+      // 4. Create Real Session with Passport
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[Auth] Passport login error:", loginErr.message);
+          return res.status(500).json({ error: "Session creation failed" });
+        }
+        
+        // Save session and respond with user data
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[Auth] Session save error:", saveErr.message);
+            return res.status(500).json({ error: "Failed to save session" });
+          }
+          console.log(`[Auth] User ${user.gamertag} (${googleId}) authenticated via native login`);
+          res.json(user);
+        });
       });
 
     } catch (error) {
-      console.error("Native login error:", error);
+      console.error("[Auth] Native login error:", error instanceof Error ? error.message : error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
