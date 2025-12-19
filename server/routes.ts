@@ -59,6 +59,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await setupAuth(app);
   }
 
+
+// --- PASTE THIS NEW ROUTE ---
+  app.post("/api/auth/native-login", async (req, res) => {
+    try {
+      const { idToken, user: nativeUser } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({ error: "Missing ID Token" });
+      }
+
+      // 1. Verify token with Google
+      const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      const data = await response.json();
+
+      if (data.error) {
+        return res.status(401).json({ error: "Invalid Token" });
+      }
+
+      // 2. Find or Create User (ADJUST 'storage' TO MATCH YOUR CODE)
+      // Look at how your other routes use 'storage.' or 'db.'
+      let user = await storage.getUserByGoogleId(data.sub);
+
+      if (!user) {
+        user = await storage.createUser({
+          username: nativeUser.displayName || data.name,
+          email: data.email,
+          googleId: data.sub,
+          avatarUrl: nativeUser.photoUrl || data.picture,
+        });
+      }
+
+      // 3. Create the Session
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ error: "Login failed" });
+        req.session.save(() => res.json(user));
+      });
+
+    } catch (error) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+  // -----------------------------
+
+
   // Auth routes
   app.get('/api/auth/user', authMiddleware, async (req: any, res) => {
     try {
