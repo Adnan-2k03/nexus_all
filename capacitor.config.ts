@@ -1,5 +1,4 @@
 import type { CapacitorConfig } from "@capacitor/cli";
-import { join } from "path";
 
 const config: CapacitorConfig = {
   appId: "com.nexusmatch.app",
@@ -11,6 +10,12 @@ const config: CapacitorConfig = {
     iosScheme: "https",
   },
   plugins: {
+    // --- THIS IS THE MISSING PART CAUSING THE CRASH ---
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ["google.com"]
+    },
+    // --------------------------------------------------
     AdMob: {
       appId: "ca-app-pub-3940256099942544~3347511713",
       testingDevices: ["YOUR_TEST_DEVICE_ID"],

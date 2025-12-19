@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.nexusmatch.app-mergeDebugResources-41:/values-v29/values-v29.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\nabee\\.gradle\\caches\\8.11.1\\transforms\\b23b8db7ab2d81563548cc9fe8380d3c\\transformed\\core-splashscreen-1.0.0\\res\\values-v29\\values-v29.xml",
+                    "from": {
+                        "startLines": "2,7",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,374",
+                        "endLines": "6,8",
+                        "endColumns": "12,12",
+                        "endOffsets": "369,464"
+                    }
+                }
+            ]
+        }
+    ]
+}
