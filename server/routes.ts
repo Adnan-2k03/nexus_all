@@ -69,6 +69,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing ID Token" });
       }
 
+      console.log("[Auth] Received native login request");
+      console.log("[Auth] ID Token length:", idToken?.length);
+      console.log("[Auth] ID Token starts with:", idToken?.substring(0, 50) + "...");
       // 1. VERIFY WITH FIREBASE IDENTITY TOOLKIT
       // We use Firebase API Key to verify the ID token directly with Firebase
       // This is much more reliable than the generic Google OAuth endpoint
@@ -78,8 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[Auth] FIREBASE_WEB_API_KEY is not configured");
         return res.status(503).json({ error: "Firebase authentication is not configured on the server" });
       }
-      
+      console.log("[Auth] Using Firebase API key (last 8 chars):", firebaseApiKey.slice(-8));
       const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`;
+      console.log("[Auth] Sending token to Firebase for verification...");
       const verifyResponse = await fetch(verifyUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
