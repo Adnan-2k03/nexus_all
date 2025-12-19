@@ -71,62 +71,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[Auth] Received native login request");
       console.log("[Auth] ID Token length:", idToken?.length);
-      console.log("[Auth] ID Token starts with:", idToken?.substring(0, 50) + "...");
-      // 1. VERIFY WITH FIREBASE IDENTITY TOOLKIT
-      // We use Firebase API Key to verify the ID token directly with Firebase
-      // This is much more reliable than the generic Google OAuth endpoint
-      const firebaseApiKey = process.env.FIREBASE_WEB_API_KEY;
+      console.log("[Auth] Verifying token using Firebase Admin SDK...");
+      // 1. VERIFY WITH FIREBASE ADMIN SDK (most reliable method)
+      const verifyResult = await verifyFirebaseToken(idToken);
       
-      if (!firebaseApiKey) {
-        console.error("[Auth] FIREBASE_WEB_API_KEY is not configured");
-        return res.status(503).json({ error: "Firebase authentication is not configured on the server" });
+      if (!verifyResult) {
+        console.error("[Auth] Firebase token verification failed");
+        return res.status(401).json({ error: "Failed to verify token with Firebase" });
       }
-      console.log("[Auth] Using Firebase API key (last 8 chars):", firebaseApiKey.slice(-8));
-      const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseApiKey}`;
-      console.log("[Auth] Sending token to Firebase for verification...");
-      const verifyResponse = await fetch(verifyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken })
-      });
-
-      if (!verifyResponse.ok) {
-        const errorText = await verifyResponse.text();
-        console.error("[Auth] Firebase verification HTTP error:", verifyResponse.status, verifyResponse.statusText);
-        console.error("[Auth] Firebase error response:", errorText);
-        return res.status(401).json({ 
-          error: "Failed to verify token with Firebase",
-          status: verifyResponse.status,
-          details: errorText 
-        });
-      }
-
-      const data = await verifyResponse.json();
-
-      // If Firebase rejects it, log the error but don't crash
-      if (data.error || !data.users || data.users.length === 0) {
-        console.error("[Auth] Firebase verification failed:", data.error?.message || "Unknown error");
-        console.error("[Auth] Full Firebase response:", JSON.stringify(data));
-        return res.status(401).json({ 
-          error: "Invalid Firebase Token", 
-          details: data.error?.message || "Unknown error"
-        });
-      }
-
-      // 2. Extract Verified User Data from Firebase Response
-      const firebaseUser = data.users[0];
-      const googleId = firebaseUser.localId; // The unique ID verified by Google
-      const email = firebaseUser.email;
+      // 2. Extract Verified User Data from Firebase
+      const googleId = verifyResult.uid;
+      const email = verifyResult.email;
       
       if (!email) {
-        console.error("[Auth] Firebase response missing email");
+        console.error("[Auth] Firebase verification missing email");
         return res.status(400).json({ error: "Email is required from Firebase" });
       }
 
-      // Use profile photo from Firebase first, fallback to native user photo
-      const profileImageUrl = firebaseUser.photoUrl || nativeUser?.photoUrl || undefined;
-      const firstName = nativeUser?.displayName?.split(' ')[0] || firebaseUser.displayName?.split(' ')[0] || undefined;
-      const lastName = nativeUser?.displayName?.split(' ')[1] || firebaseUser.displayName?.split(' ')[1] || undefined;
+      console.log("[Auth] Token verified successfully for user:", email);
+      // Use profile info from native user object if available
+      const profileImageUrl = nativeUser?.photoUrl || undefined;
+      const firstName = nativeUser?.displayName?.split(' ')[0] || undefined;
+      const lastName = nativeUser?.displayName?.split(' ')[1] || undefined;
 
       // 3. Find or Create User in Database using upsertUserByGoogleId
       // This automatically generates a unique gamertag based on email
