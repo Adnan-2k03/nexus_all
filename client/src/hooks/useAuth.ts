@@ -33,7 +33,7 @@ export function useAuth() {
     },
   });
 
-  // --- REAL AUTH LISTENER (Fixed Token Fetching) ---
+  // --- AUTH STATE LISTENER ---
   useEffect(() => {
     const setupListener = async () => {
       if (!isNative) return;
@@ -43,61 +43,49 @@ export function useAuth() {
 
         await FirebaseAuthentication.addListener('authStateChange', async (change) => {
           if (change.user) {
-            console.log("📱 Native Login Detected! Fetching fresh token...");
-
             try {
-              // 1. GET THE TOKEN EXPLICITLY (The Fix)
-              // We don't trust change.user.idToken anymore. We ask for a fresh one.
+              // Get fresh ID token from Firebase
               const tokenResult = await FirebaseAuthentication.getIdToken();
               const idToken = tokenResult.token;
 
               if (!idToken) {
-                console.error("❌ No ID Token found even after fetching!");
+                console.error("Failed to get ID token");
                 return;
               }
 
-              console.log("✅ Got Token. sending to server...");
-
-              // 2. Send the fresh token to Railway
+              // Send token to backend for verification
               const res = await fetch(getApiUrl("/api/auth/native-login"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                credentials: "include", // CRITICAL: This allows the server to set the cookie
+                credentials: "include",
                 body: JSON.stringify({ 
-                  idToken: idToken, 
+                  idToken,
                   user: change.user 
                 })
               });
 
               if (res.ok) {
-                console.log("✅ Server Session Created! Entering App...");
-                // 3. Force React to re-check the user status
+                // Refetch user data
                 await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
                 await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
               } else {
-                const errorText = await res.text();
-                console.error("❌ Server rejected the token:", errorText);
+                const error = await res.json();
+                console.error("Authentication failed:", error);
               }
             } catch (err) {
-              console.error("Failed to perform native login:", err);
-              // Don't throw - suppress error to avoid error overlay
+              console.error("Login error:", err);
             }
           }
         });
       } catch (err) {
-        // Setup listener error - suppress to avoid breaking the app
-        console.error("Failed to setup auth listener:", err);
+        console.error("Auth listener setup failed:", err);
       }
     };
 
     setupListener();
     return () => { 
       if (isNative) {
-        try {
-          FirebaseAuthentication.removeAllListeners().catch(() => {});
-        } catch (err) {
-          // Ignore cleanup errors
-        }
+        FirebaseAuthentication.removeAllListeners().catch(() => {});
       }
     };
   }, [queryClient, isNative]);

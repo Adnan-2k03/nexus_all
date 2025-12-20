@@ -37,35 +37,30 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   });
 
   const handleGoogleLogin = async () => {
-    // CHECK: Are we on a Mobile Phone?
     if (Capacitor.isNativePlatform()) {
       try {
         setIsLoading(true);
-        console.log("🔐 Starting Google Sign-In...");
         
-        // 1. Run the Native Google Sign-In
-        // The auth listener in useAuth.ts will automatically handle the server call
+        // Trigger native Google Sign-In via Firebase
+        // The auth listener (useAuth.ts) will handle token verification with the backend
         await FirebaseAuthentication.signInWithGoogle();
-        
-        // 2. Don't do anything else - the listener will take care of the rest
-        console.log("✅ Firebase sign-in triggered, waiting for listener...");
       } catch (error: any) {
-        // Only show real errors, not user cancellation
-        if (error?.code !== 'CANCELLED' && error?.message?.includes('sign')) {
-          console.log("Sign in cancelled by user");
-        } else {
-          console.error("Native Google Login Error:", error);
-          toast({
-            title: "Sign In Failed",
-            description: error?.message || "Could not sign in with Google",
-            variant: "destructive",
-          });
+        if (error?.code === 'CANCELLED') {
+          console.log("Sign in cancelled");
+          return;
         }
+        
+        console.error("Google Sign-In error:", error);
+        toast({
+          title: "Sign In Failed",
+          description: error?.message || "Could not sign in with Google",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     } else {
-      // FALLBACK: We are on the Web (Computer), so use the old redirect method.
+      // Web fallback - redirect to OAuth flow
       window.location.href = getApiUrl("/api/auth/google");
     }
   };

@@ -78,34 +78,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let googleId: string | undefined;
       let email: string | undefined;
 
-      // 1. TRY FIREBASE ADMIN SDK VERIFICATION (if configured)
-      console.log("[Native Login] Attempting Firebase Admin SDK verification...");
+      // 1. VERIFY WITH FIREBASE ADMIN SDK
+      console.log("[Native Login] Verifying token with Firebase Admin SDK...");
       const verifyResult = await verifyFirebaseToken(idToken);
       
-      if (verifyResult) {
-        // Firebase verification succeeded (production mode)
-        googleId = verifyResult.uid;
-        email = verifyResult.email;
-        console.log("✅ [Native Login] Token verified via Firebase Admin SDK:", email);
-      } else {
-        // Firebase not configured - use fallback for development
-        console.warn("⚠️  [Native Login] Firebase Admin SDK not available, using native user data");
-        if (!nativeUser?.uid || !nativeUser?.email) {
-          console.error("❌ [Native Login] Cannot proceed - missing user data");
-          console.error("    Provide either:");
-          console.error("    1. Firebase credentials (for production), OR");
-          console.error("    2. Complete native user object: { uid, email, displayName?, photoUrl? }");
-          return res.status(400).json({ error: "User authentication data required" });
-        }
-        googleId = nativeUser.uid;
-        email = nativeUser.email;
-        console.log("✅ [Native Login] Using native user data for:", email);
+      if (!verifyResult) {
+        console.error("❌ [Native Login] Firebase token verification failed");
+        return res.status(401).json({ error: "Token verification failed" });
       }
-      
+
+      googleId = verifyResult.uid;
+      email = verifyResult.email;
+
       if (!email || !googleId) {
-        console.error("❌ [Native Login] Missing email or UID");
+        console.error("❌ [Native Login] Missing email or UID from verification");
         return res.status(400).json({ error: "Email and user ID are required" });
       }
+
+      console.log("✅ [Native Login] Token verified:", email);
 
       // 2. Use profile info from native user object if available
       const profileImageUrl = nativeUser?.photoUrl || undefined;
