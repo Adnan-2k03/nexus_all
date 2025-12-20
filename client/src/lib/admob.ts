@@ -4,31 +4,21 @@ import { Capacitor } from '@capacitor/core';
 const isNative = Capacitor.isNativePlatform();
 
 // AdMob Configuration
-// IMPORTANT: Replace these with your production AdMob IDs before publishing!
-// Get your IDs from: https://admob.google.com/
 const ADMOB_CONFIG = {
-  // Set to false when you have production ad IDs and are ready to publish
-  testMode: true,
+  // Production mode - set to false to show production ads
+  testMode: false,
   
   // Your AdMob App ID (from AdMob console)
-  // Test App ID: ca-app-pub-3940256099942544~3347511713
-  // Production: Replace with your actual App ID
-  appId: 'ca-app-pub-3940256099942544~3347511713',
+  appId: 'ca-app-pub-4278995521540923',
   
-  // Banner Ad Unit ID
-  // Test ID: ca-app-pub-3940256099942544/6300978111
-  // Production: Replace with your actual Banner Ad Unit ID
-  bannerId: 'ca-app-pub-3940256099942544/6300978111',
+  // Banner Ad Unit ID (NexusMatch_Main_Bottom_Banner)
+  bannerId: import.meta.env.VITE_ADMOB_BANNER_ID || 'ca-app-pub-4278995521540923/9530455718',
   
-  // Rewarded Ad Unit ID (users watch for rewards - pays more!)
-  // Test ID: ca-app-pub-3940256099942544/5224354917
-  // Production: Replace with your actual Rewarded Ad Unit ID
-  rewardedId: 'ca-app-pub-3940256099942544/5224354917',
+  // Rewarded Ad Unit ID (NexusMatch_Boost_Rewarded - users watch for rewards)
+  rewardedId: import.meta.env.VITE_ADMOB_REWARDED_ID || 'ca-app-pub-4278995521540923/8211109962',
   
   // Interstitial Ad Unit ID (full screen ads between pages)
-  // Test ID: ca-app-pub-3940256099942544/1033173712
-  // Production: Replace with your actual Interstitial Ad Unit ID
-  interstitialId: 'ca-app-pub-3940256099942544/1033173712',
+  interstitialId: 'ca-app-pub-4278995521540923/1033173712',
 };
 
 export const initializeAdMob = async () => {

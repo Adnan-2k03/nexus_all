@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { showBannerAd, hideBannerAd } from '@/lib/admob';
+import { showBannerAd, hideBannerAd, isAdMobAvailable } from '@/lib/admob';
 
 interface AdBannerProps {
   visible?: boolean;
@@ -7,6 +7,9 @@ interface AdBannerProps {
 
 export function AdBanner({ visible = true }: AdBannerProps) {
   useEffect(() => {
+    // Only show ads on native mobile platforms
+    if (!isAdMobAvailable()) return;
+
     if (visible) {
       showBannerAd();
     } else {
@@ -18,5 +21,6 @@ export function AdBanner({ visible = true }: AdBannerProps) {
     };
   }, [visible]);
 
+  // Ads are managed by Capacitor plugin - this component just triggers show/hide
   return null;
 }

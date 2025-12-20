@@ -37,3 +37,9 @@ externalPort = 80
 deploymentTarget = "autoscale"
 run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
+
+[userenv]
+
+[userenv.shared]
+VITE_ADMOB_BANNER_ID = "ca-app-pub-4278995521540923/9530455718"
+VITE_ADMOB_REWARDED_ID = "ca-app-pub-4278995521540923/8211109962"

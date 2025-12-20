@@ -17,8 +17,8 @@ const config: CapacitorConfig = {
     },
     // --------------------------------------------------
     AdMob: {
-      appId: "ca-app-pub-3940256099942544~3347511713",
-      testingDevices: ["YOUR_TEST_DEVICE_ID"],
+      appId: "ca-app-pub-4278995521540923",
+      testingDevices: [],
       tagForChildDirectedTreatment: false,
       tagForUnderAgeOfConsent: false,
     },
