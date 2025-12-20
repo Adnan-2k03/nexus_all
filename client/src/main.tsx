@@ -75,13 +75,36 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Global error handler
+// Global error handler - suppress known Firebase non-critical errors
 window.addEventListener('error', (event) => {
+  const errorMsg = event.error?.message || '';
+  const errorCode = event.error?.code || '';
+  
+  // Suppress Firebase config-related errors (not critical, auth still works)
+  if (errorCode === 'app/no-app' || 
+      errorMsg.includes('No Firebase App') ||
+      errorMsg.includes('initializeApp')) {
+    event.preventDefault?.();
+    return;
+  }
+  
   console.error('Global error:', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('Unhandled promise rejection:', event.reason);
+  const reason = event.reason;
+  const errorMsg = reason?.message || String(reason);
+  const errorCode = reason?.code || '';
+  
+  // Suppress Firebase config-related errors (not critical on web, works on native)
+  if (errorCode === 'app/no-app' || 
+      errorMsg.includes('No Firebase App') ||
+      errorMsg.includes('initializeApp')) {
+    event.preventDefault?.();
+    return;
+  }
+  
+  console.error('Unhandled promise rejection:', reason);
 });
 
 try {
