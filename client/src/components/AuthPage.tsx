@@ -41,58 +41,25 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     if (Capacitor.isNativePlatform()) {
       try {
         setIsLoading(true);
-        // 1. Run the Native Google Sign-In (No Chrome redirect!)
-        const result = await FirebaseAuthentication.signInWithGoogle();
+        console.log("🔐 Starting Google Sign-In...");
         
-        // 2. Get the User's ID Token
-        const idToken = result.credential?.idToken;
-
-        if (!idToken) {
-          throw new Error("No ID token received from Firebase");
-        }
-        console.log("✅ Got Firebase token, sending to server...");
+        // 1. Run the Native Google Sign-In
+        // The auth listener in useAuth.ts will automatically handle the server call
+        await FirebaseAuthentication.signInWithGoogle();
         
-        // 3. Send token to backend to create session
-        const response = await fetch(getApiUrl("/api/auth/native-login"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // CRITICAL: This allows the server to set the session cookie
-          body: JSON.stringify({ 
-            idToken,
-            user: result.user 
-          })
-        });
-        
-        // Server handles the auth, useAuth listener will detect the change
-        // Just wait for the listener to complete the login
-        if (response.ok) {
-          const user = await response.json();
-          console.log("✅ Server confirmed login for:", user.gamertag);
-          toast({
-            title: "Welcome!",
-            description: `Logged in as ${user.gamertag}`,
-          });
-          onAuthSuccess();
-        } else {
-          // Don't throw - the listener will handle the auth
-          // Just log for debugging
-          const errorData = await response.json();
-          console.log("ℹ️  Server response:", errorData);
-          // Give listener time to process auth state
-          setTimeout(() => onAuthSuccess(), 1000);
-        }
+        // 2. Don't do anything else - the listener will take care of the rest
+        console.log("✅ Firebase sign-in triggered, waiting for listener...");
       } catch (error: any) {
-        // Only show real errors, not auth state issues
-        if (error.message && !error.message.includes("sign")) {
+        // Only show real errors, not user cancellation
+        if (error?.code !== 'CANCELLED' && error?.message?.includes('sign')) {
+          console.log("Sign in cancelled by user");
+        } else {
           console.error("Native Google Login Error:", error);
           toast({
-            title: "Error",
-            description: error.message || "Could not complete sign in",
+            title: "Sign In Failed",
+            description: error?.message || "Could not sign in with Google",
             variant: "destructive",
           });
-        } else {
-          // Sign-in was interrupted by user, silently fail
-          console.log("Sign in cancelled");
         }
       } finally {
         setIsLoading(false);
