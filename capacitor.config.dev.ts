@@ -17,7 +17,9 @@ const config: CapacitorConfig = {
       appId: 'ca-app-pub-4278995521540923',
       testingDevices: [],
       tagForChildDirectedTreatment: false,
-      tagForUnderAgeOfConsent: false
+      tagForUnderAgeOfConsent: false,
+      // Development uses test ads by default
+      initializeForTesting: true,
     },
     SplashScreen: {
       launchShowDuration: 2000,

@@ -4,21 +4,28 @@ import { Capacitor } from '@capacitor/core';
 const isNative = Capacitor.isNativePlatform();
 
 // AdMob Configuration
+// Use Google's test ad units for development/testing
+// Switch to production IDs after testing
 const ADMOB_CONFIG = {
-  // Production mode - set to false to show production ads
-  testMode: false,
+  // Enable test mode for development (shows test ads)
+  // Set to false and use production IDs when ready for Play Store
+  testMode: true,
   
   // Your AdMob App ID (from AdMob console)
   appId: 'ca-app-pub-4278995521540923',
   
-  // Banner Ad Unit ID (NexusMatch_Main_Bottom_Banner)
-  bannerId: import.meta.env.VITE_ADMOB_BANNER_ID || 'ca-app-pub-4278995521540923/9530455718',
+  // Banner Ad Unit ID - Using Google's test ad unit for development
+  // Production: 'ca-app-pub-4278995521540923/9530455718'
+  // Test: 'ca-app-pub-3940256099942544/6300978111'
+  bannerId: 'ca-app-pub-3940256099942544/6300978111',
   
-  // Rewarded Ad Unit ID (NexusMatch_Boost_Rewarded - users watch for rewards)
-  rewardedId: import.meta.env.VITE_ADMOB_REWARDED_ID || 'ca-app-pub-4278995521540923/8211109962',
+  // Rewarded Ad Unit ID - Using Google's test ad unit for development
+  // Production: 'ca-app-pub-4278995521540923/8211109962'
+  // Test: 'ca-app-pub-3940256099942544/5224354917'
+  rewardedId: 'ca-app-pub-3940256099942544/5224354917',
   
   // Interstitial Ad Unit ID (full screen ads between pages)
-  interstitialId: 'ca-app-pub-4278995521540923/1033173712',
+  interstitialId: 'ca-app-pub-3940256099942544/1033173712',
 };
 
 export const initializeAdMob = async () => {
@@ -29,10 +36,17 @@ export const initializeAdMob = async () => {
 
   try {
     await AdMob.initialize({
-      testingDevices: ['YOUR_TEST_DEVICE_ID'],
+      testingDevices: [], // Leave empty for testing on public ad units
       initializeForTesting: ADMOB_CONFIG.testMode,
     });
     console.log('AdMob initialized successfully');
+    
+    // Automatically show banner ad after initialization
+    if (isNative) {
+      setTimeout(() => {
+        showBannerAd();
+      }, 1000);
+    }
   } catch (error) {
     console.error('Failed to initialize AdMob:', error);
   }

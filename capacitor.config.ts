@@ -21,6 +21,9 @@ const config: CapacitorConfig = {
       testingDevices: [],
       tagForChildDirectedTreatment: false,
       tagForUnderAgeOfConsent: false,
+      // For development: comment out to use test ads
+      // For production: uncomment to use real ads
+      // initializeForTesting: false,
     },
     SplashScreen: {
       launchShowDuration: 2000,
