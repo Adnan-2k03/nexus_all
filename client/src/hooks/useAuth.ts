@@ -44,17 +44,24 @@ export function useAuth() {
         await FirebaseAuthentication.addListener('authStateChange', async (change) => {
           if (change.user) {
             try {
+              console.log("🔐 [Auth] Sign-in detected, user:", change.user.email);
+              
               // Get fresh ID token from Firebase
               const tokenResult = await FirebaseAuthentication.getIdToken();
               const idToken = tokenResult.token;
 
               if (!idToken) {
-                console.error("Failed to get ID token");
+                console.error("❌ [Auth] Failed to get ID token");
                 return;
               }
 
+              console.log("✅ [Auth] Got token, sending to backend...");
+              const url = getApiUrl("/api/auth/native-login");
+              console.log("📍 [Auth] Backend URL:", url);
+              console.log("📦 [Auth] Token length:", idToken.length);
+
               // Send token to backend for verification
-              const res = await fetch(getApiUrl("/api/auth/native-login"), {
+              const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -64,16 +71,21 @@ export function useAuth() {
                 })
               });
 
+              console.log("📬 [Auth] Backend response status:", res.status);
+
               if (res.ok) {
+                console.log("✅ [Auth] Server accepted token, refetching user...");
                 // Refetch user data
                 await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
                 await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
               } else {
-                const error = await res.json();
-                console.error("Authentication failed:", error);
+                const errorData = await res.text();
+                console.error("❌ [Auth] Server rejected request:", res.status, errorData);
               }
-            } catch (err) {
-              console.error("Login error:", err);
+            } catch (err: any) {
+              console.error("❌ [Auth] Network/fetch error:", err.message || err);
+              console.error("    Type:", err.constructor.name);
+              if (err.stack) console.error("    Stack:", err.stack);
             }
           }
         });

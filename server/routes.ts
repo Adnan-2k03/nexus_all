@@ -63,9 +63,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 // --- OFFICIAL NATIVE LOGIN ROUTE (FIREBASE) ---
   app.post("/api/auth/native-login", async (req, res) => {
     try {
+      console.log("\n🔐🔐🔐 [NATIVE LOGIN REQUEST] 🔐🔐🔐");
+      console.log("Timestamp:", new Date().toISOString());
+      console.log("Headers:", JSON.stringify(req.headers, null, 2));
+      console.log("Body keys:", Object.keys(req.body));
+      
       const { idToken, user: nativeUser } = req.body;
 
-      console.log("📱 [Native Login] Received request from mobile app");
+      console.log("📱 [Native Login] Request received from mobile app");
+      console.log("   - Has idToken:", !!idToken);
+      console.log("   - Has user object:", !!nativeUser);
       
       if (!idToken) {
         console.error("❌ [Native Login] Missing ID Token in request body");
