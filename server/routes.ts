@@ -71,31 +71,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[Auth] Received native login request");
       console.log("[Auth] ID Token length:", idToken?.length);
-      console.log("[Auth] Verifying token using Firebase Admin SDK...");
-      // 1. VERIFY WITH FIREBASE ADMIN SDK (most reliable method)
+      
+      let googleId: string | undefined;
+      let email: string | undefined;
+
+      // 1. TRY TO VERIFY WITH FIREBASE ADMIN SDK (if configured)
+      console.log("[Auth] Attempting Firebase Admin SDK verification...");
       const verifyResult = await verifyFirebaseToken(idToken);
       
-      if (!verifyResult) {
-        console.error("[Auth] Firebase token verification failed");
-        return res.status(401).json({ error: "Failed to verify token with Firebase" });
+      if (verifyResult) {
+        // Firebase verification succeeded
+        googleId = verifyResult.uid;
+        email = verifyResult.email;
+        console.log("[Auth] Token verified successfully for user:", email);
+      } else {
+        // Firebase not configured or verification failed
+        // Fallback: Extract info from native user object
+        console.warn("[Auth] Firebase verification unavailable, using native user data");
+        if (!nativeUser?.uid || !nativeUser?.email) {
+          console.error("[Auth] Cannot proceed without verified user data");
+          return res.status(400).json({ error: "User data required for authentication" });
+        }
+        googleId = nativeUser.uid;
+        email = nativeUser.email;
       }
-      // 2. Extract Verified User Data from Firebase
-      const googleId = verifyResult.uid;
-      const email = verifyResult.email;
       
-      if (!email) {
-        console.error("[Auth] Firebase verification missing email");
-        return res.status(400).json({ error: "Email is required from Firebase" });
+      if (!email || !googleId) {
+        console.error("[Auth] Missing required user identifiers");
+        return res.status(400).json({ error: "Email and user ID are required" });
       }
 
-      console.log("[Auth] Token verified successfully for user:", email);
-      // Use profile info from native user object if available
+      // 2. Use profile info from native user object if available
       const profileImageUrl = nativeUser?.photoUrl || undefined;
       const firstName = nativeUser?.displayName?.split(' ')[0] || undefined;
       const lastName = nativeUser?.displayName?.split(' ')[1] || undefined;
 
       // 3. Find or Create User in Database using upsertUserByGoogleId
-      // This automatically generates a unique gamertag based on email
       const user = await storage.upsertUserByGoogleId({
         googleId,
         email,

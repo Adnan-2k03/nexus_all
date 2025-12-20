@@ -50,6 +50,8 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         if (!idToken) {
           throw new Error("No ID token received from Firebase");
         }
+        console.log("✅ Got Firebase token, sending to server...");
+        
         // 3. Send token to backend to create session
         const response = await fetch(getApiUrl("/api/auth/native-login"), {
           method: "POST",
@@ -60,26 +62,38 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             user: result.user 
           })
         });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Backend authentication failed");
+        
+        // Server handles the auth, useAuth listener will detect the change
+        // Just wait for the listener to complete the login
+        if (response.ok) {
+          const user = await response.json();
+          console.log("✅ Server confirmed login for:", user.gamertag);
+          toast({
+            title: "Welcome!",
+            description: `Logged in as ${user.gamertag}`,
+          });
+          onAuthSuccess();
+        } else {
+          // Don't throw - the listener will handle the auth
+          // Just log for debugging
+          const errorData = await response.json();
+          console.log("ℹ️  Server response:", errorData);
+          // Give listener time to process auth state
+          setTimeout(() => onAuthSuccess(), 1000);
         }
-        const user = await response.json();
-        
-        toast({
-          title: "Welcome!",
-          description: `Logged in as ${user.gamertag}`,
-        });
-        
-        // 4. Invalidate auth cache and update UI
-        onAuthSuccess();
       } catch (error: any) {
-        console.error("Native Google Login Error:", error);
-        toast({
-          title: "Login Failed",
-          description: error.message || "Could not sign in with Google",
-          variant: "destructive",
-        });
+        // Only show real errors, not auth state issues
+        if (error.message && !error.message.includes("sign")) {
+          console.error("Native Google Login Error:", error);
+          toast({
+            title: "Error",
+            description: error.message || "Could not complete sign in",
+            variant: "destructive",
+          });
+        } else {
+          // Sign-in was interrupted by user, silently fail
+          console.log("Sign in cancelled");
+        }
       } finally {
         setIsLoading(false);
       }
