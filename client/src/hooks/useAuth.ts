@@ -2,10 +2,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { User } from "@shared/schema";
 import { getApiUrl } from "@/lib/api";
+import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 export function useAuth() {
   const queryClient = useQueryClient();
+  const isNative = Capacitor.isNativePlatform();
 
   const { data: user, isLoading, isFetching } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
@@ -34,6 +36,8 @@ export function useAuth() {
   // --- REAL AUTH LISTENER (Fixed Token Fetching) ---
   useEffect(() => {
     const setupListener = async () => {
+      if (!isNative) return;
+
       await FirebaseAuthentication.removeAllListeners();
 
       await FirebaseAuthentication.addListener('authStateChange', async (change) => {
@@ -81,8 +85,12 @@ export function useAuth() {
     };
 
     setupListener();
-    return () => { FirebaseAuthentication.removeAllListeners(); };
-  }, [queryClient]);
+    return () => { 
+      if (isNative) {
+        FirebaseAuthentication.removeAllListeners();
+      }
+    };
+  }, [queryClient, isNative]);
 
   return {
     user,
