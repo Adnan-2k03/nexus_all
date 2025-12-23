@@ -34,6 +34,7 @@ import { Groups } from "@/components/Groups";
 import { Tournaments } from "@/components/Tournaments";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { AdminPage } from "@/pages/AdminPage";
+import { LockedFeaturePage } from "@/components/LockedFeaturePage";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
 import { WebGLStarBackground } from "@/components/WebGLStarBackground";
@@ -68,7 +69,7 @@ function Router() {
   // Real authentication using useAuth hook
   const { user, isLoading, isFetching, isAuthenticated } = useAuth();
   const { getContainerClass } = useLayout();
-  const { isFeatureVisible } = useFeatureFlags();
+  const { isFeatureVisible, isFeatureLocked } = useFeatureFlags();
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
@@ -576,6 +577,9 @@ function Router() {
           </Route>
           <Route path="/feedback">
             {() => {
+              if (isFeatureLocked("feedback")) {
+                return <LockedFeaturePage featureName="feedback" description="The feedback feature has been locked." />;
+              }
               if (currentPage !== "feedback") {
                 setCurrentPage("feedback");
               }
@@ -682,6 +686,9 @@ function Router() {
           </Route>
           <Route path="/discover">
             {() => {
+              if (isFeatureLocked("discover")) {
+                return <LockedFeaturePage featureName="discover" description="The discover feature has been locked." />;
+              }
               if (currentPage !== "search") {
                 setCurrentPage("search");
               }

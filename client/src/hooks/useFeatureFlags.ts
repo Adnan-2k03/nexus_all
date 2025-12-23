@@ -43,9 +43,16 @@ export function useFeatureFlags() {
     return flag.isEnabled;
   };
 
+  const isFeatureLocked = (featureName: string): boolean => {
+    const flag = flags.find((f) => f.featureName === featureName);
+    if (!flag) return false;
+    return flag.filters?.lock === true;
+  };
+
   return {
     flags,
     isFeatureVisible,
     isFeatureEnabled,
+    isFeatureLocked,
   };
 }

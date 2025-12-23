@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { MessageSquare, Loader2, Send, Plus, Trash2, Volume2, VolumeX, Users } from "lucide-react";
+import { MessageSquare, Loader2, Send, Plus, Trash2, Volume2, VolumeX, Users, Lock } from "lucide-react";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { getApiUrl } from "@/lib/api";
 
 interface FeedbackChannel {
@@ -31,6 +32,8 @@ interface FeedbackMessage {
 
 export function FeedbackPage() {
   const { toast } = useToast();
+  const { isFeatureLocked } = useFeatureFlags();
+  const isLocked = isFeatureLocked("feedback");
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [newChannelName, setNewChannelName] = useState("");
@@ -140,8 +143,11 @@ export function FeedbackPage() {
         <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
           Feedback & Community
+          {isLocked && <Lock className="h-5 w-5 text-destructive ml-auto" data-testid="icon-locked" />}
         </h1>
-        <p className="text-muted-foreground">Join channels to discuss features, report bugs, and connect with the community</p>
+        <p className="text-muted-foreground">
+          {isLocked ? "This feature has been locked by administrators." : "Join channels to discuss features, report bugs, and connect with the community"}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
