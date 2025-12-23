@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ interface FeatureFlag {
 export function AdminPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoggedInAsAdmin, setIsLoggedInAsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -60,6 +62,8 @@ export function AdminPage() {
       sessionStorage.setItem("adminPassword", adminPassword);
       setIsLoggedInAsAdmin(true);
       setAdminPassword("");
+      // Refetch auth state so frontend knows about the new session
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       await fetchFeatureFlags();
     } catch (error) {
       toast({
@@ -240,6 +244,12 @@ export function AdminPage() {
     );
   }
 
+  const handleGoToApp = async () => {
+    // Ensure auth is refetched before navigating
+    await queryClient.refetchQueries({ queryKey: ['/api/auth/user'] });
+    setLocation("/");
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -250,7 +260,7 @@ export function AdminPage() {
           <div className="flex gap-2">
             <Button
               variant="default"
-              onClick={() => setLocation("/")}
+              onClick={handleGoToApp}
               data-testid="button-go-to-app"
             >
               Go to App
