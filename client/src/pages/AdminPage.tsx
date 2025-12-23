@@ -353,6 +353,22 @@ export function AdminPage() {
                             label = "Voice";
                             description = "Allow voice features";
                             break;
+                          case "channelCreation":
+                            label = "Channel Creation";
+                            description = "Allow users to create feedback channels";
+                            break;
+                          case "messagePosting":
+                            label = "Message Posting";
+                            description = "Allow users to post messages in feedback";
+                            break;
+                          case "textChannels":
+                            label = "Text Channels";
+                            description = "Enable text-based feedback channels";
+                            break;
+                          case "voiceChannels":
+                            label = "Voice Channels";
+                            description = "Enable voice-based feedback channels";
+                            break;
                           case "hide":
                             label = "Hide Feature";
                             description = "Hide this feature from users";
