@@ -32,6 +32,7 @@ import { FeedbackPage } from "@/pages/FeedbackPage";
 import { Groups } from "@/components/Groups";
 import { Tournaments } from "@/components/Tournaments";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
+import { AdminPage } from "@/pages/AdminPage";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
 import { WebGLStarBackground } from "@/components/WebGLStarBackground";
@@ -472,6 +473,11 @@ function Router() {
 
   return (
     <Switch>
+      {/* Admin route */}
+      <Route path="/admin">
+        {() => <AdminPage />}
+      </Route>
+      
       {/* Public route for join-channel (works for everyone) */}
       <Route path="/join-channel/:inviteCode">
         {() => (
