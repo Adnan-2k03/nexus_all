@@ -247,13 +247,22 @@ export function AdminPage() {
           <h1 className="text-3xl font-bold text-foreground">
             Admin Dashboard
           </h1>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            data-testid="button-admin-logout"
-          >
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              onClick={() => setLocation("/")}
+              data-testid="button-go-to-app"
+            >
+              Go to App
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              data-testid="button-admin-logout"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
