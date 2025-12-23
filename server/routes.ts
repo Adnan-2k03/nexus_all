@@ -362,10 +362,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user = await storage.getUserByGamertag(normalizedGamertag);
 
       if (!user) {
-        // Create new user with just gamertag
-        user = await storage.createPhoneUser({
+        // Create new user with just gamertag using createLocalUser
+        user = await storage.createLocalUser({
           gamertag: normalizedGamertag,
-          phoneNumber: "",
         });
       }
 
