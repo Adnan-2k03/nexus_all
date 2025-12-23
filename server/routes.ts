@@ -3466,9 +3466,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Session error" });
         }
         
-        // Generate a simple token for admin panel
-        const token = Buffer.from(`admin:${Date.now()}`).toString("base64");
-        res.json({ token, message: "Admin login successful", userId: adminUser.id });
+        // Save session to ensure it persists across navigation
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            return res.status(500).json({ message: "Failed to save session" });
+          }
+          
+          // Generate a simple token for admin panel
+          const token = Buffer.from(`admin:${Date.now()}`).toString("base64");
+          res.json({ token, message: "Admin login successful", userId: adminUser.id });
+        });
       });
     } catch (error) {
       res.status(500).json({ message: String(error) });
