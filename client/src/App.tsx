@@ -29,6 +29,7 @@ import { VoiceChannelsPage } from "@/pages/VoiceChannelsPage";
 import { JoinChannelPage } from "@/pages/JoinChannelPage";
 import { RewardedAdsPage } from "@/pages/RewardedAdsPage";
 import { FeedbackPage } from "@/pages/FeedbackPage";
+import { Groups } from "@/components/Groups";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
@@ -66,13 +67,14 @@ function Router() {
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
-  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" => {
-    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" } = {
+  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" => {
+    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" } = {
       "/": "home",
       "/discover": "search",
       "/connections": "connections",
       "/messages": "messages",
       "/voice-channels": "voice-channels",
+      "/groups": "groups",
       "/ads": "ads",
       "/feedback": "feedback",
       "/profile": "profile",
@@ -96,6 +98,7 @@ function Router() {
     | "connections"
     | "ads"
     | "feedback"
+    | "groups"
   >(() => getPageFromUrl(location));
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
@@ -108,6 +111,7 @@ function Router() {
       "connections": "/connections",
       "messages": "/messages",
       "voice-channels": "/voice-channels",
+      "groups": "/groups",
       "ads": "/ads",
       "feedback": "/feedback",
       "profile": "/profile",
@@ -414,6 +418,12 @@ function Router() {
             <FeedbackPage />
           </div>
         );
+      case "groups":
+        return (
+          <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
+            <Groups currentUserId={user?.id} />
+          </div>
+        );
       case "settings":
         return (
           <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
@@ -544,6 +554,28 @@ function Router() {
             {() => {
               if (currentPage !== "feedback") {
                 setCurrentPage("feedback");
+              }
+              return (
+                <div className="min-h-screen relative">
+                  {user && user.gamertag && (
+                    <GameNavigation
+                      currentPage={currentPage as any}
+                      onNavigate={handleNavigation}
+                      user={mapUserForComponents(user)}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    {renderMainContent()}
+                  </div>
+                </div>
+              );
+            }}
+          </Route>
+          <Route path="/groups">
+            {() => {
+              if (currentPage !== "groups") {
+                setCurrentPage("groups");
               }
               return (
                 <div className="min-h-screen relative">
