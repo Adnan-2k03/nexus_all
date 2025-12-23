@@ -59,6 +59,7 @@ function mapUserForComponents(user: User) {
     longitude: user.longitude ?? undefined,
     age: user.age ?? undefined,
     preferredGames: user.preferredGames ?? undefined,
+    isAdmin: user.isAdmin ?? false,
   };
 }
 

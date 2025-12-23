@@ -347,6 +347,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gamertag-based login/registration
+  app.post('/api/auth/gamertag-login', async (req: any, res) => {
+    try {
+      const { gamertag } = req.body;
+
+      if (!gamertag || typeof gamertag !== 'string' || gamertag.trim().length < 3) {
+        return res.status(400).json({ message: "Gamertag must be at least 3 characters" });
+      }
+
+      const normalizedGamertag = gamertag.trim().toLowerCase();
+
+      // Find or create user by gamertag
+      let user = await storage.getUserByGamertag(normalizedGamertag);
+
+      if (!user) {
+        // Create new user with just gamertag
+        user = await storage.createPhoneUser({
+          gamertag: normalizedGamertag,
+          phoneNumber: "",
+        });
+      }
+
+      req.login(user, (err: any) => {
+        if (err) {
+          console.error("Error logging in with gamertag:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        res.json(user);
+      });
+    } catch (error) {
+      console.error("Error with gamertag login:", error);
+      res.status(500).json({ message: "Failed to login with gamertag" });
+    }
+  });
+
   // User discovery routes
   app.get('/api/users', async (req: any, res) => {
     try {

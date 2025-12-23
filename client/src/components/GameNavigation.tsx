@@ -18,7 +18,8 @@ import {
   Mic,
   Phone,
   Coins,
-  Trophy
+  Trophy,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ interface GameNavigationProps {
   user?: {
     gamertag: string;
     profileImageUrl?: string;
+    isAdmin?: boolean;
   };
   onLogout?: () => void;
   pendingMessages?: number;
@@ -172,6 +174,15 @@ export function GameNavigation({
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </DropdownMenuItem>
+              {user?.isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => window.location.href = '/admin'} data-testid="nav-admin">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </DropdownMenuItem>
+                </>
+              )}
               {user && (
                 <>
                   <DropdownMenuSeparator />

@@ -28,6 +28,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [countryCode, setCountryCode] = useState("+1");
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [firebaseToken, setFirebaseToken] = useState<string>("");
+  const [gamertagInput, setGamertagInput] = useState("");
 
   const [phoneRegisterData, setPhoneRegisterData] = useState<RegisterUser>({
     gamertag: "",
@@ -35,6 +36,40 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     lastName: "",
     age: undefined,
   });
+
+  const handleGamertagLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await fetch(getApiUrl("/api/auth/gamertag-login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ gamertag: gamertagInput }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.message || "Failed to login",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setGamertagInput("");
+      onAuthSuccess();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to login with gamertag",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     if (Capacitor.isNativePlatform()) {
@@ -427,11 +462,37 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="google" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="gamertag" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="gamertag" data-testid="tab-gamertag">Gamertag</TabsTrigger>
               <TabsTrigger value="google" data-testid="tab-google">Google</TabsTrigger>
               <TabsTrigger value="phone" data-testid="tab-phone">Phone</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="gamertag" className="space-y-4">
+              <form onSubmit={handleGamertagLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gamertag">Gamertag</Label>
+                  <Input
+                    id="gamertag"
+                    data-testid="input-gamertag"
+                    type="text"
+                    placeholder="Enter your gamertag"
+                    value={gamertagInput}
+                    onChange={(e) => setGamertagInput(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || gamertagInput.length < 3}
+                  data-testid="button-gamertag-login"
+                >
+                  <Gamepad2 className="mr-2 h-4 w-4" />
+                  {isLoading ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            </TabsContent>
 
             <TabsContent value="google" className="space-y-4">
               <Button
