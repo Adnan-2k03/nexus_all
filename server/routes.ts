@@ -3258,5 +3258,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Group operations
+  app.post("/api/groups", authMiddleware, async (req: any, res) => {
+    try {
+      const { name, description, groupLanguage } = req.body;
+      const group = await storage.createGroup(name, req.user.id, description, groupLanguage);
+      res.status(201).json(group);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/groups", authMiddleware, async (req: any, res) => {
+    try {
+      const groups = await storage.getUserGroups(req.user.id);
+      res.json(groups);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/groups/:groupId", authMiddleware, async (req: any, res) => {
+    try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      res.json(group);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.patch("/api/groups/:groupId", authMiddleware, async (req: any, res) => {
+    try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group || group.creatorId !== req.user.id) return res.status(403).json({ message: "Unauthorized" });
+      const updated = await storage.updateGroup(req.params.groupId, req.body);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.delete("/api/groups/:groupId", authMiddleware, async (req: any, res) => {
+    try {
+      await storage.deleteGroup(req.params.groupId, req.user.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(403).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/groups/:groupId/members", authMiddleware, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      const member = await storage.addGroupMember(req.params.groupId, userId, "member");
+      res.status(201).json(member);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.delete("/api/groups/:groupId/members/:userId", authMiddleware, async (req: any, res) => {
+    try {
+      await storage.removeGroupMember(req.params.groupId, req.params.userId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/groups/:groupId/messages", authMiddleware, async (req: any, res) => {
+    try {
+      const { message, senderLanguage } = req.body;
+      const msg = await storage.sendGroupMessage(req.params.groupId, req.user.id, message, senderLanguage);
+      res.status(201).json(msg);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/groups/:groupId/messages", async (req: any, res) => {
+    try {
+      const messages = await storage.getGroupMessages(req.params.groupId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.patch("/api/groups/messages/:messageId/translations", authMiddleware, async (req: any, res) => {
+    try {
+      const { translations } = req.body;
+      const msg = await storage.updateMessageTranslations(req.params.messageId, translations);
+      res.json(msg);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   return httpServer;
 }

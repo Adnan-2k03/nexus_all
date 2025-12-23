@@ -2063,6 +2063,116 @@ export class DatabaseStorage implements IStorage {
     const [member] = await db.select().from(channelMembers).where(and(eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId)));
     return member?.role;
   }
+
+  // Group operations
+  async createGroup(name: string, creatorId: string, description?: string, groupLanguage?: string): Promise<Group> {
+    const [group] = await db.insert(groups).values({
+      name,
+      creatorId,
+      description,
+      groupLanguage,
+      isActive: true,
+    }).returning();
+    await db.insert(groupMembers).values({
+      groupId: group.id,
+      userId: creatorId,
+      role: "owner",
+    });
+    return group;
+  }
+
+  async getGroup(id: string): Promise<Group | undefined> {
+    const [group] = await db.select().from(groups).where(eq(groups.id, id));
+    return group;
+  }
+
+  async getUserGroups(userId: string): Promise<GroupWithDetails[]> {
+    const userGroupsData = await db.select({
+      id: groups.id,
+      name: groups.name,
+      description: groups.description,
+      creatorId: groups.creatorId,
+      profileImageUrl: groups.profileImageUrl,
+      groupLanguage: groups.groupLanguage,
+      isActive: groups.isActive,
+      createdAt: groups.createdAt,
+      updatedAt: groups.updatedAt,
+      creatorGamertag: users.gamertag,
+      memberCount: sql<number>`COUNT(DISTINCT ${groupMembers.userId})`,
+      lastMessageTime: sql<Date>`MAX(${groupMessages.createdAt})`,
+    }).from(groups)
+      .leftJoin(users, eq(groups.creatorId, users.id))
+      .leftJoin(groupMembers, eq(groups.id, groupMembers.groupId))
+      .leftJoin(groupMessages, eq(groups.id, groupMessages.groupId))
+      .where(eq(groupMembers.userId, userId))
+      .groupBy(groups.id, users.id);
+    return userGroupsData;
+  }
+
+  async updateGroup(id: string, updates: Partial<Group>): Promise<Group> {
+    const [group] = await db.update(groups).set({ ...updates, updatedAt: new Date() }).where(eq(groups.id, id)).returning();
+    return group;
+  }
+
+  async deleteGroup(id: string, userId: string): Promise<void> {
+    const group = await this.getGroup(id);
+    if (!group || group.creatorId !== userId) throw new Error("Unauthorized");
+    await db.delete(groups).where(eq(groups.id, id));
+  }
+
+  async addGroupMember(groupId: string, userId: string, role?: string): Promise<GroupMember> {
+    const existing = await db.select().from(groupMembers).where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
+    if (existing.length > 0) return existing[0];
+    const [member] = await db.insert(groupMembers).values({
+      groupId,
+      userId,
+      role: (role as "owner" | "admin" | "member") || "member",
+    }).returning();
+    return member;
+  }
+
+  async removeGroupMember(groupId: string, userId: string): Promise<void> {
+    await db.delete(groupMembers).where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
+  }
+
+  async getGroupMembers(groupId: string): Promise<GroupMember[]> {
+    return db.select().from(groupMembers).where(eq(groupMembers.groupId, groupId));
+  }
+
+  async sendGroupMessage(groupId: string, senderId: string, message: string, senderLanguage?: string): Promise<GroupMessage> {
+    const [msg] = await db.insert(groupMessages).values({
+      groupId,
+      senderId,
+      message,
+      senderLanguage,
+      translations: {},
+    }).returning();
+    return msg;
+  }
+
+  async getGroupMessages(groupId: string, limit?: number): Promise<GroupMessageWithSender[]> {
+    const messages = await db.select({
+      id: groupMessages.id,
+      groupId: groupMessages.groupId,
+      senderId: groupMessages.senderId,
+      message: groupMessages.message,
+      senderLanguage: groupMessages.senderLanguage,
+      translations: groupMessages.translations,
+      createdAt: groupMessages.createdAt,
+      senderGamertag: users.gamertag,
+      senderProfileImageUrl: users.profileImageUrl,
+    }).from(groupMessages)
+      .leftJoin(users, eq(groupMessages.senderId, users.id))
+      .where(eq(groupMessages.groupId, groupId))
+      .orderBy(desc(groupMessages.createdAt))
+      .limit(limit || 50);
+    return messages;
+  }
+
+  async updateMessageTranslations(messageId: string, translations: Record<string, string>): Promise<GroupMessage> {
+    const [msg] = await db.update(groupMessages).set({ translations }).where(eq(groupMessages.id, messageId)).returning();
+    return msg;
+  }
 }
 
 export const storage = new DatabaseStorage();
