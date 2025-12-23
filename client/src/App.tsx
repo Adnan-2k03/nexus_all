@@ -27,6 +27,8 @@ import { Discover } from "@/components/Discover";
 import { Settings } from "@/components/Settings";
 import { VoiceChannelsPage } from "@/pages/VoiceChannelsPage";
 import { JoinChannelPage } from "@/pages/JoinChannelPage";
+import { RewardedAdsPage } from "@/pages/RewardedAdsPage";
+import { CreditsDisplay } from "@/components/CreditsDisplay";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
 import { WebGLStarBackground } from "@/components/WebGLStarBackground";
@@ -63,13 +65,14 @@ function Router() {
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
-  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" => {
-    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" } = {
+  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" => {
+    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" } = {
       "/": "home",
       "/discover": "search",
       "/connections": "connections",
       "/messages": "messages",
       "/voice-channels": "voice-channels",
+      "/ads": "ads",
       "/profile": "profile",
       "/settings": "settings",
       "/profile-setup": "profile-setup",
@@ -89,6 +92,7 @@ function Router() {
     | "settings"
     | "profile-setup"
     | "connections"
+    | "ads"
   >(() => getPageFromUrl(location));
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
@@ -101,6 +105,7 @@ function Router() {
       "connections": "/connections",
       "messages": "/messages",
       "voice-channels": "/voice-channels",
+      "ads": "/ads",
       "profile": "/profile",
       "settings": "/settings",
       "profile-setup": "/profile-setup",
@@ -393,6 +398,12 @@ function Router() {
             <VoiceChannelsPage currentUserId={user?.id} />
           </div>
         );
+      case "ads":
+        return (
+          <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
+            <RewardedAdsPage />
+          </div>
+        );
       case "settings":
         return (
           <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
@@ -462,7 +473,7 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads"}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}
@@ -484,7 +495,29 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as any}
+                      onNavigate={handleNavigation}
+                      user={mapUserForComponents(user)}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    {renderMainContent()}
+                  </div>
+                </div>
+              );
+            }}
+          </Route>
+          <Route path="/ads">
+            {() => {
+              if (currentPage !== "ads") {
+                setCurrentPage("ads");
+              }
+              return (
+                <div className="min-h-screen relative">
+                  {user && user.gamertag && (
+                    <GameNavigation
+                      currentPage={currentPage as any}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}
@@ -506,7 +539,7 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as any}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}
@@ -542,7 +575,7 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as any}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}
@@ -564,7 +597,7 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as any}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}
@@ -586,7 +619,7 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as any}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}
@@ -608,7 +641,7 @@ function Router() {
                 <div className="min-h-screen relative">
                   {user && user.gamertag && (
                     <GameNavigation
-                      currentPage={currentPage}
+                      currentPage={currentPage as any}
                       onNavigate={handleNavigation}
                       user={mapUserForComponents(user)}
                       onLogout={handleLogout}

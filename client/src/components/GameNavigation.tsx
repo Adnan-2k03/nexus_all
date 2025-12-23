@@ -15,7 +15,8 @@ import {
   Search,
   MoreVertical,
   Mic,
-  Phone
+  Phone,
+  Coins
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ import { NotificationBell } from "./NotificationBell";
 import { useVoiceCallNotifications } from "@/hooks/useVoiceCallNotifications";
 
 interface GameNavigationProps {
-  currentPage: "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections";
+  currentPage: "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads";
   onNavigate: (page: string) => void;
   user?: {
     gamertag: string;
@@ -55,6 +56,7 @@ export function GameNavigation({
     { id: "connections", label: "Matches", icon: Users },
     { id: "messages", label: "Messages", icon: MessageCircle, badge: pendingMessages, hasPhoneIndicator: hasWaitingCalls },
     { id: "voice-channels", label: "Voice", icon: Phone, hasPhoneIndicator: hasWaitingCalls },
+    { id: "ads", label: "Earn", icon: Coins },
     { id: "profile", label: "Profile", icon: User },
   ];
 
