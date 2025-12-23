@@ -144,8 +144,12 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button disabled={isLocked} data-testid="button-create-tournament">
-                {isLocked && <Lock className="h-4 w-4 mr-2" />}
+              <Button 
+                disabled={isLocked} 
+                data-testid="button-create-tournament"
+                className={isLocked ? "opacity-100" : ""}
+              >
+                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
                 Create Tournament
               </Button>
             </DialogTrigger>
@@ -265,8 +269,13 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                           </div>
                         </div>
                         {!isCreator && !isJoined && (
-                          <Button onClick={(e) => { e.stopPropagation(); joinMutation.mutate(tournament.id); }} disabled={joinMutation.isPending || isLocked} data-testid={`button-join-tournament-${tournament.id}`}>
-                            {isLocked && <Lock className="h-4 w-4 mr-2" />}
+                          <Button 
+                            onClick={(e) => { e.stopPropagation(); joinMutation.mutate(tournament.id); }} 
+                            disabled={joinMutation.isPending || isLocked} 
+                            data-testid={`button-join-tournament-${tournament.id}`}
+                            className={isLocked ? "opacity-100" : ""}
+                          >
+                            {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
                             Join
                           </Button>
                         )}
@@ -309,8 +318,13 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
             <Card className="p-8 text-center">
               <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No tournaments yet. Create the first one or check back soon!</p>
-              <Button onClick={() => setIsCreateOpen(true)} disabled={isLocked} data-testid="button-create-first-tournament">
-                {isLocked && <Lock className="h-4 w-4 mr-2" />}
+              <Button 
+                onClick={() => setIsCreateOpen(true)} 
+                disabled={isLocked} 
+                data-testid="button-create-first-tournament"
+                className={isLocked ? "opacity-100" : ""}
+              >
+                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
                 Create Tournament
               </Button>
             </Card>
