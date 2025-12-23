@@ -30,6 +30,7 @@ import { JoinChannelPage } from "@/pages/JoinChannelPage";
 import { RewardedAdsPage } from "@/pages/RewardedAdsPage";
 import { FeedbackPage } from "@/pages/FeedbackPage";
 import { Groups } from "@/components/Groups";
+import { Tournaments } from "@/components/Tournaments";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
@@ -67,14 +68,15 @@ function Router() {
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
-  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" => {
-    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" } = {
+  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" | "tournaments" => {
+    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" | "tournaments" } = {
       "/": "home",
       "/discover": "search",
       "/connections": "connections",
       "/messages": "messages",
       "/voice-channels": "voice-channels",
       "/groups": "groups",
+      "/tournaments": "tournaments",
       "/ads": "ads",
       "/feedback": "feedback",
       "/profile": "profile",
@@ -99,6 +101,7 @@ function Router() {
     | "ads"
     | "feedback"
     | "groups"
+    | "tournaments"
   >(() => getPageFromUrl(location));
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
@@ -112,6 +115,7 @@ function Router() {
       "messages": "/messages",
       "voice-channels": "/voice-channels",
       "groups": "/groups",
+      "tournaments": "/tournaments",
       "ads": "/ads",
       "feedback": "/feedback",
       "profile": "/profile",
@@ -422,6 +426,12 @@ function Router() {
         return (
           <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
             <Groups currentUserId={user?.id} />
+          </div>
+        );
+      case "tournaments":
+        return (
+          <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
+            <Tournaments currentUserId={user?.id} />
           </div>
         );
       case "settings":

@@ -637,6 +637,49 @@ export const groupMessages = pgTable("group_messages", {
   index("idx_group_messages_created").on(table.createdAt),
 ]);
 
+// Tournaments table
+export const tournaments = pgTable("tournaments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  gameName: varchar("game_name").notNull(),
+  prizePool: integer("prize_pool").notNull().default(0), // in credits
+  status: varchar("status").notNull().default("upcoming"), // upcoming, active, completed
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  maxParticipants: integer("max_participants").notNull().default(16),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_tournaments_game").on(table.gameName),
+  index("idx_tournaments_status").on(table.status),
+  index("idx_tournaments_creator").on(table.createdBy),
+]);
+
+// Tournament participants table
+export const tournamentParticipants = pgTable("tournament_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: varchar("status").notNull().default("joined"), // joined, eliminated, winner
+  joinedAt: timestamp("joined_at").defaultNow(),
+}, (table) => [
+  index("idx_tournament_participants_tournament").on(table.tournamentId),
+  index("idx_tournament_participants_user").on(table.userId),
+]);
+
+// Tournament matches table
+export const tournamentMatches = pgTable("tournament_matches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
+  participant1Id: varchar("participant1_id").notNull().references(() => tournamentParticipants.id),
+  participant2Id: varchar("participant2_id").references(() => tournamentParticipants.id),
+  winnerId: varchar("winner_id").references(() => tournamentParticipants.id),
+  matchDate: timestamp("match_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_tournament_matches_tournament").on(table.tournamentId),
+  index("idx_tournament_matches_date").on(table.matchDate),
+]);
+
 // Derived types for userCredits
 export type UserCredits = typeof userCredits.$inferSelect;
 export type InsertUserCredits = typeof userCredits.$inferInsert;
@@ -724,4 +767,29 @@ export type GroupWithDetails = Group & {
 export type GroupMessageWithSender = GroupMessage & {
   senderGamertag: string | null;
   senderProfileImageUrl: string | null;
+};
+
+// Tournament-related types and schemas
+export type Tournament = typeof tournaments.$inferSelect;
+export type InsertTournament = typeof tournaments.$inferInsert;
+export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;
+export type InsertTournamentParticipant = typeof tournamentParticipants.$inferInsert;
+export type TournamentMatch = typeof tournamentMatches.$inferSelect;
+export type InsertTournamentMatch = typeof tournamentMatches.$inferInsert;
+
+// Insert schemas
+export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true, updatedAt: true });
+export const insertTournamentParticipantSchema = createInsertSchema(tournamentParticipants).omit({ id: true, joinedAt: true });
+export const insertTournamentMatchSchema = createInsertSchema(tournamentMatches).omit({ id: true, createdAt: true });
+
+// Tournament with details
+export type TournamentWithDetails = Tournament & {
+  participantCount: number;
+  creatorGamertag: string | null;
+};
+
+// Tournament participant with user info
+export type TournamentParticipantWithUser = TournamentParticipant & {
+  gamertag: string | null;
+  profileImageUrl: string | null;
 };
