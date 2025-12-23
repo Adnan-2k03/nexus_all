@@ -3503,6 +3503,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filters: { creation: true, messaging: true, voice: true, hide: false, lock: false },
           description: "Control group features - creation, messaging, voice",
         },
+        {
+          featureName: "feedback",
+          isEnabled: true,
+          filters: { channelCreation: true, messagePosting: true, textChannels: true, voiceChannels: true, hide: false, lock: false },
+          description: "Control feedback features - channel creation, message posting, text/voice channels",
+        },
+        {
+          featureName: "match_feed",
+          isEnabled: true,
+          filters: { creation: true, joining: true, advancedFilters: true, hide: false, lock: false },
+          description: "Control match feed features - creation, joining, filtering",
+        },
+        {
+          featureName: "discover",
+          isEnabled: true,
+          filters: { creation: false, joining: true, advancedFilters: true, hide: false, lock: false },
+          description: "Control discover features - user discovery, filtering",
+        },
       ];
 
       for (const flag of defaultFlags) {

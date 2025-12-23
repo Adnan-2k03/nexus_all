@@ -339,7 +339,7 @@ export function AdminPage() {
                             break;
                           case "advancedFilters":
                             label = "Advanced Filters";
-                            description = "Show advanced filter options";
+                            description = "Show advanced filter options for users";
                             break;
                           case "groupChannels":
                             label = "Group Channels";
@@ -376,6 +376,11 @@ export function AdminPage() {
                           case "lock":
                             label = "Lock Feature";
                             description = "Completely lock and disable this feature";
+                            break;
+                          default:
+                            // Keep the filter name as-is if no mapping exists
+                            label = filterName.charAt(0).toUpperCase() + filterName.slice(1).replace(/([A-Z])/g, ' $1');
+                            description = `Control ${filterName} setting`;
                             break;
                         }
                         
