@@ -122,11 +122,15 @@ export function AdminPage() {
   const handleToggleFeature = async (featureName: string, newValue: boolean) => {
     setLoading(true);
     try {
+      const adminToken = sessionStorage.getItem("adminToken");
       const response = await fetch(
         getApiUrl(`/api/feature-flags/${featureName}`),
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(adminToken && { "Authorization": `Bearer ${adminToken}` }),
+          },
           credentials: "include",
           body: JSON.stringify({ isEnabled: newValue }),
         }
@@ -165,11 +169,15 @@ export function AdminPage() {
         [filterName]: newValue,
       };
 
+      const adminToken = sessionStorage.getItem("adminToken");
       const response = await fetch(
         getApiUrl(`/api/feature-flags/${featureName}`),
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(adminToken && { "Authorization": `Bearer ${adminToken}` }),
+          },
           credentials: "include",
           body: JSON.stringify({ filters: updatedFilters }),
         }
