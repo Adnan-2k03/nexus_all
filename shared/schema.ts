@@ -533,6 +533,17 @@ export const portfolioBoosts = pgTable("portfolio_boosts", {
   index("idx_portfolio_boosts_is_active").on(table.isActive),
 ]);
 
+// Feedback table - store user feedback and suggestions
+export const feedback = pgTable("feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_feedback_user_id").on(table.userId),
+  index("idx_feedback_created_at").on(table.createdAt),
+]);
+
 // Derived types for userCredits
 export type UserCredits = typeof userCredits.$inferSelect;
 export type InsertUserCredits = typeof userCredits.$inferInsert;
@@ -549,11 +560,19 @@ export type InsertSubscription = typeof subscriptions.$inferInsert;
 export type PortfolioBoost = typeof portfolioBoosts.$inferSelect;
 export type InsertPortfolioBoost = typeof portfolioBoosts.$inferInsert;
 
+// Derived types for feedback
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = typeof feedback.$inferInsert;
+
 // Credit-related schemas for validation
 export const insertUserCreditsSchema = createInsertSchema(userCredits).omit({ id: true, lastUpdated: true });
 export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({ id: true, createdAt: true });
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true });
 export const insertPortfolioBoostSchema = createInsertSchema(portfolioBoosts).omit({ id: true, createdAt: true });
+
+// Feedback schemas
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({ id: true, createdAt: true });
+export type InsertFeedbackInput = z.infer<typeof insertFeedbackSchema>;
 
 // Privacy settings validation
 export const privacyVisibilityEnum = z.enum(["everyone", "connections", "nobody"]);

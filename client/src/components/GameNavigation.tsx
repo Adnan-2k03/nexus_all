@@ -7,6 +7,7 @@ import {
   Plus, 
   User, 
   MessageCircle, 
+  MessageSquare,
   Settings,
   LogOut,
   Menu,
@@ -25,7 +26,7 @@ import { useVoiceCallNotifications } from "@/hooks/useVoiceCallNotifications";
 import { CreditsDisplay } from "./CreditsDisplay";
 
 interface GameNavigationProps {
-  currentPage: "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads";
+  currentPage: "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback";
   onNavigate: (page: string) => void;
   user?: {
     gamertag: string;
@@ -58,6 +59,7 @@ export function GameNavigation({
     { id: "messages", label: "Messages", icon: MessageCircle, badge: pendingMessages, hasPhoneIndicator: hasWaitingCalls },
     { id: "voice-channels", label: "Voice", icon: Phone, hasPhoneIndicator: hasWaitingCalls },
     { id: "ads", label: "Earn", icon: Coins },
+    { id: "feedback", label: "Feedback", icon: MessageSquare },
     { id: "profile", label: "Profile", icon: User },
   ];
 

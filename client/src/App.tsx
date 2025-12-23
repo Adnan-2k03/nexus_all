@@ -28,6 +28,7 @@ import { Settings } from "@/components/Settings";
 import { VoiceChannelsPage } from "@/pages/VoiceChannelsPage";
 import { JoinChannelPage } from "@/pages/JoinChannelPage";
 import { RewardedAdsPage } from "@/pages/RewardedAdsPage";
+import { FeedbackPage } from "@/pages/FeedbackPage";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
@@ -65,14 +66,15 @@ function Router() {
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
-  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" => {
-    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" } = {
+  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" => {
+    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" } = {
       "/": "home",
       "/discover": "search",
       "/connections": "connections",
       "/messages": "messages",
       "/voice-channels": "voice-channels",
       "/ads": "ads",
+      "/feedback": "feedback",
       "/profile": "profile",
       "/settings": "settings",
       "/profile-setup": "profile-setup",
@@ -93,6 +95,7 @@ function Router() {
     | "profile-setup"
     | "connections"
     | "ads"
+    | "feedback"
   >(() => getPageFromUrl(location));
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
@@ -106,6 +109,7 @@ function Router() {
       "messages": "/messages",
       "voice-channels": "/voice-channels",
       "ads": "/ads",
+      "feedback": "/feedback",
       "profile": "/profile",
       "settings": "/settings",
       "profile-setup": "/profile-setup",
@@ -402,6 +406,12 @@ function Router() {
         return (
           <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
             <RewardedAdsPage />
+          </div>
+        );
+      case "feedback":
+        return (
+          <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
+            <FeedbackPage />
           </div>
         );
       case "settings":

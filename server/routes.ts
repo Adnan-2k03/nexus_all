@@ -16,9 +16,10 @@ import { sendPushNotification } from "./pushNotifications";
 import { r2Storage, generateFileKey } from "./services/r2-storage";
 import { hmsService, generateRoomName } from "./services/hms-service";
 import { verifyFirebaseToken, isPhoneAuthConfigured } from "./services/firebase-admin";
-import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema, creditTransactions } from "@shared/schema";
+import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema, creditTransactions, feedback as feedbackTable } from "@shared/schema";
 import { db } from "./db";
-import { eq as dbEq, desc as dbDesc } from "drizzle-orm";
+import { eq as dbEq, desc as dbDesc, eq } from "drizzle-orm";
+import { users } from "@shared/schema";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -3129,6 +3130,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const credits = await storage.addCredits(targetUserId, amount, "admin_credit", reason || "Admin credit", undefined);
       res.json({ success: true, newBalance: credits.balance });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // POST feedback
+  app.post("/api/feedback", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      
+      const { message } = req.body;
+      if (!message || typeof message !== "string" || message.trim().length === 0) {
+        return res.status(400).json({ message: "Feedback message is required" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const feedback = await db.insert(feedbackTable).values({
+        userId,
+        message: message.trim(),
+      }).returning();
+
+      res.json({ ...feedback[0], gamertag: user.gamertag });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // GET all feedback
+  app.get("/api/feedback", async (req, res) => {
+    try {
+      const allFeedback = await db
+        .select({
+          id: feedbackTable.id,
+          userId: feedbackTable.userId,
+          message: feedbackTable.message,
+          createdAt: feedbackTable.createdAt,
+          gamertag: users.gamertag,
+        })
+        .from(feedbackTable)
+        .leftJoin(users, eq(feedbackTable.userId, users.id))
+        .orderBy(dbDesc(feedbackTable.createdAt));
+
+      res.json(allFeedback);
     } catch (error) {
       res.status(500).json({ message: String(error) });
     }

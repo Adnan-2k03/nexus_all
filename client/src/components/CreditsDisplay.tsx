@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getApiUrl } from "@/lib/api";
+import { useLocation } from "wouter";
 
 interface CreditsDisplayProps {
   showButton?: boolean;
@@ -13,6 +14,7 @@ interface CreditsDisplayProps {
 
 export function CreditsDisplay({ showButton = false, compact = false, onWatchAdClick }: CreditsDisplayProps) {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   // Fetch user credits
   const { data: credits, isLoading } = useQuery<{ balance: number }>({
@@ -52,10 +54,16 @@ export function CreditsDisplay({ showButton = false, compact = false, onWatchAdC
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate("/ads")}
+        className="gap-2 px-2 h-8"
+        data-testid="button-credits-display"
+      >
         <Coins className="h-4 w-4 text-yellow-500" />
         <span className="text-sm font-semibold">{balance}</span>
-      </div>
+      </Button>
     );
   }
 
