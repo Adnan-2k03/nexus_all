@@ -3419,6 +3419,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize default feature flags
+  app.post("/api/admin/init-flags", async (req: any, res) => {
+    try {
+      const adminPassword = process.env.ADMIN_PASSWORD || "admin";
+      const { password } = req.body;
+      
+      if (password !== adminPassword) {
+        return res.status(401).json({ message: "Invalid admin password" });
+      }
+
+      const defaultFlags = [
+        {
+          featureName: "tournaments",
+          isEnabled: true,
+          filters: { creation: true, joining: true, advancedFilters: true, hide: false, lock: false },
+          description: "Control tournament features - creation, joining, filtering, visibility",
+        },
+        {
+          featureName: "voice_channels",
+          isEnabled: true,
+          filters: { creation: true, joining: true, groupChannels: true, hide: false, lock: false },
+          description: "Control voice channel features - creation, joining, group channels",
+        },
+        {
+          featureName: "groups",
+          isEnabled: true,
+          filters: { creation: true, messaging: true, voice: true, hide: false, lock: false },
+          description: "Control group features - creation, messaging, voice",
+        },
+      ];
+
+      for (const flag of defaultFlags) {
+        const existing = await storage.getFeatureFlag(flag.featureName);
+        if (!existing) {
+          await storage.createFeatureFlag(flag as any);
+        }
+      }
+
+      // Fetch all flags and return them
+      const allFlags = await storage.getAllFeatureFlags();
+      res.json({ message: "Feature flags initialized", flags: allFlags });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   // Feature Flags routes - public endpoint for mobile app to check feature status
   app.get("/api/feature-flags", async (req: any, res) => {
     try {

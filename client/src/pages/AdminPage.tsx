@@ -57,6 +57,7 @@ export function AdminPage() {
 
       const data = await response.json();
       sessionStorage.setItem("adminToken", data.token);
+      sessionStorage.setItem("adminPassword", adminPassword);
       setIsLoggedInAsAdmin(true);
       setAdminPassword("");
       await fetchFeatureFlags();
@@ -80,6 +81,11 @@ export function AdminPage() {
       if (response.ok) {
         const data = await response.json();
         setFlags(data);
+        
+        // If no flags exist, initialize them
+        if (data.length === 0) {
+          await initializeFlags();
+        }
       }
     } catch (error) {
       toast({
@@ -89,6 +95,29 @@ export function AdminPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const initializeFlags = async () => {
+    try {
+      const adminToken = sessionStorage.getItem("adminToken");
+      const response = await fetch(getApiUrl("/api/admin/init-flags"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ password: sessionStorage.getItem("adminPassword") || "" }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFlags(data.flags);
+        toast({
+          title: "Success",
+          description: "Feature flags initialized",
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing flags:", error);
     }
   };
 
@@ -266,34 +295,84 @@ export function AdminPage() {
                 {flag.filters && Object.keys(flag.filters).length > 0 && (
                   <div className="pt-4 border-t space-y-3">
                     <p className="text-sm font-medium text-foreground">
-                      Filters:
+                      Controls:
                     </p>
-                    {Object.entries(flag.filters).map(([filterName, enabled]) => (
-                      <div
-                        key={filterName}
-                        className="flex items-center justify-between pl-4"
-                      >
-                        <Label
-                          htmlFor={`filter-${flag.featureName}-${filterName}`}
-                          className="text-sm text-muted-foreground cursor-pointer"
-                        >
-                          {filterName}
-                        </Label>
-                        <Switch
-                          id={`filter-${flag.featureName}-${filterName}`}
-                          checked={enabled as boolean}
-                          onCheckedChange={(checked) =>
-                            handleToggleFilter(
-                              flag.featureName,
-                              filterName,
-                              checked
-                            )
-                          }
-                          disabled={loading || !flag.isEnabled}
-                          data-testid={`switch-filter-${flag.featureName}-${filterName}`}
-                        />
-                      </div>
-                    ))}
+                    <div className="space-y-2">
+                      {Object.entries(flag.filters).map(([filterName, enabled]) => {
+                        let label = filterName;
+                        let description = "";
+                        
+                        // Map filter names to readable labels
+                        switch (filterName) {
+                          case "creation":
+                            label = "Allow Creation";
+                            description = "Allow users to create new items";
+                            break;
+                          case "joining":
+                            label = "Allow Joining";
+                            description = "Allow users to join/participate";
+                            break;
+                          case "advancedFilters":
+                            label = "Advanced Filters";
+                            description = "Show advanced filter options";
+                            break;
+                          case "groupChannels":
+                            label = "Group Channels";
+                            description = "Enable group voice channels";
+                            break;
+                          case "messaging":
+                            label = "Messaging";
+                            description = "Allow group messaging";
+                            break;
+                          case "voice":
+                            label = "Voice";
+                            description = "Allow voice features";
+                            break;
+                          case "hide":
+                            label = "Hide Feature";
+                            description = "Hide this feature from users";
+                            break;
+                          case "lock":
+                            label = "Lock Feature";
+                            description = "Completely lock and disable this feature";
+                            break;
+                        }
+                        
+                        return (
+                          <div
+                            key={filterName}
+                            className="flex items-center justify-between pl-4 py-2 rounded-md bg-muted/30"
+                          >
+                            <div className="flex-1">
+                              <Label
+                                htmlFor={`filter-${flag.featureName}-${filterName}`}
+                                className="text-sm font-medium text-foreground cursor-pointer block"
+                              >
+                                {label}
+                              </Label>
+                              {description && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {description}
+                                </p>
+                              )}
+                            </div>
+                            <Switch
+                              id={`filter-${flag.featureName}-${filterName}`}
+                              checked={enabled as boolean}
+                              onCheckedChange={(checked) =>
+                                handleToggleFilter(
+                                  flag.featureName,
+                                  filterName,
+                                  checked
+                                )
+                              }
+                              disabled={loading || !flag.isEnabled}
+                              data-testid={`switch-filter-${flag.featureName}-${filterName}`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </Card>
