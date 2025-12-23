@@ -393,13 +393,8 @@ export function MatchFeed({
         activeFilters={filters}
       />
 
-      {/* Ad Space 1 */}
-      <div className="my-2">
-        <AdUnit slotId="7186282934" format="horizontal" className="text-center" />
-      </div>
-
       {/* Match Feed with Tabs */}
-      <Tabs defaultValue="lfg" className="w-full -mt-2">
+      <Tabs defaultValue="lfg" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="lfg" className="gap-1 sm:gap-2" data-testid="tab-lfg">
             <Users className="h-4 w-4 flex-shrink-0" />
