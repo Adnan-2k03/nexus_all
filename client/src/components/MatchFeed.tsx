@@ -394,7 +394,7 @@ export function MatchFeed({
       />
 
       {/* Ad Space 1 */}
-      <div className="my-6">
+      <div className="my-4">
         <AdUnit slotId="7186282934" format="horizontal" className="text-center" />
       </div>
 
@@ -411,7 +411,7 @@ export function MatchFeed({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="lfg" className="mt-6 space-y-4">
+        <TabsContent value="lfg" className="mt-4 space-y-4">
           {isFetchingMatches ? (
             <LoadingSkeleton />
           ) : lfgMatches.length === 0 ? (
@@ -509,7 +509,7 @@ export function MatchFeed({
           )}
         </TabsContent>
 
-        <TabsContent value="lfo" className="mt-6 space-y-4">
+        <TabsContent value="lfo" className="mt-4 space-y-4">
           {isFetchingMatches ? (
             <LoadingSkeleton />
           ) : lfoMatches.length === 0 ? (

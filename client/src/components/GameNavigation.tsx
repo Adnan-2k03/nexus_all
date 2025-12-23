@@ -22,6 +22,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "./NotificationBell";
 import { useVoiceCallNotifications } from "@/hooks/useVoiceCallNotifications";
+import { CreditsDisplay } from "./CreditsDisplay";
 
 interface GameNavigationProps {
   currentPage: "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads";
@@ -127,11 +128,15 @@ export function GameNavigation({
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden md:flex fixed left-0 top-0 h-full w-20 bg-card border-r border-card-border flex-col items-center py-6 z-50">
-        <div className="mb-8">
+      <nav className="hidden md:flex fixed left-0 top-0 h-full w-20 bg-card border-r border-card-border flex-col items-center py-4 z-50">
+        <div className="mb-4">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-lg">GM</span>
           </div>
+        </div>
+
+        <div className="mb-4 px-2">
+          <CreditsDisplay compact={true} />
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
@@ -185,7 +190,9 @@ export function GameNavigation({
           <h1 className="font-bold text-lg text-foreground">GameMatch</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <CreditsDisplay compact={true} />
+          
           {user && (
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.profileImageUrl} alt={user.gamertag} />
