@@ -25,6 +25,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "./NotificationBell";
 import { useVoiceCallNotifications } from "@/hooks/useVoiceCallNotifications";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { CreditsDisplay } from "./CreditsDisplay";
 
 interface GameNavigationProps {
@@ -48,25 +49,32 @@ export function GameNavigation({
 }: GameNavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { hasWaitingCalls, waitingCallCount } = useVoiceCallNotifications();
+  const { isFeatureVisible } = useFeatureFlags();
 
-  const navigationItems: Array<{
+  const allNavigationItems: Array<{
     id: string;
     label: string;
     icon: typeof Home;
     badge?: number;
     hasPhoneIndicator?: boolean;
+    featureName?: string;
   }> = [
     { id: "home", label: "Feed", icon: Home },
     { id: "search", label: "Discover", icon: Search },
     { id: "connections", label: "Matches", icon: Users },
     { id: "messages", label: "Messages", icon: MessageCircle, badge: pendingMessages, hasPhoneIndicator: hasWaitingCalls },
-    { id: "voice-channels", label: "Voice", icon: Phone, hasPhoneIndicator: hasWaitingCalls },
-    { id: "groups", label: "Groups", icon: Users },
-    { id: "tournaments", label: "Tournaments", icon: Trophy },
+    { id: "voice-channels", label: "Voice", icon: Phone, hasPhoneIndicator: hasWaitingCalls, featureName: "voice_channels" },
+    { id: "groups", label: "Groups", icon: Users, featureName: "groups" },
+    { id: "tournaments", label: "Tournaments", icon: Trophy, featureName: "tournaments" },
     { id: "ads", label: "Earn", icon: Coins },
     { id: "feedback", label: "Feedback", icon: MessageSquare },
     { id: "profile", label: "Profile", icon: User },
   ];
+
+  // Filter items based on feature visibility
+  const navigationItems = allNavigationItems.filter(
+    item => !item.featureName || isFeatureVisible(item.featureName)
+  );
 
   const NavItem = ({ item, isMobile = false }: { item: typeof navigationItems[0], isMobile?: boolean }) => {
     const isActive = currentPage === item.id;

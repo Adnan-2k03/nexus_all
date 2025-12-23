@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 
 // Hooks
 import { useAuth } from "@/hooks/useAuth";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { getApiUrl } from "@/lib/api";
 
 // Components
@@ -67,6 +68,7 @@ function Router() {
   // Real authentication using useAuth hook
   const { user, isLoading, isFetching, isAuthenticated } = useAuth();
   const { getContainerClass } = useLayout();
+  const { isFeatureVisible } = useFeatureFlags();
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
@@ -526,28 +528,30 @@ function Router() {
               );
             }}
           </Route>
-          <Route path="/voice-channels">
-            {() => {
-              if (currentPage !== "voice-channels") {
-                setCurrentPage("voice-channels");
-              }
-              return (
-                <div className="min-h-screen relative">
-                  {user && user.gamertag && (
-                    <GameNavigation
-                      currentPage={currentPage as any}
-                      onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
-                      onLogout={handleLogout}
-                    />
-                  )}
-                  <div className="relative z-10">
-                    {renderMainContent()}
+          {isFeatureVisible("voice_channels") && (
+            <Route path="/voice-channels">
+              {() => {
+                if (currentPage !== "voice-channels") {
+                  setCurrentPage("voice-channels");
+                }
+                return (
+                  <div className="min-h-screen relative">
+                    {user && user.gamertag && (
+                      <GameNavigation
+                        currentPage={currentPage as any}
+                        onNavigate={handleNavigation}
+                        user={mapUserForComponents(user)}
+                        onLogout={handleLogout}
+                      />
+                    )}
+                    <div className="relative z-10">
+                      {renderMainContent()}
+                    </div>
                   </div>
-                </div>
-              );
-            }}
-          </Route>
+                );
+              }}
+            </Route>
+          )}
           <Route path="/ads">
             {() => {
               if (currentPage !== "ads") {
@@ -592,50 +596,54 @@ function Router() {
               );
             }}
           </Route>
-          <Route path="/groups">
-            {() => {
-              if (currentPage !== "groups") {
-                setCurrentPage("groups");
-              }
-              return (
-                <div className="min-h-screen relative">
-                  {user && user.gamertag && (
-                    <GameNavigation
-                      currentPage={currentPage as any}
-                      onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
-                      onLogout={handleLogout}
-                    />
-                  )}
-                  <div className="relative z-10">
-                    {renderMainContent()}
+          {isFeatureVisible("groups") && (
+            <Route path="/groups">
+              {() => {
+                if (currentPage !== "groups") {
+                  setCurrentPage("groups");
+                }
+                return (
+                  <div className="min-h-screen relative">
+                    {user && user.gamertag && (
+                      <GameNavigation
+                        currentPage={currentPage as any}
+                        onNavigate={handleNavigation}
+                        user={mapUserForComponents(user)}
+                        onLogout={handleLogout}
+                      />
+                    )}
+                    <div className="relative z-10">
+                      {renderMainContent()}
+                    </div>
                   </div>
-                </div>
-              );
-            }}
-          </Route>
-          <Route path="/tournaments">
-            {() => {
-              if (currentPage !== "tournaments") {
-                setCurrentPage("tournaments");
-              }
-              return (
-                <div className="min-h-screen relative">
-                  {user && user.gamertag && (
-                    <GameNavigation
-                      currentPage={currentPage as any}
-                      onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
-                      onLogout={handleLogout}
-                    />
-                  )}
-                  <div className="relative z-10">
-                    {renderMainContent()}
+                );
+              }}
+            </Route>
+          )}
+          {isFeatureVisible("tournaments") && (
+            <Route path="/tournaments">
+              {() => {
+                if (currentPage !== "tournaments") {
+                  setCurrentPage("tournaments");
+                }
+                return (
+                  <div className="min-h-screen relative">
+                    {user && user.gamertag && (
+                      <GameNavigation
+                        currentPage={currentPage as any}
+                        onNavigate={handleNavigation}
+                        user={mapUserForComponents(user)}
+                        onLogout={handleLogout}
+                      />
+                    )}
+                    <div className="relative z-10">
+                      {renderMainContent()}
+                    </div>
                   </div>
-                </div>
-              );
-            }}
-          </Route>
+                );
+              }}
+            </Route>
+          )}
           <Route path="/messages">
             {() => {
               if (currentPage !== "messages") {
