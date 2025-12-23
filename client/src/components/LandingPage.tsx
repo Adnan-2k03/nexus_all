@@ -87,6 +87,13 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
               Explore Features
             </button>
           </div>
+          <style>{`
+            @media (max-width: 640px) {
+              .hero-content {
+                padding: 0 1rem;
+              }
+            }
+          `}</style>
         </div>
         <div className="hero-image">
           <div className="hero-image-glow"></div>

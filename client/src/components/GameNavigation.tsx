@@ -72,8 +72,8 @@ export function GameNavigation({
           if (isMobile) setIsMobileMenuOpen(false);
         }}
         className={cn(
-          "relative",
-          isMobile ? "justify-start w-full" : "flex-col h-16 w-16",
+          "relative min-h-[48px]",
+          isMobile ? "justify-start w-full py-3 px-4" : "flex-col h-16 w-16",
           isActive && "bg-primary text-primary-foreground"
         )}
         data-testid={`nav-${item.id}`}

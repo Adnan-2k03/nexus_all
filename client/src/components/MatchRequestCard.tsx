@@ -68,20 +68,20 @@ export function MatchRequestCard({
       className="hover-elevate transition-all duration-200 border-card-border"
       data-testid={`card-match-request-${id}`}
     >
-      <CardHeader className="pb-2 pt-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+      <CardHeader className="pb-2 pt-3 px-3 sm:px-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0 w-full">
             <ProfileDialog 
               userId={userId} 
               gamertag={gamertag} 
               profileImageUrl={profileImageUrl}
               currentUserId={currentUserId}
             >
-              <div className="min-w-0">
-                <h3 className="font-semibold text-sm text-foreground hover:text-primary cursor-pointer truncate" data-testid={`text-gamertag-${id}`}>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm sm:text-base text-foreground hover:text-primary cursor-pointer truncate" data-testid={`text-gamertag-${id}`}>
                   {gamertag}
                 </h3>
-                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <Badge variant="secondary" className="text-xs font-medium px-1.5 py-0">
                     {gameName}
                   </Badge>
@@ -93,7 +93,7 @@ export function MatchRequestCard({
               </div>
             </ProfileDialog>
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1 w-full sm:w-auto">
             <Badge 
               className={`text-xs font-medium whitespace-nowrap ${getStatusColor(status)}`}
               data-testid={`status-${status}-${id}`}
@@ -105,7 +105,7 @@ export function MatchRequestCard({
                 size="sm"
                 variant="ghost"
                 onClick={onDelete}
-                className="h-6 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                className="min-h-[40px] px-3 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                 data-testid={`button-delete-${id}`}
               >
                 <Trash2 className="h-3 w-3 mr-1" />
@@ -116,7 +116,7 @@ export function MatchRequestCard({
         </div>
       </CardHeader>
 
-      <CardContent className="py-2 space-y-2">
+      <CardContent className="py-3 px-3 sm:px-4 space-y-2">
         <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${id}`}>
           {description}
         </p>

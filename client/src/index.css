@@ -649,6 +649,11 @@
 @media (max-width: 767px) {
   .hamburger {
     display: flex !important;
+    min-width: 48px;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
   }
   .nav-links {
     position: absolute;
@@ -661,13 +666,18 @@
     padding: 1rem 0;
     display: none;
     border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    z-index: 999;
   }
   .nav-links.active {
     display: flex;
   }
   .nav-links a {
-    padding: 1rem 2rem;
+    padding: 1.25rem 2rem;
     border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
   }
   .signup-btn {
     display: none;
@@ -682,6 +692,13 @@
   justify-content: space-between;
   padding: 6rem 0 4rem;
   margin-top: 4rem;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 3rem 0 2rem;
+    margin-top: 2rem;
+  }
 }
 
 @media (min-width: 768px) {
@@ -700,6 +717,13 @@
   font-weight: 700;
 }
 
+@media (max-width: 640px) {
+  .hero h1 {
+    font-size: 1.75rem;
+    line-height: 1.3;
+  }
+}
+
 .hero p {
   margin: 1.5rem 0;
   color: #e2e8f0;
@@ -707,10 +731,24 @@
   font-weight: 400;
 }
 
+@media (max-width: 640px) {
+  .hero p {
+    font-size: 0.95rem;
+    margin: 1rem 0;
+  }
+}
+
 .btn-group {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .btn-group {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 }
 
 .btn {
@@ -721,6 +759,18 @@
   transition: all 0.3s ease;
   border: none;
   font-weight: 600;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .btn {
+    padding: 1rem 1.5rem;
+    font-size: 0.95rem;
+    width: 100%;
+  }
 }
 
 .btn-primary {
@@ -747,6 +797,13 @@
   width: 320px;
   height: auto;
   margin-bottom: 3rem;
+}
+
+@media (max-width: 640px) {
+  .hero-image {
+    width: 200px;
+    margin-bottom: 1.5rem;
+  }
 }
 
 .glow {
@@ -809,6 +866,13 @@
   font-weight: 700;
 }
 
+@media (max-width: 640px) {
+  .features h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
 .feature-grid {
   display: grid;
   gap: 2rem;
@@ -817,6 +881,12 @@
 @media (min-width: 768px) {
   .feature-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .feature-grid {
+    gap: 1.5rem;
   }
 }
 
