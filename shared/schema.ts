@@ -795,3 +795,30 @@ export type TournamentParticipantWithUser = TournamentParticipant & {
   gamertag: string | null;
   profileImageUrl: string | null;
 };
+
+// Feature Flags table - controls which features are enabled/disabled across all app installations
+export const featureFlags = pgTable("feature_flags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  featureName: varchar("feature_name").notNull().unique(), // tournaments, voice_channels, groups, etc
+  isEnabled: boolean("is_enabled").notNull().default(true), // Global toggle
+  filters: jsonb("filters").default({}), // Individual filter toggles: { tournamentCreation: false, tournamentJoin: true, advancedFilters: false }
+  description: text("description"), // What this feature does
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by").references(() => users.id), // Admin who last updated
+}, (table) => [
+  index("idx_feature_flags_name").on(table.featureName),
+]);
+
+// Types
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type InsertFeatureFlag = typeof featureFlags.$inferInsert;
+
+// Schemas
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({ id: true, updatedAt: true, updatedBy: true });
+export const updateFeatureFlagSchema = z.object({
+  isEnabled: z.boolean().optional(),
+  filters: z.record(z.any()).optional(),
+  description: z.string().optional(),
+});
+
+export type UpdateFeatureFlag = z.infer<typeof updateFeatureFlagSchema>;

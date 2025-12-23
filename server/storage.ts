@@ -28,7 +28,11 @@ import {
   groupMessages,
   tournaments,
   tournamentParticipants,
+  featureFlags,
   type User,
+  type FeatureFlag,
+  type InsertFeatureFlag,
+  type UpdateFeatureFlag,
   type UpsertUser,
   type MatchRequest,
   type MatchRequestWithUser,
@@ -280,6 +284,12 @@ export interface IStorage {
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   getUserTournaments(userId: string): Promise<TournamentWithDetails[]>;
   joinTournament(tournamentId: string, userId: string): Promise<TournamentParticipant>;
+
+  // Feature Flags operations
+  getFeatureFlag(featureName: string): Promise<FeatureFlag | undefined>;
+  getAllFeatureFlags(): Promise<FeatureFlag[]>;
+  updateFeatureFlag(featureName: string, updates: UpdateFeatureFlag, adminId: string): Promise<FeatureFlag>;
+  createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
 }
 
 // Database storage implementation using PostgreSQL
@@ -2251,6 +2261,33 @@ export class DatabaseStorage implements IStorage {
       status: "joined",
     }).returning();
     return participant;
+  }
+
+  // Feature Flags operations
+  async getFeatureFlag(featureName: string): Promise<FeatureFlag | undefined> {
+    const [flag] = await db.select().from(featureFlags).where(eq(featureFlags.featureName, featureName));
+    return flag;
+  }
+
+  async getAllFeatureFlags(): Promise<FeatureFlag[]> {
+    return await db.select().from(featureFlags);
+  }
+
+  async updateFeatureFlag(featureName: string, updates: UpdateFeatureFlag, adminId: string): Promise<FeatureFlag> {
+    const [flag] = await db.update(featureFlags)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+        updatedBy: adminId,
+      })
+      .where(eq(featureFlags.featureName, featureName))
+      .returning();
+    return flag;
+  }
+
+  async createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const [newFlag] = await db.insert(featureFlags).values(flag).returning();
+    return newFlag;
   }
 }
 

@@ -3401,5 +3401,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Feature Flags routes - public endpoint for mobile app to check feature status
+  app.get("/api/feature-flags", async (req: any, res) => {
+    try {
+      const flags = await storage.getAllFeatureFlags();
+      res.json(flags);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/feature-flags/:featureName", async (req: any, res) => {
+    try {
+      const flag = await storage.getFeatureFlag(req.params.featureName);
+      if (!flag) return res.status(404).json({ message: "Feature flag not found" });
+      res.json(flag);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Admin endpoint to update feature flags
+  app.patch("/api/feature-flags/:featureName", authMiddleware, async (req: any, res) => {
+    try {
+      // Check if user is admin
+      if (!req.user.isAdmin) {
+        return res.status(403).json({ message: "Only admins can update feature flags" });
+      }
+      
+      const updates: any = {
+        isEnabled: req.body.isEnabled,
+        filters: req.body.filters,
+        description: req.body.description,
+      };
+      
+      // Remove undefined values
+      Object.keys(updates).forEach(key => updates[key] === undefined && delete updates[key]);
+      
+      const flag = await storage.updateFeatureFlag(req.params.featureName, updates, req.user.id);
+      res.json(flag);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   return httpServer;
 }
