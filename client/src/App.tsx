@@ -627,6 +627,9 @@ function Router() {
           {isFeatureVisible("tournaments") && (
             <Route path="/tournaments">
               {() => {
+                if (isFeatureLocked("tournaments")) {
+                  return <LockedFeaturePage featureName="tournaments" description="The tournaments feature has been locked." />;
+                }
                 if (currentPage !== "tournaments") {
                   setCurrentPage("tournaments");
                 }

@@ -14,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { insertTournamentSchema } from "@shared/schema";
 import { z } from "zod";
-import { Trophy, Users, Calendar, Coins } from "lucide-react";
+import { Trophy, Users, Calendar, Coins, Lock } from "lucide-react";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface TournamentsProps {
   currentUserId?: string;
@@ -24,6 +25,8 @@ interface TournamentsProps {
 export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { toast } = useToast();
+  const { isFeatureLocked } = useFeatureFlags();
+  const isLocked = isFeatureLocked("tournaments");
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
 
   const form = useForm({
@@ -141,7 +144,10 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="button-create-tournament">Create Tournament</Button>
+              <Button disabled={isLocked} data-testid="button-create-tournament">
+                {isLocked && <Lock className="h-4 w-4 mr-2" />}
+                Create Tournament
+              </Button>
             </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -211,7 +217,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-tournament">
+                <Button type="submit" className="w-full" disabled={createMutation.isPending || isLocked} data-testid="button-submit-tournament">
                   {createMutation.isPending ? "Creating..." : "Create Tournament"}
                 </Button>
               </form>
@@ -259,7 +265,8 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                           </div>
                         </div>
                         {!isCreator && !isJoined && (
-                          <Button onClick={(e) => { e.stopPropagation(); joinMutation.mutate(tournament.id); }} disabled={joinMutation.isPending} data-testid={`button-join-tournament-${tournament.id}`}>
+                          <Button onClick={(e) => { e.stopPropagation(); joinMutation.mutate(tournament.id); }} disabled={joinMutation.isPending || isLocked} data-testid={`button-join-tournament-${tournament.id}`}>
+                            {isLocked && <Lock className="h-4 w-4 mr-2" />}
                             Join
                           </Button>
                         )}
@@ -302,7 +309,8 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
             <Card className="p-8 text-center">
               <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No tournaments yet. Create the first one or check back soon!</p>
-              <Button onClick={() => setIsCreateOpen(true)} data-testid="button-create-first-tournament">
+              <Button onClick={() => setIsCreateOpen(true)} disabled={isLocked} data-testid="button-create-first-tournament">
+                {isLocked && <Lock className="h-4 w-4 mr-2" />}
                 Create Tournament
               </Button>
             </Card>
