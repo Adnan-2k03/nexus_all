@@ -150,6 +150,15 @@ export function FeedbackPage() {
         </p>
       </div>
 
+      {isLocked && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-md p-4 mb-6">
+          <p className="text-destructive font-semibold flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            This feature has been locked by administrators
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Channels List */}
         <div className="lg:col-span-1 space-y-4">
@@ -160,6 +169,8 @@ export function FeedbackPage() {
             <CardContent className="space-y-2">
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isLocked ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Feature is locked</p>
               ) : (
                 <div className="space-y-2">
                   {channels.map((channel) => (
@@ -194,6 +205,7 @@ export function FeedbackPage() {
                 placeholder="Channel name"
                 value={newChannelName}
                 onChange={(e) => setNewChannelName(e.target.value)}
+                disabled={isLocked}
                 data-testid="input-channel-name"
               />
               <div className="flex gap-2">
@@ -201,6 +213,7 @@ export function FeedbackPage() {
                   size="sm"
                   variant={newChannelType === "text" ? "default" : "outline"}
                   onClick={() => setNewChannelType("text")}
+                  disabled={isLocked}
                   className="flex-1 text-xs"
                 >
                   Text
@@ -209,6 +222,7 @@ export function FeedbackPage() {
                   size="sm"
                   variant={newChannelType === "voice" ? "default" : "outline"}
                   onClick={() => setNewChannelType("voice")}
+                  disabled={isLocked}
                   className="flex-1 text-xs"
                 >
                   Voice
@@ -216,7 +230,7 @@ export function FeedbackPage() {
               </div>
               <Button
                 onClick={handleCreateChannel}
-                disabled={createChannelMutation.isPending}
+                disabled={createChannelMutation.isPending || isLocked}
                 size="sm"
                 className="w-full"
                 data-testid="button-create-channel"

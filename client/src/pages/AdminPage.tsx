@@ -85,11 +85,6 @@ export function AdminPage() {
       if (response.ok) {
         const data = await response.json();
         setFlags(data);
-        
-        // If no flags exist, initialize them
-        if (data.length === 0) {
-          await initializeFlags();
-        }
       }
     } catch (error) {
       toast({
@@ -276,9 +271,20 @@ export function AdminPage() {
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Feature Locks
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">
+              Feature Locks
+            </h2>
+            <Button
+              onClick={() => initializeFlags()}
+              disabled={loading}
+              variant="outline"
+              size="sm"
+              data-testid="button-initialize-flags"
+            >
+              {loading ? "Initializing..." : "Initialize/Refresh Flags"}
+            </Button>
+          </div>
 
           {flags.length === 0 ? (
             <Card className="p-6">
