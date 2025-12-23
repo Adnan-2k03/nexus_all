@@ -42,6 +42,8 @@ export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", [
   "admin_credit",
   "refund"
 ]);
+export const groupRoleEnum = pgEnum("group_role", ["owner", "admin", "member"]);
+export const translationStatusEnum = pgEnum("translation_status", ["pending", "completed", "failed"]);
 
 // Session storage table for authentication
 export const sessions = pgTable(
@@ -591,6 +593,50 @@ export const channelMembers = pgTable("channel_members", {
   unique("unique_channel_member").on(table.channelId, table.userId),
 ]);
 
+// Groups table - for user-created groups (WhatsApp/Discord style)
+export const groups = pgTable("groups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  profileImageUrl: varchar("profile_image_url"),
+  groupLanguage: varchar("group_language"), // Primary language for the group
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_groups_creator").on(table.creatorId),
+  index("idx_groups_created").on(table.createdAt),
+]);
+
+// Group members table
+export const groupMembers = pgTable("group_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: groupRoleEnum("role").notNull().default("member"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+}, (table) => [
+  index("idx_group_members_group").on(table.groupId),
+  index("idx_group_members_user").on(table.userId),
+  unique("unique_group_member").on(table.groupId, table.userId),
+]);
+
+// Group messages table
+export const groupMessages = pgTable("group_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
+  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  senderLanguage: varchar("sender_language"), // Language the sender wrote in
+  translations: jsonb("translations").default({}), // JSON cache: { "en": "translated text", "fr": "...", etc }
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_group_messages_group").on(table.groupId),
+  index("idx_group_messages_sender").on(table.senderId),
+  index("idx_group_messages_created").on(table.createdAt),
+]);
+
 // Derived types for userCredits
 export type UserCredits = typeof userCredits.$inferSelect;
 export type InsertUserCredits = typeof userCredits.$inferInsert;
@@ -653,3 +699,29 @@ export const updatePrivacySettingsSchema = z.object({
   showMutualFriends: privacyVisibilityEnum.optional(),
   showMutualHobbies: privacyVisibilityEnum.optional(),
 });
+
+// Group-related types and schemas
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = typeof groups.$inferInsert;
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type InsertGroupMember = typeof groupMembers.$inferInsert;
+export type GroupMessage = typeof groupMessages.$inferSelect;
+export type InsertGroupMessage = typeof groupMessages.$inferInsert;
+
+// Insert schemas
+export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, creatorId: true, createdAt: true, updatedAt: true });
+export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({ id: true, joinedAt: true });
+export const insertGroupMessageSchema = createInsertSchema(groupMessages).omit({ id: true, createdAt: true });
+
+// Group with member count and message info
+export type GroupWithDetails = Group & {
+  memberCount: number;
+  creatorGamertag: string | null;
+  lastMessageTime: Date | null;
+};
+
+// Group message with sender info
+export type GroupMessageWithSender = GroupMessage & {
+  senderGamertag: string | null;
+  senderProfileImageUrl: string | null;
+};

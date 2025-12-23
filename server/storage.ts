@@ -23,6 +23,9 @@ import {
   feedbackChannels,
   feedbackMessages,
   channelMembers,
+  groups,
+  groupMembers,
+  groupMessages,
   type User,
   type UpsertUser,
   type MatchRequest,
@@ -77,6 +80,14 @@ import {
   type InsertFeedbackChannel,
   type InsertFeedbackMessage,
   type ChannelMember,
+  type Group,
+  type InsertGroup,
+  type GroupMember,
+  type InsertGroupMember,
+  type GroupMessage,
+  type InsertGroupMessage,
+  type GroupWithDetails,
+  type GroupMessageWithSender,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, sql, ne, notInArray } from "drizzle-orm";
@@ -242,6 +253,19 @@ export interface IStorage {
   leaveChannel(channelId: string, userId: string): Promise<void>;
   getChannelMembers(channelId: string): Promise<ChannelMember[]>;
   getUserRole(channelId: string, userId: string): Promise<string | undefined>;
+
+  // Group operations (WhatsApp/Discord style groups with translation)
+  createGroup(name: string, creatorId: string, description?: string, groupLanguage?: string): Promise<Group>;
+  getGroup(id: string): Promise<Group | undefined>;
+  getUserGroups(userId: string): Promise<GroupWithDetails[]>;
+  updateGroup(id: string, updates: Partial<Group>): Promise<Group>;
+  deleteGroup(id: string, userId: string): Promise<void>;
+  addGroupMember(groupId: string, userId: string, role?: string): Promise<GroupMember>;
+  removeGroupMember(groupId: string, userId: string): Promise<void>;
+  getGroupMembers(groupId: string): Promise<GroupMember[]>;
+  sendGroupMessage(groupId: string, senderId: string, message: string, senderLanguage?: string): Promise<GroupMessage>;
+  getGroupMessages(groupId: string, limit?: number): Promise<GroupMessageWithSender[]>;
+  updateMessageTranslations(messageId: string, translations: Record<string, string>): Promise<GroupMessage>;
 }
 
 // Database storage implementation using PostgreSQL
