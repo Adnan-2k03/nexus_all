@@ -3422,13 +3422,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize default feature flags
   app.post("/api/admin/init-flags", async (req: any, res) => {
     try {
-      const adminPassword = process.env.ADMIN_PASSWORD || "admin";
-      const { password } = req.body;
-      
-      if (password !== adminPassword) {
-        return res.status(401).json({ message: "Invalid admin password" });
-      }
-
       const defaultFlags = [
         {
           featureName: "tournaments",

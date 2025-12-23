@@ -100,12 +100,10 @@ export function AdminPage() {
 
   const initializeFlags = async () => {
     try {
-      const adminToken = sessionStorage.getItem("adminToken");
       const response = await fetch(getApiUrl("/api/admin/init-flags"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password: sessionStorage.getItem("adminPassword") || "" }),
       });
 
       if (response.ok) {
