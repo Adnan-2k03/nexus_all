@@ -254,6 +254,21 @@ export function GameNavigation({
                   Settings
                 </Button>
                 
+                {user?.isAdmin && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      window.location.href = '/admin';
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="justify-start w-full"
+                    data-testid="nav-admin-mobile"
+                  >
+                    <Shield className="h-5 w-5 mr-3" />
+                    Admin Panel
+                  </Button>
+                )}
+                
                 {user && (
                   <Button
                     variant="ghost"

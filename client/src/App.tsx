@@ -192,6 +192,9 @@ function Router() {
 
   const handleLogout = async () => {
     try {
+      // Clear admin token if present
+      sessionStorage.removeItem("adminToken");
+      
       // Use fetch with getApiUrl to ensure it hits the backend, even in cross-origin deployments
       const response = await fetch(getApiUrl("/api/logout"), {
         method: "GET",
