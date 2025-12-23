@@ -3446,9 +3446,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid admin password" });
       }
       
-      // Generate a simple token
-      const token = Buffer.from(`admin:${Date.now()}`).toString("base64");
-      res.json({ token, message: "Admin login successful" });
+      // Get or create admin user account
+      const adminUser = await storage.upsertUserByGoogleId({
+        googleId: "admin_system_user",
+        email: "admin@system.local",
+        firstName: "System",
+        lastName: "Admin",
+        profileImageUrl: null,
+      });
+      
+      // Make sure the admin user has isAdmin flag
+      if (!adminUser.isAdmin) {
+        await storage.updateUserProfile(adminUser.id, { isAdmin: true });
+      }
+      
+      // Set user session so they're logged in as the admin user
+      req.login(adminUser, (err: any) => {
+        if (err) {
+          return res.status(500).json({ message: "Session error" });
+        }
+        
+        // Generate a simple token for admin panel
+        const token = Buffer.from(`admin:${Date.now()}`).toString("base64");
+        res.json({ token, message: "Admin login successful", userId: adminUser.id });
+      });
     } catch (error) {
       res.status(500).json({ message: String(error) });
     }
