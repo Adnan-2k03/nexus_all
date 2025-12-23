@@ -423,6 +423,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const validatedData = insertMatchRequestSchema.parse(req.body);
       
+      // Deduct 5 credits for posting a match request
+      const success = await storage.deductCredits(userId, 5, "match_posting", "Posted a match request");
+      if (!success) {
+        return res.status(400).json({ message: "Insufficient credits. Need 5 credits to post a match request." });
+      }
+      
       const matchRequest = await storage.createMatchRequest({
         ...validatedData,
         userId,
@@ -3053,6 +3059,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upgrade to subscription
+  app.post("/api/subscription/upgrade", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      const { tier, months } = req.body;
+      
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      if (!["pro", "gold"].includes(tier)) {
+        return res.status(400).json({ message: "Invalid subscription tier" });
+      }
+
+      const subscription = await storage.createSubscription(userId, tier, months || 1);
+      res.json(subscription);
+    } catch (error: any) {
+      if (error.message.includes("Insufficient")) {
+        return res.status(400).json({ message: "Insufficient credits" });
+      }
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Get boosted matches (for discovery page to show boosted items first)
+  app.get("/api/match-requests/boosted", async (req, res) => {
+    try {
+      const boostedMatches = await storage.getActiveBoostedMatches();
+      res.json(boostedMatches);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Get portfolio boosts for user
+  app.get("/api/user/portfolio-boosts", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const boosts = await storage.getPortfolioBoosts(userId);
+      res.json(boosts);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Reward credits for watching ads (rewarded_ad transaction)
+  app.post("/api/credits/reward-ad", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const creditsPerAd = 5; // 5 credits per ad view
+      const credits = await storage.addCredits(userId, creditsPerAd, "rewarded_ad", "Watched rewarded advertisement");
+      res.json(credits);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   // Admin: Give credits to user (for testing/rewards)
   app.post("/api/admin/give-credits", authMiddleware, async (req, res) => {
     try {
@@ -3063,10 +3127,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing targetUserId or amount" });
       }
 
-      await storage.addCredits(targetUserId, amount, "admin_credit", reason || "Admin credit", undefined);
-      const credits = await storage.getUserCredits(targetUserId);
-      
-      res.json({ success: true, newBalance: credits?.balance });
+      const credits = await storage.addCredits(targetUserId, amount, "admin_credit", reason || "Admin credit", undefined);
+      res.json({ success: true, newBalance: credits.balance });
     } catch (error) {
       res.status(500).json({ message: String(error) });
     }

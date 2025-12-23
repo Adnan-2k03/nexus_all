@@ -208,6 +208,17 @@ export interface IStorage {
   hasExistingPendingInvite(channelId: string, inviteeId: string): Promise<boolean>;
   acceptGroupVoiceInvite(inviteId: string): Promise<void>;
   declineGroupVoiceInvite(inviteId: string): Promise<void>;
+  
+  // Credit system operations
+  getOrCreateUserCredits(userId: string): Promise<UserCredits>;
+  getUserCredits(userId: string): Promise<UserCredits | undefined>;
+  addCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<UserCredits>;
+  deductCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<boolean>;
+  getSubscription(userId: string): Promise<Subscription | undefined>;
+  createSubscription(userId: string, tier: "pro" | "gold", months: number): Promise<Subscription>;
+  getPortfolioBoosts(userId: string): Promise<PortfolioBoost[]>;
+  createPortfolioBoost(userId: string, matchRequestId: string | null, costCredits: number): Promise<PortfolioBoost>;
+  getActiveBoostedMatches(): Promise<MatchRequest[]>;
 }
 
 // Database storage implementation using PostgreSQL
@@ -1771,118 +1782,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groupVoiceInvites.id, inviteId));
   }
 
-  // ===== CREDIT ECONOMY METHODS =====
-  
-  async getUserCredits(userId: string): Promise<UserCredits | undefined> {
-    const [credits] = await db
-      .select()
-      .from(userCredits)
-      .where(eq(userCredits.userId, userId));
-    return credits || undefined;
-  }
-
-  async getOrCreateUserCredits(userId: string): Promise<UserCredits> {
-    let credits = await this.getUserCredits(userId);
-    if (!credits) {
-      const [newCredits] = await db
-        .insert(userCredits)
-        .values({ userId, balance: 10 })
-        .returning();
-      credits = newCredits;
-    }
-    return credits;
-  }
-
-  async deductCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<boolean> {
-    const credits = await this.getOrCreateUserCredits(userId);
-    if (credits.balance < amount) return false;
-
-    await db
-      .update(userCredits)
-      .set({ balance: sql`balance - ${amount}`, lastUpdated: sql`NOW()` })
-      .where(eq(userCredits.userId, userId));
-
-    await db.insert(creditTransactions).values({
-      userId,
-      amount: -amount,
-      type: type as any,
-      description,
-      relatedId,
-    });
-
-    return true;
-  }
-
-  async addCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<void> {
-    await this.getOrCreateUserCredits(userId);
-    
-    await db
-      .update(userCredits)
-      .set({ balance: sql`balance + ${amount}`, lastUpdated: sql`NOW()` })
-      .where(eq(userCredits.userId, userId));
-
-    await db.insert(creditTransactions).values({
-      userId,
-      amount,
-      type: type as any,
-      description,
-      relatedId,
-    });
-  }
-
-  async getSubscription(userId: string): Promise<Subscription | undefined> {
-    const [sub] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, userId));
-    return sub || undefined;
-  }
-
-  async upgradeSubscription(userId: string, tier: "pro" | "gold"): Promise<void> {
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1);
-
-    const existing = await this.getSubscription(userId);
-    if (existing) {
-      await db
-        .update(subscriptions)
-        .set({ tier, endDate, status: 'active' })
-        .where(eq(subscriptions.userId, userId));
-    } else {
-      await db.insert(subscriptions).values({
-        userId,
-        tier,
-        endDate,
-        status: 'active',
-      });
-    }
-  }
-
-  async createPortfolioBoost(userId: string, matchRequestId: string | null, costCredits: number): Promise<PortfolioBoost> {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 1); // 24 hour boost
-
-    const [boost] = await db
-      .insert(portfolioBoosts)
-      .values({
-        userId,
-        matchRequestId: matchRequestId || undefined,
-        costCredits,
-        expiresAt,
-        isActive: true,
-      })
-      .returning();
-
-    if (matchRequestId) {
-      await db
-        .update(matchRequests)
-        .set({ isBoosted: true, boostExpiresAt: expiresAt })
-        .where(eq(matchRequests.id, matchRequestId));
-    }
-
-    return boost;
-  }
-
   async checkConnectionRequestLimit(userId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
     const user = await this.getUser(userId);
     if (!user) throw new Error('User not found');
@@ -1916,6 +1815,141 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ connectionRequestsUsedToday: sql`connection_requests_used_today + 1` })
       .where(eq(users.id, userId));
+  }
+
+  // Credit system operations
+  async getOrCreateUserCredits(userId: string): Promise<UserCredits> {
+    let [credits] = await db.select().from(userCredits).where(eq(userCredits.userId, userId));
+    if (!credits) {
+      [credits] = await db.insert(userCredits).values({ userId, balance: 10 }).returning();
+    }
+    return credits;
+  }
+
+  async getUserCredits(userId: string): Promise<UserCredits | undefined> {
+    const [credits] = await db.select().from(userCredits).where(eq(userCredits.userId, userId));
+    return credits;
+  }
+
+  async addCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<UserCredits> {
+    const credits = await this.getOrCreateUserCredits(userId);
+    
+    await db.insert(creditTransactions).values({
+      userId,
+      amount,
+      type: type as any,
+      description,
+      relatedId,
+    });
+    
+    const [updated] = await db
+      .update(userCredits)
+      .set({ balance: credits.balance + amount, lastUpdated: new Date() })
+      .where(eq(userCredits.userId, userId))
+      .returning();
+    
+    return updated;
+  }
+
+  async deductCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<boolean> {
+    const credits = await this.getOrCreateUserCredits(userId);
+    
+    if (credits.balance < amount) {
+      return false;
+    }
+    
+    await db.insert(creditTransactions).values({
+      userId,
+      amount: -amount,
+      type: type as any,
+      description,
+      relatedId,
+    });
+    
+    await db
+      .update(userCredits)
+      .set({ balance: credits.balance - amount, lastUpdated: new Date() })
+      .where(eq(userCredits.userId, userId));
+    
+    return true;
+  }
+
+  async getSubscription(userId: string): Promise<Subscription | undefined> {
+    const [sub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
+    return sub;
+  }
+
+  async createSubscription(userId: string, tier: "pro" | "gold", months: number): Promise<Subscription> {
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + months);
+    
+    const costCredits = tier === "pro" ? 500 : 1500;
+    const success = await this.deductCredits(userId, costCredits, "subscription_charge", `${tier.toUpperCase()} subscription for ${months} months`);
+    
+    if (!success) {
+      throw new Error("Insufficient credits for subscription");
+    }
+
+    const existing = await this.getSubscription(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(subscriptions)
+        .set({ tier: tier as any, status: "active", endDate, autoRenew: true })
+        .where(eq(subscriptions.userId, userId))
+        .returning();
+      return updated;
+    }
+
+    const [sub] = await db.insert(subscriptions).values({
+      userId,
+      tier: tier as any,
+      status: "active",
+      endDate,
+      autoRenew: true,
+    }).returning();
+    
+    return sub;
+  }
+
+  async getPortfolioBoosts(userId: string): Promise<PortfolioBoost[]> {
+    return db.select().from(portfolioBoosts).where(
+      and(
+        eq(portfolioBoosts.userId, userId),
+        eq(portfolioBoosts.isActive, true),
+        sql`${portfolioBoosts.expiresAt} > NOW()`
+      )
+    );
+  }
+
+  async createPortfolioBoost(userId: string, matchRequestId: string | null, costCredits: number): Promise<PortfolioBoost> {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+    
+    const [boost] = await db.insert(portfolioBoosts).values({
+      userId,
+      matchRequestId: matchRequestId || undefined,
+      costCredits,
+      expiresAt,
+      isActive: true,
+    }).returning();
+
+    if (matchRequestId) {
+      await db
+        .update(matchRequests)
+        .set({ isBoosted: true, boostExpiresAt: expiresAt })
+        .where(eq(matchRequests.id, matchRequestId));
+    }
+
+    return boost;
+  }
+
+  async getActiveBoostedMatches(): Promise<MatchRequest[]> {
+    return db.select().from(matchRequests).where(
+      and(
+        eq(matchRequests.isBoosted, true),
+        sql`${matchRequests.boostExpiresAt} > NOW()`
+      )
+    );
   }
 }
 
