@@ -804,7 +804,7 @@ export const featureFlags = pgTable("feature_flags", {
   filters: jsonb("filters").default({}), // Individual filter toggles: { tournamentCreation: false, tournamentJoin: true, advancedFilters: false }
   description: text("description"), // What this feature does
   updatedAt: timestamp("updated_at").defaultNow(),
-  updatedBy: varchar("updated_by").references(() => users.id), // Admin who last updated
+  updatedBy: varchar("updated_by"), // Admin who last updated (no foreign key - can be "admin" or user ID)
 }, (table) => [
   index("idx_feature_flags_name").on(table.featureName),
 ]);
