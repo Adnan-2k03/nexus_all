@@ -26,6 +26,8 @@ import {
   groups,
   groupMembers,
   groupMessages,
+  tournaments,
+  tournamentParticipants,
   type User,
   type UpsertUser,
   type MatchRequest,
@@ -88,6 +90,12 @@ import {
   type InsertGroupMessage,
   type GroupWithDetails,
   type GroupMessageWithSender,
+  type Tournament,
+  type InsertTournament,
+  type TournamentParticipant,
+  type InsertTournamentParticipant,
+  type TournamentWithDetails,
+  type TournamentParticipantWithUser,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, sql, ne, notInArray } from "drizzle-orm";
@@ -266,6 +274,12 @@ export interface IStorage {
   sendGroupMessage(groupId: string, senderId: string, message: string, senderLanguage?: string): Promise<GroupMessage>;
   getGroupMessages(groupId: string, limit?: number): Promise<GroupMessageWithSender[]>;
   updateMessageTranslations(messageId: string, translations: Record<string, string>): Promise<GroupMessage>;
+
+  // Tournament operations
+  getAllTournaments(): Promise<TournamentWithDetails[]>;
+  createTournament(tournament: InsertTournament): Promise<Tournament>;
+  getUserTournaments(userId: string): Promise<TournamentWithDetails[]>;
+  joinTournament(tournamentId: string, userId: string): Promise<TournamentParticipant>;
 }
 
 // Database storage implementation using PostgreSQL
@@ -2172,6 +2186,71 @@ export class DatabaseStorage implements IStorage {
   async updateMessageTranslations(messageId: string, translations: Record<string, string>): Promise<GroupMessage> {
     const [msg] = await db.update(groupMessages).set({ translations }).where(eq(groupMessages.id, messageId)).returning();
     return msg;
+  }
+
+  // Tournament operations
+  async getAllTournaments(): Promise<TournamentWithDetails[]> {
+    const result = await db.select({
+      id: tournaments.id,
+      name: tournaments.name,
+      gameName: tournaments.gameName,
+      prizePool: tournaments.prizePool,
+      status: tournaments.status,
+      createdBy: tournaments.createdBy,
+      maxParticipants: tournaments.maxParticipants,
+      createdAt: tournaments.createdAt,
+      updatedAt: tournaments.updatedAt,
+      creatorGamertag: users.gamertag,
+      participantCount: sql<number>`COUNT(DISTINCT ${tournamentParticipants.userId})`,
+    }).from(tournaments)
+      .leftJoin(users, eq(tournaments.createdBy, users.id))
+      .leftJoin(tournamentParticipants, eq(tournaments.id, tournamentParticipants.tournamentId))
+      .groupBy(tournaments.id, users.id);
+    return result;
+  }
+
+  async createTournament(tournament: InsertTournament): Promise<Tournament> {
+    const [newTournament] = await db.insert(tournaments).values(tournament).returning();
+    return newTournament;
+  }
+
+  async getUserTournaments(userId: string): Promise<TournamentWithDetails[]> {
+    const result = await db.select({
+      id: tournaments.id,
+      name: tournaments.name,
+      gameName: tournaments.gameName,
+      prizePool: tournaments.prizePool,
+      status: tournaments.status,
+      createdBy: tournaments.createdBy,
+      maxParticipants: tournaments.maxParticipants,
+      createdAt: tournaments.createdAt,
+      updatedAt: tournaments.updatedAt,
+      creatorGamertag: users.gamertag,
+      participantCount: sql<number>`COUNT(DISTINCT ${tournamentParticipants.userId})`,
+    }).from(tournaments)
+      .leftJoin(users, eq(tournaments.createdBy, users.id))
+      .leftJoin(tournamentParticipants, eq(tournaments.id, tournamentParticipants.tournamentId))
+      .where(
+        or(
+          eq(tournaments.createdBy, userId),
+          eq(tournamentParticipants.userId, userId)
+        )
+      )
+      .groupBy(tournaments.id, users.id);
+    return result;
+  }
+
+  async joinTournament(tournamentId: string, userId: string): Promise<TournamentParticipant> {
+    const existing = await db.select().from(tournamentParticipants)
+      .where(and(eq(tournamentParticipants.tournamentId, tournamentId), eq(tournamentParticipants.userId, userId)));
+    if (existing.length > 0) return existing[0];
+    
+    const [participant] = await db.insert(tournamentParticipants).values({
+      tournamentId,
+      userId,
+      status: "joined",
+    }).returning();
+    return participant;
   }
 }
 

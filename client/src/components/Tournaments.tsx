@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { getApiUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,8 @@ export function Tournaments({ currentUserId }: TournamentsProps) {
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["/api/tournaments"],
     queryFn: async () => {
-      const res = await apiRequest("/api/tournaments", { method: "GET" });
+      const res = await fetch(getApiUrl("/api/tournaments"), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch tournaments");
       return res.json();
     },
   });
@@ -48,7 +50,8 @@ export function Tournaments({ currentUserId }: TournamentsProps) {
     queryKey: ["/api/user/tournaments", currentUserId],
     queryFn: async () => {
       if (!currentUserId) return [];
-      const res = await apiRequest(`/api/user/${currentUserId}/tournaments`, { method: "GET" });
+      const res = await fetch(getApiUrl(`/api/user/${currentUserId}/tournaments`), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch user tournaments");
       return res.json();
     },
     enabled: !!currentUserId,
@@ -57,10 +60,13 @@ export function Tournaments({ currentUserId }: TournamentsProps) {
   // Create tournament mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await apiRequest("/api/tournaments", {
+      const res = await fetch(getApiUrl("/api/tournaments"), {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
+      if (!res.ok) throw new Error("Failed to create tournament");
       return res.json();
     },
     onSuccess: () => {
@@ -85,9 +91,11 @@ export function Tournaments({ currentUserId }: TournamentsProps) {
   // Join tournament mutation
   const joinMutation = useMutation({
     mutationFn: async (tournamentId: string) => {
-      const res = await apiRequest(`/api/tournaments/${tournamentId}/join`, {
+      const res = await fetch(getApiUrl(`/api/tournaments/${tournamentId}/join`), {
         method: "POST",
+        credentials: "include",
       });
+      if (!res.ok) throw new Error("Failed to join tournament");
       return res.json();
     },
     onSuccess: () => {

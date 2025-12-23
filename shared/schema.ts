@@ -87,6 +87,7 @@ export const users = pgTable("users", {
   subscriptionEndDate: timestamp("subscription_end_date"),
   connectionRequestsUsedToday: integer("connection_requests_used_today").default(0),
   lastConnectionRequestReset: timestamp("last_connection_request_reset").defaultNow(),
+  adRevenueEarned: integer("ad_revenue_earned").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [

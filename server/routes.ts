@@ -3356,5 +3356,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tournament routes
+  app.get("/api/tournaments", async (req: any, res) => {
+    try {
+      const tournaments = await storage.getAllTournaments();
+      res.json(tournaments);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/tournaments", authMiddleware, async (req: any, res) => {
+    try {
+      const { name, gameName, prizePool, maxParticipants } = req.body;
+      const tournament = await storage.createTournament({
+        name,
+        gameName,
+        prizePool: parseInt(prizePool),
+        maxParticipants: parseInt(maxParticipants),
+        status: "upcoming",
+        createdBy: req.user.id,
+      });
+      res.status(201).json(tournament);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/user/:userId/tournaments", async (req: any, res) => {
+    try {
+      const tournaments = await storage.getUserTournaments(req.params.userId);
+      res.json(tournaments);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/tournaments/:tournamentId/join", authMiddleware, async (req: any, res) => {
+    try {
+      const participant = await storage.joinTournament(req.params.tournamentId, req.user.id);
+      res.status(201).json(participant);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   return httpServer;
 }
