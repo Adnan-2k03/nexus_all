@@ -544,6 +544,53 @@ export const feedback = pgTable("feedback", {
   index("idx_feedback_created_at").on(table.createdAt),
 ]);
 
+// User roles enum for feedback system
+export const userRoleEnum = pgEnum("user_role", ["member", "admin", "moderator"]);
+
+// Feedback channels table - text and voice channels
+export const feedbackChannels = pgTable("feedback_channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  type: varchar("type").notNull(), // "text" or "voice"
+  creatorId: varchar("creator_id").notNull().references(() => users.id),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_feedback_channels_creator").on(table.creatorId),
+  index("idx_feedback_channels_active").on(table.isActive),
+]);
+
+// Feedback channel messages - messages in text channels
+export const feedbackMessages = pgTable("feedback_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id").notNull().references(() => feedbackChannels.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedBy: varchar("deleted_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_feedback_messages_channel").on(table.channelId),
+  index("idx_feedback_messages_user").on(table.userId),
+  index("idx_feedback_messages_created").on(table.createdAt),
+]);
+
+// Channel members - track who is in which channel and their roles
+export const channelMembers = pgTable("channel_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  channelId: varchar("channel_id").notNull().references(() => feedbackChannels.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: userRoleEnum("role").notNull().default("member"),
+  isMuted: boolean("is_muted").notNull().default(false),
+  joinedAt: timestamp("joined_at").defaultNow(),
+}, (table) => [
+  index("idx_channel_members_channel").on(table.channelId),
+  index("idx_channel_members_user").on(table.userId),
+  unique("unique_channel_member").on(table.channelId, table.userId),
+]);
+
 // Derived types for userCredits
 export type UserCredits = typeof userCredits.$inferSelect;
 export type InsertUserCredits = typeof userCredits.$inferInsert;
@@ -559,6 +606,31 @@ export type InsertSubscription = typeof subscriptions.$inferInsert;
 // Derived types for portfolioBoosts
 export type PortfolioBoost = typeof portfolioBoosts.$inferSelect;
 export type InsertPortfolioBoost = typeof portfolioBoosts.$inferInsert;
+
+// Derived types for feedback channels and messages
+export type FeedbackChannel = typeof feedbackChannels.$inferSelect;
+export type InsertFeedbackChannel = typeof feedbackChannels.$inferInsert;
+export type FeedbackMessage = typeof feedbackMessages.$inferSelect;
+export type InsertFeedbackMessage = typeof feedbackMessages.$inferInsert;
+export type ChannelMember = typeof channelMembers.$inferSelect;
+export type InsertChannelMember = typeof channelMembers.$inferInsert;
+
+// Insert schemas
+export const insertFeedbackChannelSchema = createInsertSchema(feedbackChannels).omit({ id: true, creatorId: true, createdAt: true });
+export const insertFeedbackMessageSchema = createInsertSchema(feedbackMessages).omit({ id: true, userId: true, createdAt: true, updatedAt: true, isDeleted: true, deletedBy: true });
+export const insertChannelMemberSchema = createInsertSchema(channelMembers).omit({ id: true, joinedAt: true });
+
+// Message with sender info
+export type FeedbackMessageWithSender = FeedbackMessage & {
+  gamertag: string | null;
+  profileImageUrl: string | null;
+};
+
+// Channel with member count
+export type FeedbackChannelWithMembers = FeedbackChannel & {
+  memberCount: number;
+  creatorGamertag: string | null;
+};
 
 // Derived types for feedback
 export type Feedback = typeof feedback.$inferSelect;

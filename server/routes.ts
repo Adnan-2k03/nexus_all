@@ -3181,5 +3181,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Feedback channel routes
+  app.get("/api/feedback/channels", async (req, res) => {
+    try {
+      const channels = await storage.getFeedbackChannels();
+      res.json(channels);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/feedback/channels", authMiddleware, async (req: any, res) => {
+    try {
+      const { name, description, type } = req.body;
+      if (!name || !type) return res.status(400).json({ message: "Name and type required" });
+      const channel = await storage.createFeedbackChannel(name, description || "", type, req.user.id);
+      res.status(201).json(channel);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/feedback/channels/:channelId/messages", async (req, res) => {
+    try {
+      const messages = await storage.getChannelMessages(req.params.channelId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/feedback/channels/:channelId/messages", authMiddleware, async (req: any, res) => {
+    try {
+      const { message } = req.body;
+      if (!message) return res.status(400).json({ message: "Message required" });
+      await storage.joinChannel(req.params.channelId, req.user.id);
+      const msg = await storage.sendChannelMessage(req.params.channelId, req.user.id, message);
+      res.status(201).json(msg);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.delete("/api/feedback/channels/:channelId/messages/:messageId", authMiddleware, async (req: any, res) => {
+    try {
+      const userRole = await storage.getUserRole(req.params.channelId, req.user.id);
+      if (userRole !== "admin" && userRole !== "moderator") {
+        return res.status(403).json({ message: "Only admin/moderator can delete messages" });
+      }
+      await storage.deleteChannelMessage(req.params.messageId, req.user.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/feedback/channels/:channelId/mute/:userId", authMiddleware, async (req: any, res) => {
+    try {
+      const userRole = await storage.getUserRole(req.params.channelId, req.user.id);
+      if (userRole !== "admin") return res.status(403).json({ message: "Admin only" });
+      const member = await storage.muteChannelMember(req.params.channelId, req.params.userId);
+      res.json(member);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/feedback/channels/:channelId/unmute/:userId", authMiddleware, async (req: any, res) => {
+    try {
+      const userRole = await storage.getUserRole(req.params.channelId, req.user.id);
+      if (userRole !== "admin") return res.status(403).json({ message: "Admin only" });
+      const member = await storage.unmuteChannelMember(req.params.channelId, req.params.userId);
+      res.json(member);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   return httpServer;
 }

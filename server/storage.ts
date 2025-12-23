@@ -19,6 +19,10 @@ import {
   creditTransactions,
   subscriptions,
   portfolioBoosts,
+  feedback,
+  feedbackChannels,
+  feedbackMessages,
+  channelMembers,
   type User,
   type UpsertUser,
   type MatchRequest,
@@ -67,6 +71,12 @@ import {
   type InsertSubscription,
   type PortfolioBoost,
   type InsertPortfolioBoost,
+  type FeedbackChannel,
+  type FeedbackMessage,
+  type FeedbackMessageWithSender,
+  type InsertFeedbackChannel,
+  type InsertFeedbackMessage,
+  type ChannelMember,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, sql, ne, notInArray } from "drizzle-orm";
@@ -219,6 +229,19 @@ export interface IStorage {
   getPortfolioBoosts(userId: string): Promise<PortfolioBoost[]>;
   createPortfolioBoost(userId: string, matchRequestId: string | null, costCredits: number): Promise<PortfolioBoost>;
   getActiveBoostedMatches(): Promise<MatchRequest[]>;
+
+  // Feedback channel operations
+  getFeedbackChannels(): Promise<FeedbackChannel[]>;
+  createFeedbackChannel(name: string, description: string, type: "text" | "voice", creatorId: string): Promise<FeedbackChannel>;
+  getChannelMessages(channelId: string): Promise<FeedbackMessageWithSender[]>;
+  sendChannelMessage(channelId: string, userId: string, message: string): Promise<FeedbackMessage>;
+  deleteChannelMessage(messageId: string, userId: string): Promise<void>;
+  muteChannelMember(channelId: string, userId: string): Promise<ChannelMember>;
+  unmuteChannelMember(channelId: string, userId: string): Promise<ChannelMember>;
+  joinChannel(channelId: string, userId: string): Promise<ChannelMember>;
+  leaveChannel(channelId: string, userId: string): Promise<void>;
+  getChannelMembers(channelId: string): Promise<ChannelMember[]>;
+  getUserRole(channelId: string, userId: string): Promise<string | undefined>;
 }
 
 // Database storage implementation using PostgreSQL
@@ -1950,6 +1973,71 @@ export class DatabaseStorage implements IStorage {
         sql`${matchRequests.boostExpiresAt} > NOW()`
       )
     );
+  }
+
+  // Feedback channel operations
+  async getFeedbackChannels(): Promise<FeedbackChannel[]> {
+    return db.select().from(feedbackChannels).where(eq(feedbackChannels.isActive, true)).orderBy(desc(feedbackChannels.createdAt));
+  }
+
+  async createFeedbackChannel(name: string, description: string, type: "text" | "voice", creatorId: string): Promise<FeedbackChannel> {
+    const [channel] = await db.insert(feedbackChannels).values({ name, description, type, creatorId, isActive: true }).returning();
+    return channel;
+  }
+
+  async getChannelMessages(channelId: string): Promise<FeedbackMessageWithSender[]> {
+    const messages = await db.select({
+      id: feedbackMessages.id,
+      channelId: feedbackMessages.channelId,
+      userId: feedbackMessages.userId,
+      message: feedbackMessages.message,
+      isDeleted: feedbackMessages.isDeleted,
+      deletedBy: feedbackMessages.deletedBy,
+      createdAt: feedbackMessages.createdAt,
+      updatedAt: feedbackMessages.updatedAt,
+      gamertag: users.gamertag,
+      profileImageUrl: users.profileImageUrl,
+    }).from(feedbackMessages).leftJoin(users, eq(feedbackMessages.userId, users.id)).where(eq(feedbackMessages.channelId, channelId)).orderBy(desc(feedbackMessages.createdAt)).limit(100);
+    return messages as FeedbackMessageWithSender[];
+  }
+
+  async sendChannelMessage(channelId: string, userId: string, message: string): Promise<FeedbackMessage> {
+    const [msg] = await db.insert(feedbackMessages).values({ channelId, userId, message }).returning();
+    return msg;
+  }
+
+  async deleteChannelMessage(messageId: string, userId: string): Promise<void> {
+    await db.update(feedbackMessages).set({ isDeleted: true, deletedBy: userId, updatedAt: new Date() }).where(eq(feedbackMessages.id, messageId));
+  }
+
+  async muteChannelMember(channelId: string, userId: string): Promise<ChannelMember> {
+    const [member] = await db.update(channelMembers).set({ isMuted: true }).where(and(eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId))).returning();
+    return member;
+  }
+
+  async unmuteChannelMember(channelId: string, userId: string): Promise<ChannelMember> {
+    const [member] = await db.update(channelMembers).set({ isMuted: false }).where(and(eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId))).returning();
+    return member;
+  }
+
+  async joinChannel(channelId: string, userId: string): Promise<ChannelMember> {
+    const existing = await db.select().from(channelMembers).where(and(eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId)));
+    if (existing.length > 0) return existing[0];
+    const [member] = await db.insert(channelMembers).values({ channelId, userId, role: "member" }).returning();
+    return member;
+  }
+
+  async leaveChannel(channelId: string, userId: string): Promise<void> {
+    await db.delete(channelMembers).where(and(eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId)));
+  }
+
+  async getChannelMembers(channelId: string): Promise<ChannelMember[]> {
+    return db.select().from(channelMembers).where(eq(channelMembers.channelId, channelId));
+  }
+
+  async getUserRole(channelId: string, userId: string): Promise<string | undefined> {
+    const [member] = await db.select().from(channelMembers).where(and(eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId)));
+    return member?.role;
   }
 }
 

@@ -1,198 +1,307 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { MessageSquare, Loader2, Send, Users } from "lucide-react";
+import { MessageSquare, Loader2, Send, Plus, Trash2, Volume2, VolumeX, Users } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 
-interface Feedback {
+interface FeedbackChannel {
   id: string;
+  name: string;
+  description?: string;
+  type: "text" | "voice";
+  creatorId: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface FeedbackMessage {
+  id: string;
+  channelId: string;
   userId: string;
-  gamertag: string;
   message: string;
+  isDeleted: boolean;
+  gamertag?: string | null;
+  profileImageUrl?: string | null;
   createdAt: string;
 }
 
 export function FeedbackPage() {
   const { toast } = useToast();
-  const [feedback, setFeedback] = useState("");
+  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState("");
+  const [newChannelName, setNewChannelName] = useState("");
+  const [newChannelType, setNewChannelType] = useState<"text" | "voice">("text");
 
-  // Fetch feedback list
-  const { data: feedbackList = [], isLoading } = useQuery<Feedback[]>({
-    queryKey: ["/api/feedback"],
+  // Fetch channels
+  const { data: channels = [], isLoading, refetch: refetchChannels } = useQuery<FeedbackChannel[]>({
+    queryKey: ["/api/feedback/channels"],
     queryFn: async () => {
-      const response = await fetch(getApiUrl("/api/feedback"), {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch feedback");
+      const response = await fetch(getApiUrl("/api/feedback/channels"), { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch channels");
       return await response.json();
     },
   });
 
-  // Submit feedback mutation
-  const submitMutation = useMutation({
+  // Fetch messages for selected channel
+  const { data: messages = [], refetch: refetchMessages } = useQuery<FeedbackMessage[]>({
+    queryKey: selectedChannel ? ["/api/feedback/channels", selectedChannel, "messages"] : [],
+    queryFn: async () => {
+      if (!selectedChannel) return [];
+      const response = await fetch(getApiUrl(`/api/feedback/channels/${selectedChannel}/messages`), { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      return await response.json();
+    },
+    enabled: !!selectedChannel,
+  });
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest("POST", "/api/feedback", { message });
+      if (!selectedChannel) throw new Error("No channel selected");
+      const response = await fetch(getApiUrl(`/api/feedback/channels/${selectedChannel}/messages`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message }),
+      });
+      if (!response.ok) throw new Error("Failed to send message");
+      return await response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Thank you!",
-        description: "Your feedback has been submitted",
-      });
-      setFeedback("");
-      queryClient.invalidateQueries({ queryKey: ["/api/feedback"] });
+      setMessageText("");
+      refetchMessages();
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit feedback",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
-  const handleSubmit = () => {
-    if (!feedback.trim()) {
-      toast({
-        title: "Empty feedback",
-        description: "Please write something before submitting",
-        variant: "destructive",
+  // Create channel mutation
+  const createChannelMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(getApiUrl("/api/feedback/channels"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: newChannelName, description: "", type: newChannelType }),
       });
+      if (!response.ok) throw new Error("Failed to create channel");
+      return await response.json();
+    },
+    onSuccess: () => {
+      setNewChannelName("");
+      toast({ title: "Channel created!", description: `New ${newChannelType} channel created.` });
+      refetchChannels();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Delete message mutation
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      if (!selectedChannel) throw new Error("No channel selected");
+      const response = await fetch(getApiUrl(`/api/feedback/channels/${selectedChannel}/messages/${messageId}`), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to delete message");
+    },
+    onSuccess: () => {
+      toast({ title: "Message deleted" });
+      refetchMessages();
+    },
+  });
+
+  const handleSendMessage = () => {
+    if (!messageText.trim()) {
+      toast({ title: "Empty message", variant: "destructive" });
       return;
     }
-    submitMutation.mutate(feedback);
+    sendMessageMutation.mutate(messageText);
+  };
+
+  const handleCreateChannel = () => {
+    if (!newChannelName.trim()) {
+      toast({ title: "Channel name required", variant: "destructive" });
+      return;
+    }
+    createChannelMutation.mutate();
   };
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
-          Feedback & Suggestions
+          Feedback & Community
         </h1>
-        <p className="text-muted-foreground">Help us improve GameMatch with your ideas and feedback</p>
+        <p className="text-muted-foreground">Join channels to discuss features, report bugs, and connect with the community</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Feedback Form */}
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Channels List */}
+        <div className="lg:col-span-1 space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Share Your Feedback</CardTitle>
-              <CardDescription>Tell us what you think or suggest new features</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Channels</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder="What's on your mind? Feature ideas, bug reports, general feedback..."
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                className="min-h-[120px]"
-                data-testid="input-feedback-message"
-              />
-              <Button
-                onClick={handleSubmit}
-                disabled={submitMutation.isPending}
-                className="w-full gap-2"
-                data-testid="button-submit-feedback"
-              >
-                {submitMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-                Submit Feedback
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Recent Feedback */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Feedback</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-2">
               {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                </div>
-              ) : feedbackList.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p>No feedback yet. Be the first to share!</p>
-                </div>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <div className="space-y-4">
-                  {feedbackList.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3 bg-background/50 border border-border rounded-md"
-                      data-testid={`feedback-item-${item.id}`}
+                <div className="space-y-2">
+                  {channels.map((channel) => (
+                    <button
+                      key={channel.id}
+                      onClick={() => setSelectedChannel(channel.id)}
+                      className={`w-full text-left p-2 rounded-md transition-colors text-sm font-medium flex items-center gap-2 ${
+                        selectedChannel === channel.id
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-background"
+                      }`}
+                      data-testid={`button-channel-${channel.id}`}
                     >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="font-medium text-sm">{item.gamertag}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{item.message}</p>
-                    </div>
+                      {channel.type === "voice" ? <Volume2 className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                      <span className="truncate">{channel.name}</span>
+                    </button>
                   ))}
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Voice Channel Card */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-20 md:top-4">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Voice Discussion
+          {/* Create Channel */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Plus className="h-4 w-4" /> New Channel
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg text-center">
-                <div className="mb-3">
-                  <Users className="h-8 w-8 text-primary mx-auto opacity-50" />
-                </div>
-                <p className="text-sm font-medium text-foreground mb-3">
-                  Join our voice channel to discuss features and improvements live
-                </p>
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Channel name"
+                value={newChannelName}
+                onChange={(e) => setNewChannelName(e.target.value)}
+                data-testid="input-channel-name"
+              />
+              <div className="flex gap-2">
                 <Button
-                  variant="default"
                   size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Coming Soon",
-                      description: "Voice channel integration will be available soon",
-                    });
-                  }}
-                  className="w-full"
-                  data-testid="button-join-voice-feedback"
+                  variant={newChannelType === "text" ? "default" : "outline"}
+                  onClick={() => setNewChannelType("text")}
+                  className="flex-1 text-xs"
                 >
-                  Join Voice Channel
+                  Text
+                </Button>
+                <Button
+                  size="sm"
+                  variant={newChannelType === "voice" ? "default" : "outline"}
+                  onClick={() => setNewChannelType("voice")}
+                  className="flex-1 text-xs"
+                >
+                  Voice
                 </Button>
               </div>
-
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="font-medium text-foreground mb-1">How to Participate:</p>
-                  <ul className="text-muted-foreground space-y-1 text-xs">
-                    <li>• Share feature ideas</li>
-                    <li>• Report bugs</li>
-                    <li>• Suggest improvements</li>
-                    <li>• Connect with community</li>
-                  </ul>
-                </div>
-              </div>
+              <Button
+                onClick={handleCreateChannel}
+                disabled={createChannelMutation.isPending}
+                size="sm"
+                className="w-full"
+                data-testid="button-create-channel"
+              >
+                Create
+              </Button>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Messages Area */}
+        <div className="lg:col-span-3 space-y-4">
+          {selectedChannel ? (
+            <>
+              <Card className="flex flex-col h-[600px]">
+                <CardHeader className="border-b">
+                  <CardTitle>
+                    {channels.find((c) => c.id === selectedChannel)?.name || "Channel"}
+                  </CardTitle>
+                  <CardDescription>
+                    {channels.find((c) => c.id === selectedChannel)?.type === "voice" ? "Voice Discussion" : "Text Discussion"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto space-y-3 py-4">
+                  {messages.length === 0 ? (
+                    <div className="flex justify-center items-center h-full text-muted-foreground text-sm">
+                      No messages yet. Be the first to say something!
+                    </div>
+                  ) : (
+                    messages
+                      .filter((m) => !m.isDeleted)
+                      .map((msg) => (
+                        <div key={msg.id} className="p-3 bg-background rounded-md border flex items-start justify-between gap-2" data-testid={`message-${msg.id}`}>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{msg.gamertag || "Anonymous"}</div>
+                            <p className="text-muted-foreground text-sm">{msg.message}</p>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {new Date(msg.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteMessageMutation.mutate(msg.id)}
+                            className="h-8 w-8 flex-shrink-0"
+                            data-testid={`button-delete-message-${msg.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Message Input */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="Say something..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.ctrlKey) {
+                          handleSendMessage();
+                        }
+                      }}
+                      className="resize-none"
+                      data-testid="input-message"
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={sendMessageMutation.isPending}
+                      size="icon"
+                      data-testid="button-send-message"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card className="h-[600px] flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Select a channel to start chatting</p>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>
