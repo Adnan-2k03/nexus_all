@@ -15,6 +15,10 @@ import {
   groupVoiceInvites,
   pushSubscriptions,
   phoneVerificationCodes,
+  userCredits,
+  creditTransactions,
+  subscriptions,
+  portfolioBoosts,
   type User,
   type UpsertUser,
   type MatchRequest,
@@ -55,6 +59,14 @@ import {
   type InsertPushSubscription,
   type PhoneVerificationCode,
   type InsertPhoneVerificationCode,
+  type UserCredits,
+  type InsertUserCredits,
+  type CreditTransaction,
+  type InsertCreditTransaction,
+  type Subscription,
+  type InsertSubscription,
+  type PortfolioBoost,
+  type InsertPortfolioBoost,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, sql, ne, notInArray } from "drizzle-orm";
@@ -1757,6 +1769,153 @@ export class DatabaseStorage implements IStorage {
       .update(groupVoiceInvites)
       .set({ status: 'declined', respondedAt: sql`NOW()` })
       .where(eq(groupVoiceInvites.id, inviteId));
+  }
+
+  // ===== CREDIT ECONOMY METHODS =====
+  
+  async getUserCredits(userId: string): Promise<UserCredits | undefined> {
+    const [credits] = await db
+      .select()
+      .from(userCredits)
+      .where(eq(userCredits.userId, userId));
+    return credits || undefined;
+  }
+
+  async getOrCreateUserCredits(userId: string): Promise<UserCredits> {
+    let credits = await this.getUserCredits(userId);
+    if (!credits) {
+      const [newCredits] = await db
+        .insert(userCredits)
+        .values({ userId, balance: 10 })
+        .returning();
+      credits = newCredits;
+    }
+    return credits;
+  }
+
+  async deductCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<boolean> {
+    const credits = await this.getOrCreateUserCredits(userId);
+    if (credits.balance < amount) return false;
+
+    await db
+      .update(userCredits)
+      .set({ balance: sql`balance - ${amount}`, lastUpdated: sql`NOW()` })
+      .where(eq(userCredits.userId, userId));
+
+    await db.insert(creditTransactions).values({
+      userId,
+      amount: -amount,
+      type: type as any,
+      description,
+      relatedId,
+    });
+
+    return true;
+  }
+
+  async addCredits(userId: string, amount: number, type: string, description: string, relatedId?: string): Promise<void> {
+    await this.getOrCreateUserCredits(userId);
+    
+    await db
+      .update(userCredits)
+      .set({ balance: sql`balance + ${amount}`, lastUpdated: sql`NOW()` })
+      .where(eq(userCredits.userId, userId));
+
+    await db.insert(creditTransactions).values({
+      userId,
+      amount,
+      type: type as any,
+      description,
+      relatedId,
+    });
+  }
+
+  async getSubscription(userId: string): Promise<Subscription | undefined> {
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId));
+    return sub || undefined;
+  }
+
+  async upgradeSubscription(userId: string, tier: "pro" | "gold"): Promise<void> {
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+
+    const existing = await this.getSubscription(userId);
+    if (existing) {
+      await db
+        .update(subscriptions)
+        .set({ tier, endDate, status: 'active' })
+        .where(eq(subscriptions.userId, userId));
+    } else {
+      await db.insert(subscriptions).values({
+        userId,
+        tier,
+        endDate,
+        status: 'active',
+      });
+    }
+  }
+
+  async createPortfolioBoost(userId: string, matchRequestId: string | null, costCredits: number): Promise<PortfolioBoost> {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 1); // 24 hour boost
+
+    const [boost] = await db
+      .insert(portfolioBoosts)
+      .values({
+        userId,
+        matchRequestId: matchRequestId || undefined,
+        costCredits,
+        expiresAt,
+        isActive: true,
+      })
+      .returning();
+
+    if (matchRequestId) {
+      await db
+        .update(matchRequests)
+        .set({ isBoosted: true, boostExpiresAt: expiresAt })
+        .where(eq(matchRequests.id, matchRequestId));
+    }
+
+    return boost;
+  }
+
+  async checkConnectionRequestLimit(userId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error('User not found');
+
+    const now = new Date();
+    const lastReset = user.lastConnectionRequestReset ? new Date(user.lastConnectionRequestReset) : new Date();
+    
+    const isNewDay = now.getDate() !== lastReset.getDate() || 
+                     now.getMonth() !== lastReset.getMonth() || 
+                     now.getFullYear() !== lastReset.getFullYear();
+
+    const limit = user.subscriptionTier === 'free' ? 3 : (user.subscriptionTier === 'pro' ? 10 : 50);
+    const used = isNewDay ? 0 : (user.connectionRequestsUsedToday || 0);
+
+    if (isNewDay) {
+      await db
+        .update(users)
+        .set({ connectionRequestsUsedToday: 0, lastConnectionRequestReset: sql`NOW()` })
+        .where(eq(users.id, userId));
+    }
+
+    return {
+      allowed: used < limit,
+      used,
+      limit,
+    };
+  }
+
+  async incrementConnectionRequest(userId: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ connectionRequestsUsedToday: sql`connection_requests_used_today + 1` })
+      .where(eq(users.id, userId));
   }
 }
 

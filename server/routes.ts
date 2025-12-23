@@ -16,7 +16,9 @@ import { sendPushNotification } from "./pushNotifications";
 import { r2Storage, generateFileKey } from "./services/r2-storage";
 import { hmsService, generateRoomName } from "./services/hms-service";
 import { verifyFirebaseToken, isPhoneAuthConfigured } from "./services/firebase-admin";
-import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema } from "@shared/schema";
+import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema, creditTransactions } from "@shared/schema";
+import { db } from "./db";
+import { eq as dbEq, desc as dbDesc } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -2967,6 +2969,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating demo data:", error);
       res.status(500).json({ message: "Failed to create demo data", error: String(error) });
+    }
+  });
+
+  // ===== CREDIT SYSTEM ROUTES =====
+  
+  // Get user credits
+  app.get("/api/user/credits", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const credits = await storage.getOrCreateUserCredits(userId);
+      res.json(credits);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Get user subscription
+  app.get("/api/user/subscription", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const sub = await storage.getSubscription(userId);
+      res.json(sub || { tier: "free", status: "active" });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Check connection request limit
+  app.get("/api/user/connection-limit", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const limit = await storage.checkConnectionRequestLimit(userId);
+      res.json(limit);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Create portfolio boost
+  app.post("/api/portfolio/boost", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const { matchRequestId } = req.body;
+      const costCredits = 50;
+
+      const success = await storage.deductCredits(userId, costCredits, "portfolio_boost", "Portfolio boost for 24 hours", matchRequestId);
+      if (!success) {
+        return res.status(400).json({ message: "Insufficient credits" });
+      }
+
+      const boost = await storage.createPortfolioBoost(userId, matchRequestId || null, costCredits);
+      res.json(boost);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Get user credit transactions (history)
+  app.get("/api/user/credit-history", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const transactions = await db
+        .select()
+        .from(creditTransactions)
+        .where(dbEq(creditTransactions.userId, userId))
+        .orderBy(dbDesc(creditTransactions.createdAt))
+        .limit(50);
+
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  // Admin: Give credits to user (for testing/rewards)
+  app.post("/api/admin/give-credits", authMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || (req as any).session?.userId;
+      const { targetUserId, amount, reason } = req.body;
+      
+      if (!targetUserId || !amount) {
+        return res.status(400).json({ message: "Missing targetUserId or amount" });
+      }
+
+      await storage.addCredits(targetUserId, amount, "admin_credit", reason || "Admin credit", undefined);
+      const credits = await storage.getUserCredits(targetUserId);
+      
+      res.json({ success: true, newBalance: credits?.balance });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
     }
   });
 

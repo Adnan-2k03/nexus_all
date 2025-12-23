@@ -31,6 +31,17 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "voice_channel_invite_accepted",
   "voice_channel_invite_declined"
 ]);
+export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "pro", "gold"]);
+export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", [
+  "match_posting",
+  "connection_request",
+  "portfolio_boost",
+  "voice_channel_purchase",
+  "subscription_charge",
+  "rewarded_ad",
+  "admin_credit",
+  "refund"
+]);
 
 // Session storage table for authentication
 export const sessions = pgTable(
@@ -69,6 +80,11 @@ export const users = pgTable("users", {
   showMutualHobbies: varchar("show_mutual_hobbies").default("everyone"),
   // Voice overlay settings (mobile only)
   voiceOverlayEnabled: boolean("voice_overlay_enabled").default(false),
+  // Monetization fields
+  subscriptionTier: subscriptionTierEnum("subscription_tier").default("free"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  connectionRequestsUsedToday: integer("connection_requests_used_today").default(0),
+  lastConnectionRequestReset: timestamp("last_connection_request_reset").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -76,6 +92,7 @@ export const users = pgTable("users", {
   index("idx_users_language").on(table.language),
   index("idx_users_created_at").on(table.createdAt),
   index("idx_users_phone_number").on(table.phoneNumber),
+  index("idx_users_subscription_tier").on(table.subscriptionTier),
 ]);
 
 // Match requests table
@@ -90,6 +107,9 @@ export const matchRequests = pgTable("match_requests", {
   description: text("description").notNull(),
   status: matchRequestStatusEnum("status").notNull().default("waiting"),
   region: varchar("region"),
+  costCredits: integer("cost_credits").default(5), // Cost to post this match
+  isBoosted: boolean("is_boosted").default(false), // Portfolio boost flag
+  boostExpiresAt: timestamp("boost_expires_at"), // Boost expiry time
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -97,6 +117,7 @@ export const matchRequests = pgTable("match_requests", {
   index("idx_match_requests_status").on(table.status),
   index("idx_match_requests_game_name").on(table.gameName),
   index("idx_match_requests_created_at").on(table.createdAt),
+  index("idx_match_requests_is_boosted").on(table.isBoosted),
 ]);
 
 // Direct connection requests (user-to-user, no match required)
@@ -455,6 +476,84 @@ export const insertGroupVoiceMemberSchema = createInsertSchema(groupVoiceMembers
 export const insertGroupVoiceInviteSchema = createInsertSchema(groupVoiceInvites).omit({ id: true, createdAt: true, respondedAt: true });
 export const insertVoiceParticipantSchema = createInsertSchema(voiceParticipants).omit({ id: true, joinedAt: true });
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
+
+// User credits table - tracks credit balance per user
+export const userCredits = pgTable("user_credits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  balance: integer("balance").notNull().default(10), // Start with 10 free credits
+  lastUpdated: timestamp("last_updated").defaultNow(),
+}, (table) => [
+  index("idx_user_credits_user_id").on(table.userId),
+]);
+
+// Credit transactions table - audit trail for all credit operations
+export const creditTransactions = pgTable("credit_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // Can be negative (deduction) or positive (reward)
+  type: creditTransactionTypeEnum("type").notNull(),
+  description: text("description"),
+  relatedId: varchar("related_id"), // References match ID, subscription ID, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_credit_transactions_user_id").on(table.userId),
+  index("idx_credit_transactions_type").on(table.type),
+  index("idx_credit_transactions_created_at").on(table.createdAt),
+]);
+
+// Subscriptions table - track active subscriptions
+export const subscriptions = pgTable("subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  tier: subscriptionTierEnum("tier").notNull().default("free"),
+  status: varchar("status").notNull().default("active"), // active, cancelled, expired
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date"),
+  autoRenew: boolean("auto_renew").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_subscriptions_user_id").on(table.userId),
+  index("idx_subscriptions_tier").on(table.tier),
+  index("idx_subscriptions_status").on(table.status),
+]);
+
+// Portfolio boosts table - track active portfolio boosts
+export const portfolioBoosts = pgTable("portfolio_boosts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  matchRequestId: varchar("match_request_id").references(() => matchRequests.id, { onDelete: "cascade" }),
+  costCredits: integer("cost_credits").notNull().default(50),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_portfolio_boosts_user_id").on(table.userId),
+  index("idx_portfolio_boosts_expires_at").on(table.expiresAt),
+  index("idx_portfolio_boosts_is_active").on(table.isActive),
+]);
+
+// Derived types for userCredits
+export type UserCredits = typeof userCredits.$inferSelect;
+export type InsertUserCredits = typeof userCredits.$inferInsert;
+
+// Derived types for creditTransactions
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type InsertCreditTransaction = typeof creditTransactions.$inferInsert;
+
+// Derived types for subscriptions
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = typeof subscriptions.$inferInsert;
+
+// Derived types for portfolioBoosts
+export type PortfolioBoost = typeof portfolioBoosts.$inferSelect;
+export type InsertPortfolioBoost = typeof portfolioBoosts.$inferInsert;
+
+// Credit-related schemas for validation
+export const insertUserCreditsSchema = createInsertSchema(userCredits).omit({ id: true, lastUpdated: true });
+export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({ id: true, createdAt: true });
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true });
+export const insertPortfolioBoostSchema = createInsertSchema(portfolioBoosts).omit({ id: true, createdAt: true });
 
 // Privacy settings validation
 export const privacyVisibilityEnum = z.enum(["everyone", "connections", "nobody"]);
