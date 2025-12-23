@@ -431,7 +431,7 @@ function Router() {
       case "tournaments":
         return (
           <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
-            <Tournaments currentUserId={user?.id} />
+            <Tournaments currentUserId={user?.id} isAdmin={user?.isAdmin as boolean} />
           </div>
         );
       case "settings":

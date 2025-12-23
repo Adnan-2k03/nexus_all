@@ -18,9 +18,10 @@ import { Trophy, Users, Calendar, Coins } from "lucide-react";
 
 interface TournamentsProps {
   currentUserId?: string;
+  isAdmin?: boolean;
 }
 
-export function Tournaments({ currentUserId }: TournamentsProps) {
+export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { toast } = useToast();
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
@@ -135,12 +136,13 @@ export function Tournaments({ currentUserId }: TournamentsProps) {
             <Trophy className="h-8 w-8" />
             Tournaments
           </h1>
-          <p className="text-muted-foreground mt-1">Join or create gaming tournaments with prize pools funded by your ad revenue</p>
+          <p className="text-muted-foreground mt-1">Join gaming tournaments with prize pools funded by ad revenue</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-tournament">Create Tournament</Button>
-          </DialogTrigger>
+        {isAdmin && (
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-tournament">Create Tournament</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Tournament</DialogTitle>
@@ -216,6 +218,7 @@ export function Tournaments({ currentUserId }: TournamentsProps) {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {isLoading ? (
