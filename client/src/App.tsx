@@ -540,6 +540,28 @@ function Router() {
               );
             }}
           </Route>
+          <Route path="/feedback">
+            {() => {
+              if (currentPage !== "feedback") {
+                setCurrentPage("feedback");
+              }
+              return (
+                <div className="min-h-screen relative">
+                  {user && user.gamertag && (
+                    <GameNavigation
+                      currentPage={currentPage as any}
+                      onNavigate={handleNavigation}
+                      user={mapUserForComponents(user)}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    {renderMainContent()}
+                  </div>
+                </div>
+              );
+            }}
+          </Route>
           <Route path="/messages">
             {() => {
               if (currentPage !== "messages") {
