@@ -298,6 +298,14 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
           </a>
           <span className="text-gray-600">•</span>
           <a 
+            href="/child-safety-standards" 
+            className="text-cyan-400 hover:underline"
+            data-testid="link-child-safety-standards"
+          >
+            Child Safety Standards
+          </a>
+          <span className="text-gray-600">•</span>
+          <a 
             href="/data-deletion-request" 
             className="text-cyan-400 hover:underline"
             data-testid="link-data-deletion"

@@ -50,12 +50,12 @@ export default function DataDeletionRequest() {
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Back Button */}
         <button
-          onClick={() => setLocation("/settings")}
+          onClick={() => setLocation("/")}
           className="flex items-center gap-2 text-cyan-400 hover:underline mb-8"
-          data-testid="button-back-to-settings"
+          data-testid="button-back-to-landing"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Settings
+          Back to Landing
         </button>
 
         <div className="space-y-6">
