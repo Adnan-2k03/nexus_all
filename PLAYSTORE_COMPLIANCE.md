@@ -21,7 +21,7 @@
 
 ### Question 4: Add a link that users can use to request that their account and associated data is deleted
 
-**Delete Account URL:** `https://your-app-domain.com/data-deletion-request`
+**Delete Account URL:** `https://nexusfinal-android.vercel.app/data-deletion-request`
 
 Or when on your app: Navigate to Settings → Account & Data Management → Request Account Deletion
 
@@ -109,7 +109,7 @@ When filling out security measures:
 Add to your app description or privacy section:
 
 > **Data Privacy:**
-> Nexus Match is committed to protecting your privacy. We encrypt all data in transit, support OAuth authentication, and allow you to request account and data deletion at any time. For more information, see our [Privacy Policy](/privacy-policy) or request deletion at [Delete Account](/data-deletion-request).
+> Nexus Match is committed to protecting your privacy. We encrypt all data in transit, support OAuth authentication, and allow you to request account and data deletion at any time. For more information, see our [Privacy Policy](https://nexusfinal-android.vercel.app/privacy-policy) or request deletion at [Delete Account](https://nexusfinal-android.vercel.app/data-deletion-request).
 
 ---
 

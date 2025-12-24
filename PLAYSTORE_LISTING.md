@@ -74,8 +74,8 @@ Works with any multiplayer game: Valorant, Fortnite, Apex Legends, Counter-Strik
 Start matchmaking today and elevate your gaming experience. Your perfect squad is waiting.
 
 ---
-PRIVACY POLICY: https://nexusmatch.com/privacy-policy
-REQUEST DATA DELETION: https://nexusmatch.com/data-deletion-request
+PRIVACY POLICY: https://nexusfinal-android.vercel.app/privacy-policy
+REQUEST DATA DELETION: https://nexusfinal-android.vercel.app/data-deletion-request
 ```
 
 **Character count:** ~1,650/4,000 ✅
