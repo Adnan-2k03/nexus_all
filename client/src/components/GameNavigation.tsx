@@ -67,7 +67,7 @@ export function GameNavigation({
     { id: "groups", label: "Groups", icon: Users, featureName: "groups" },
     { id: "tournaments", label: "Tournaments", icon: Trophy, featureName: "tournaments" },
     { id: "ads", label: "Earn", icon: Coins },
-    { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "feedback", label: "Feedback", icon: MessageSquare, featureName: "feedback" },
     { id: "profile", label: "Profile", icon: User },
   ];
 

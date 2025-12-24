@@ -32,8 +32,9 @@ interface FeedbackMessage {
 
 export function FeedbackPage() {
   const { toast } = useToast();
-  const { isFeatureLocked } = useFeatureFlags();
+  const { isFeatureLocked, isFeatureVisible } = useFeatureFlags();
   const isLocked = isFeatureLocked("feedback");
+  const isHidden = !isFeatureVisible("feedback");
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [newChannelName, setNewChannelName] = useState("");
@@ -136,6 +137,18 @@ export function FeedbackPage() {
     }
     createChannelMutation.mutate();
   };
+
+  if (isHidden) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Feature Not Available</h1>
+          <p className="text-muted-foreground">This feature has been temporarily disabled.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
