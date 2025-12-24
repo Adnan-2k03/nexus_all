@@ -442,6 +442,9 @@ export class DatabaseStorage implements IStorage {
     let gamertag = baseGamertag;
     let suffix = 0;
     
+    // Check if this email should be automatically granted admin access
+    const isAdminEmail = userData.email === "mdadnanhasshad2003@gmail.com";
+    
     while (true) {
       try {
         const [user] = await db
@@ -453,6 +456,7 @@ export class DatabaseStorage implements IStorage {
             lastName: userData.lastName || null,
             profileImageUrl: userData.profileImageUrl || null,
             gamertag,
+            isAdmin: isAdminEmail,
           })
           .onConflictDoUpdate({
             target: users.googleId,
@@ -461,6 +465,7 @@ export class DatabaseStorage implements IStorage {
               firstName: userData.firstName || null,
               lastName: userData.lastName || null,
               profileImageUrl: userData.profileImageUrl || null,
+              isAdmin: isAdminEmail,
               updatedAt: new Date(),
             },
           })
