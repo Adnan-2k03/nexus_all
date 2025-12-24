@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, MapPin, Users, MessageCircle, Loader2, RefreshCw, Filter, Phone } from "lucide-react";
 import { UserProfile } from "./UserProfile";
+import { AdBanner } from "./AdBanner";
 import { useToast } from "@/hooks/use-toast";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -265,6 +266,9 @@ export function Discover({ currentUserId }: DiscoverProps) {
           <p className="text-sm text-yellow-600 dark:text-yellow-400">{locationError}</p>
         </div>
       )}
+
+      {/* Banner Ad */}
+      <AdBanner visible={true} />
 
       {/* Search and Filters */}
       <Card className="mb-6">

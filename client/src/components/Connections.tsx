@@ -19,6 +19,7 @@ import { getApiUrl } from "@/lib/api";
 import type { MatchConnectionWithUser, ConnectionRequestWithUser, User } from "@shared/schema";
 import { Chat } from "./Chat";
 import { VoiceChannel } from "./VoiceChannel";
+import { AdBanner } from "./AdBanner";
 import { useToast } from "@/hooks/use-toast";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useVoiceCallNotifications } from "@/hooks/useVoiceCallNotifications";
@@ -608,6 +609,9 @@ export function Connections({ currentUserId }: ConnectionsProps) {
           </Button>
         </div>
       </div>
+
+      {/* Banner Ad */}
+      <AdBanner visible={true} />
 
       {/* Search and Filter Bar */}
       <Card className="mb-6">

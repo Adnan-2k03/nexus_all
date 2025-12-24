@@ -13,6 +13,7 @@ import { ProfileDialog } from "@/components/ui/profile-dialog";
 import { MessageCircle, Phone, RefreshCw, Search, UserPlus, ChevronDown, ChevronUp, CheckCircle, X, UserMinus, Users } from "lucide-react";
 import { useState } from "react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { AdBanner } from "./AdBanner";
 import { useToast } from "@/hooks/use-toast";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useVoiceCallNotifications } from "@/hooks/useVoiceCallNotifications";
@@ -232,6 +233,9 @@ export function Messages({ currentUserId, onNavigateToVoiceChannels }: MessagesP
           </Button>
         </div>
       </div>
+
+      {/* Banner Ad */}
+      <AdBanner visible={true} />
 
       {/* Search */}
       <Card className="mb-6">

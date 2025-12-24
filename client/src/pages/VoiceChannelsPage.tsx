@@ -13,6 +13,7 @@ import { Plus, Users, UserPlus, X, RefreshCw, Mic2, Search, Link as LinkIcon } f
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { GroupVoiceChannel } from "@/components/GroupVoiceChannel";
+import { AdBanner } from "@/components/AdBanner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getApiUrl } from "@/lib/api";
 import type { GroupVoiceChannelWithDetails, User, ConnectionRequestWithUser } from "@shared/schema";
@@ -484,6 +485,9 @@ export function VoiceChannelsPage({ currentUserId }: VoiceChannelsPageProps) {
           </Dialog>
         </div>
       </div>
+
+      {/* Banner Ad */}
+      <AdBanner visible={true} />
 
       {/* Search Bar */}
       <Card className="mb-6">
