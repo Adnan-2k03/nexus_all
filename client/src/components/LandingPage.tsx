@@ -5,6 +5,7 @@ import leftWarrior from "@assets/left_1762075484949.jpg";
 import rightWarrior from "@assets/right_1762075491469.jpg";
 import aboutImage from "@assets/abt_1762075393318.webp";
 import supportImage from "@assets/sup_1762075536689.webp";
+import { AdBanner } from "./AdBanner";
 
 interface LandingPageProps {
   onShowAuth: () => void;
@@ -108,6 +109,10 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
       >
         <span className="text-2xl">↓</span>
         <span className="ml-2">EXPLORE FEATURES</span>
+      </div>
+
+      <div className="mb-6 nexus-container">
+        <AdBanner visible={true} />
       </div>
 
       <section id="how" className="features nexus-container">
@@ -252,7 +257,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
               
               <div className="mt-8">
                 <h3 className="text-cyan-400 mb-4 text-xl">Contact Support</h3>
-                <p>For technical help or bug reports, reach out to <a href="mailto:support@nexusmatch.gg" className="text-cyan-400 hover:underline">support@nexusmatch.gg</a></p>
+                <p>For technical help or bug reports, reach out to <a href="mailto:rxplorerh@gmail.com" className="text-cyan-400 hover:underline">rxplorerh@gmail.com</a></p>
               </div>
               
               <div className="mt-8">
