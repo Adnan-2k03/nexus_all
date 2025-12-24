@@ -35,6 +35,7 @@ import { Groups } from "@/components/Groups";
 import { Tournaments } from "@/components/Tournaments";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import DataDeletionRequest from "@/pages/DataDeletionRequest";
+import ChildSafetyStandards from "@/pages/ChildSafetyStandards";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { AdminPage } from "@/pages/AdminPage";
 import { LockedFeaturePage } from "@/components/LockedFeaturePage";
@@ -496,6 +497,11 @@ function Router() {
       {/* Data Deletion Request route */}
       <Route path="/data-deletion-request">
         {() => <DataDeletionRequest />}
+      </Route>
+
+      {/* Child Safety Standards route */}
+      <Route path="/child-safety-standards">
+        {() => <ChildSafetyStandards />}
       </Route>
       
       {/* Public route for join-channel (works for everyone) */}
