@@ -38,13 +38,20 @@ export function RewardedAdsPage() {
   });
 
   // Watch ad mutation
-  const watchAdMutation = useMutation({
+  const watchAdMutation = useMutation<{ balance: number }, Error>({
     mutationFn: async () => {
       // Simulate ad watching (3-5 seconds)
       await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
-      return apiRequest("POST", "/api/credits/reward-ad", {});
+      const response = await fetch(getApiUrl("/api/credits/reward-ad"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) throw new Error("Failed to reward credits");
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: { balance: number }) => {
       const newSession: AdSession = {
         id: `ad-${Date.now()}`,
         timestamp: Date.now(),

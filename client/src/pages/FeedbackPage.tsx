@@ -8,6 +8,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { MessageSquare, Loader2, Send, Plus, Trash2, Volume2, VolumeX, Users, Lock } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { getApiUrl } from "@/lib/api";
+import { AdBanner } from "@/components/AdBanner";
 
 interface FeedbackChannel {
   id: string;
@@ -152,6 +153,9 @@ export function FeedbackPage() {
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
+      {/* Banner Ad */}
+      <AdBanner visible={true} />
+
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
