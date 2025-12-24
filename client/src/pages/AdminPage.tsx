@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { getApiUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useTestAds } from "@/contexts/TestAdsContext";
 
 interface FeatureFlag {
   id: string;
@@ -23,6 +24,7 @@ export function AdminPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { showTestAds, setShowTestAds } = useTestAds();
   const [isLoggedInAsAdmin, setIsLoggedInAsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -271,6 +273,34 @@ export function AdminPage() {
         </div>
 
         <div className="space-y-6">
+          {/* Test Ads Section */}
+          <Card className="p-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Test Ad Placement
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Enable visual boxes to verify ad placement across pages
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="toggle-test-ads"
+                  className="text-sm"
+                >
+                  {showTestAds ? "Enabled" : "Disabled"}
+                </Label>
+                <Switch
+                  id="toggle-test-ads"
+                  checked={showTestAds}
+                  onCheckedChange={setShowTestAds}
+                  data-testid="switch-test-ads"
+                />
+              </div>
+            </div>
+          </Card>
+
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">
               Feature Locks

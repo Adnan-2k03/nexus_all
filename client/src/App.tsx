@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { BackgroundProvider, useBackground } from "@/components/BackgroundProvider";
 import { LayoutProvider, useLayout } from "@/contexts/LayoutContext";
 import { HMSProvider } from "@/contexts/HMSContext";
+import { TestAdsProvider } from "@/contexts/TestAdsContext";
 import { useState, useEffect } from "react";
 
 // Hooks
@@ -842,11 +843,12 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <HMSProvider>
-        <ThemeProvider defaultTheme="dark" storageKey="gamematch-ui-theme">
-          <BackgroundProvider>
-            <LayoutProvider>
-              <TooltipProvider>
+      <TestAdsProvider>
+        <HMSProvider>
+          <ThemeProvider defaultTheme="dark" storageKey="gamematch-ui-theme">
+            <BackgroundProvider>
+              <LayoutProvider>
+                <TooltipProvider>
                 {/* Background layer */}
                 <BackgroundRenderer />
 
@@ -864,6 +866,7 @@ function App() {
           </BackgroundProvider>
         </ThemeProvider>
       </HMSProvider>
+      </TestAdsProvider>
     </QueryClientProvider>
   );
 }
