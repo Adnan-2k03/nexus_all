@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { MatchRequestCard } from "./MatchRequestCard";
 import { AdUnit } from "./AdUnit";
+import { AdBanner } from "./AdBanner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { MatchRequestWithUser, MatchConnection } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -386,6 +387,9 @@ export function MatchFeed({
           <p className="text-sm text-yellow-600 dark:text-yellow-400">{locationError}</p>
         </div>
       )}
+
+      {/* Banner Ad - Positioned above search bar for mobile */}
+      <AdBanner visible={true} />
 
       {/* Filters */}
       <GameFilters 

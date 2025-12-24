@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getApiUrl } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import { AdBanner } from "@/components/AdBanner";
 
 interface AdSession {
   id: string;
@@ -93,6 +94,9 @@ export function RewardedAdsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Banner Ad */}
+      <AdBanner visible={true} />
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Earn Credits</h1>
