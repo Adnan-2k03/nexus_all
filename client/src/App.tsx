@@ -34,6 +34,7 @@ import { FeedbackPage } from "@/pages/FeedbackPage";
 import { Groups } from "@/components/Groups";
 import { Tournaments } from "@/components/Tournaments";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import DataDeletionRequest from "@/pages/DataDeletionRequest";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { AdminPage } from "@/pages/AdminPage";
 import { LockedFeaturePage } from "@/components/LockedFeaturePage";
@@ -490,6 +491,11 @@ function Router() {
       {/* Privacy Policy route */}
       <Route path="/privacy-policy">
         {() => <PrivacyPolicy />}
+      </Route>
+
+      {/* Data Deletion Request route */}
+      <Route path="/data-deletion-request">
+        {() => <DataDeletionRequest />}
       </Route>
       
       {/* Public route for join-channel (works for everyone) */}

@@ -2,12 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PrivacySettings } from "./PrivacySettings";
 import { PushNotificationToggle } from "./PushNotificationPrompt";
 import { VoiceOverlayToggle } from "./VoiceOverlayToggle";
-import { Check, Sparkles, Zap, Square, Palette } from "lucide-react";
+import { Check, Sparkles, Zap, Square, Palette, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { User } from "@shared/schema";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useBackground } from "./BackgroundProvider";
 import { UnifiedThemeSelector } from "./UnifiedThemeSelector";
+import { useLocation } from "wouter";
 
 interface SettingsProps {
   user?: User | null;
@@ -16,6 +17,7 @@ interface SettingsProps {
 export function Settings({ user }: SettingsProps) {
   const { layoutWidth, setLayoutWidth, getContainerClass } = useLayout();
   const { background, setBackground } = useBackground();
+  const [, setLocation] = useLocation();
 
   return (
     <div className={`${getContainerClass()} mx-auto`}>
@@ -164,6 +166,29 @@ export function Settings({ user }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <VoiceOverlayToggle userId={user?.id} />
+          </CardContent>
+        </Card>
+
+        {/* Account & Data Deletion */}
+        <Card className="border-destructive/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Account & Data Management
+            </CardTitle>
+            <CardDescription>Permanently delete your account and associated data</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Request the deletion of your account, profile, messages, and all personal data. This action is permanent and cannot be undone.
+            </p>
+            <Button
+              variant="destructive"
+              onClick={() => setLocation("/data-deletion-request")}
+              data-testid="button-request-deletion"
+            >
+              Request Account Deletion
+            </Button>
           </CardContent>
         </Card>
       </div>

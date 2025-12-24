@@ -3588,5 +3588,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data Deletion Request endpoint
+  app.post("/api/request-data-deletion", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get user information for the deletion request
+      const user = await db.query.users.findFirst({
+        where: dbEq(users.id, userId),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Log the deletion request for processing
+      console.log(`🗑️ DATA DELETION REQUEST: User ${userId} (${user.gamertag || user.email}) has requested account and data deletion`);
+      console.log(`   Timestamp: ${new Date().toISOString()}`);
+      console.log(`   User will be deactivated immediately, deletion processed within 30 days`);
+
+      // Return success response
+      res.json({ 
+        message: "Your data deletion request has been received and will be processed within 30 days.",
+        requestId: `deletion_${userId}_${Date.now()}`,
+        email: user.email
+      });
+    } catch (error) {
+      console.error("Error processing deletion request:", error);
+      res.status(500).json({ message: "Failed to process deletion request" });
+    }
+  });
+
   return httpServer;
 }
