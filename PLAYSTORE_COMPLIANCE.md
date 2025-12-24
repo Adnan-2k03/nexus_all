@@ -41,30 +41,55 @@ Or when on your app: Navigate to Settings → Account & Data Management → Requ
 
 ## Data Types to Disclose
 
-When filling out the "Data types" section, you'll need to declare:
+### ✅ CHECK THESE (Nexus Match collects):
 
-### Personal Information:
+**Personal Information:**
 - ✅ Name
 - ✅ Email address
-- ✅ User ID/Profile information
-- ✅ Profile photo/game portfolio images
-- ✅ Location (optional)
-- ✅ Age (if provided)
+- ✅ User IDs
+- ✅ Address (optional - if users provide location for finding local players)
 
-### Communications:
-- ✅ Chat messages
-- ✅ Voice communication metadata (not content, but connection info)
+**Photos and Videos:**
+- ✅ Photos (profile pictures/avatars)
 
-### Device & App:
-- ✅ Device information
-- ✅ Browser/app version
-- ✅ IP address
-- ✅ Usage patterns
+**Audio Files:**
+- ✅ Voice or sound recordings (WebRTC voice chat for team coordination)
 
-### Gaming Data:
-- ✅ Preferred games list
-- ✅ Match requests and connection history
-- ✅ Matchmaking preferences
+**Messages:**
+- ✅ Other in-app messages (chat between matched players)
+
+**Device or Other IDs:**
+- ✅ Device or other IDs (needed for authentication & device tracking)
+
+**App Activity:**
+- ✅ App activity (user actions: match creation, acceptance, decline, etc.)
+- ✅ App interactions (button clicks, feature usage, etc.)
+- ✅ Other actions (general user behavior within the app)
+
+**In-app Search:**
+- ✅ In-app search history (if you have search for games/players/teams)
+
+**App Info & Performance:**
+- ✅ Crash logs (for debugging)
+- ✅ Diagnostics (app performance metrics)
+- ✅ Other app performance data (stability metrics)
+
+### ❌ DO NOT CHECK THESE (Nexus Match doesn't collect):
+
+- ❌ Calendar
+- ❌ Calendar events
+- ❌ Contacts (you don't access device contact list)
+- ❌ Installed apps
+- ❌ Other user-generated content (unless game reviews/tournament descriptions count)
+- ❌ Web browsing
+- ❌ Web browsing history
+- ❌ Location (unless you're using precise location - just keep "optional")
+- ❌ Financial info (no payments on the platform)
+- ❌ Health and fitness
+- ❌ Emails/SMS/MMS (only in-app messages)
+- ❌ Videos (only if users don't upload gameplay videos)
+- ❌ Music files
+- ❌ Files and docs
 
 ---
 
