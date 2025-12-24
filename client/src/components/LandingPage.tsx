@@ -288,13 +288,21 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
 
       <footer className="text-center py-8 text-gray-400 text-sm border-t border-gray-800">
         <p>&copy; 2025 Nexus Match. Built for the gaming community.</p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
           <a 
             href="/privacy-policy" 
             className="text-cyan-400 hover:underline"
             data-testid="link-privacy-policy"
           >
             Privacy Policy
+          </a>
+          <span className="text-gray-600">•</span>
+          <a 
+            href="/data-deletion-request" 
+            className="text-cyan-400 hover:underline"
+            data-testid="link-data-deletion"
+          >
+            Request Data Deletion
           </a>
         </div>
       </footer>
