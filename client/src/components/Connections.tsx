@@ -610,8 +610,10 @@ export function Connections({ currentUserId }: ConnectionsProps) {
         </div>
       </div>
 
-      {/* Banner Ad */}
-      <AdBanner visible={true} />
+      {/* Banner Ad - Positioned above search bar for mobile */}
+      <div className="mb-4">
+        <AdBanner visible={true} />
+      </div>
 
       {/* Search and Filter Bar */}
       <Card className="mb-6">
