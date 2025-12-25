@@ -37,6 +37,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [isLocked, setIsLocked] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [teammateIds, setTeammateIds] = useState<string[]>([]);
+  const [roadmapFile, setRoadmapFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const { data: invitations = [] } = useQuery<any[]>({
@@ -263,7 +264,17 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   }, [tournaments]);
 
   const handleCreateTournament = async (data: any) => {
-    createMutation.mutate(data);
+    const dataToSubmit = { ...data };
+    if (roadmapFile) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        dataToSubmit.roadmapImageUrl = reader.result as string;
+        createMutation.mutate(dataToSubmit);
+      };
+      reader.readAsDataURL(roadmapFile);
+    } else {
+      createMutation.mutate(dataToSubmit);
+    }
   };
 
   const handleJoinTournament = (tournament: any) => {
@@ -309,6 +320,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
               setIsCreateOpen(open);
               if (!open) {
                 setSelectedTournament(null);
+                setRoadmapFile(null);
                 form.reset({
                   name: "",
                   gameName: "",
@@ -318,6 +330,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   startTime: "",
                   playersPerTeam: 1,
                   description: "",
+                  roadmapImageUrl: "",
                 });
               }
             }}>
@@ -397,7 +410,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                       <FormItem>
                         <FormLabel>Start Date & Time</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" data-testid="input-start-time" {...field} />
+                          <Input type="datetime-local" data-testid="input-start-time" {...field} value={field.value ? (field.value instanceof Date ? field.value.toISOString().slice(0, 16) : field.value) : ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -423,19 +436,9 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Max Participants</FormLabel>
-                      <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={field.value?.toString()}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="4">4</SelectItem>
-                          <SelectItem value="8">8</SelectItem>
-                          <SelectItem value="16">16</SelectItem>
-                          <SelectItem value="32">32</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input type="number" placeholder="16" data-testid="input-max-participants" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -453,6 +456,19 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                     </FormItem>
                   )}
                 />
+                <FormItem>
+                  <FormLabel>Tournament Roadmap Photo</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      data-testid="input-roadmap-photo"
+                      onChange={(e) => setRoadmapFile(e.target.files?.[0] || null)}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground mt-1">Upload a roadmap or bracket image for this tournament</p>
+                  <FormMessage />
+                </FormItem>
                 <Button type="submit" className="w-full" disabled={createMutation.isPending || isLocked} data-testid="button-submit-tournament">
                   {createMutation.isPending ? "Saving..." : (selectedTournament ? "Update Tournament" : "Create Tournament")}
                 </Button>

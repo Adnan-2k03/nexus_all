@@ -75,6 +75,7 @@ export const tournaments = pgTable("tournaments", {
   playersPerTeam: integer("players_per_team").default(1),
   status: varchar("status").notNull().default("upcoming"),
   description: text("description"), // Admin Description field
+  roadmapImageUrl: varchar("roadmap_image_url"), // Roadmap photo URL
   createdBy: varchar("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -182,7 +183,13 @@ export type TournamentParticipantWithUser = TournamentParticipant & {
   gamertag: string | null;
   profileImageUrl: string | null;
 };
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true });
+export const insertTournamentSchema = createInsertSchema(tournaments)
+  .omit({ id: true, createdBy: true, createdAt: true })
+  .extend({
+    startTime: z.string().or(z.date()).transform(val => val ? new Date(val) : undefined).optional(),
+    maxParticipants: z.number().int().min(2).or(z.string().transform(v => parseInt(v))),
+    roadmapImageUrl: z.string().optional()
+  });
 export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true });
 
 export const sendPhoneCodeSchema = z.object({
