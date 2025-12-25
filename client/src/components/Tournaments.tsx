@@ -31,6 +31,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [gameUsername, setGameUsername] = useState("");
   const [saveProfile, setSaveProfile] = useState(true);
   const [announcement, setAnnouncement] = useState("");
+  const [query, setQuery] = useState("");
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const { toast } = useToast();
@@ -73,7 +74,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       return res.json();
     },
     onSuccess: () => {
-      setAnnouncement("");
+      setQuery("");
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
     }
   });
@@ -296,7 +297,14 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+              // Also invalidate expanded tournament details if one is expanded
+              if (expandedTournament) {
+                queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
+              }
+            }}
             data-testid="button-refresh-tournaments"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -605,20 +613,20 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                             </div>
                             <div className="flex gap-2">
                               <Input 
-                                value={announcement}
-                                onChange={(e) => setAnnouncement(e.target.value)}
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Type a message or voice channel..."
                                 className="text-sm"
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && announcement && !sendChatMutation.isPending) {
-                                    sendChatMutation.mutate({ id: tournament.id, message: announcement });
+                                  if (e.key === 'Enter' && query && !sendChatMutation.isPending) {
+                                    sendChatMutation.mutate({ id: tournament.id, message: query });
                                   }
                                 }}
                               />
                               <Button 
                                 size="icon" 
-                                disabled={!announcement || sendChatMutation.isPending}
-                                onClick={() => sendChatMutation.mutate({ id: tournament.id, message: announcement })}
+                                disabled={!query || sendChatMutation.isPending}
+                                onClick={() => sendChatMutation.mutate({ id: tournament.id, message: query })}
                               >
                                 <Send className="h-4 w-4" />
                               </Button>

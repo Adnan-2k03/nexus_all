@@ -256,6 +256,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/tournaments/:tournamentId/participants/:participantId", authMiddleware, async (req: any, res) => {
+    try {
+      const { tournamentId, participantId } = req.params;
+      const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
+
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) return res.status(404).json({ message: "Tournament not found" });
+
+      if (tournament.createdBy !== userId && !(req.session as any).isAdmin) {
+        return res.status(403).json({ message: "Only the host can remove participants" });
+      }
+
+      await storage.removeTournamentParticipant(tournamentId, participantId);
+      res.json({ message: "Participant removed successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove participant" });
+    }
+  });
+
   app.get("/api/tournaments/:tournamentId/participants", async (req, res) => {
     try {
       const { tournamentId } = req.params;

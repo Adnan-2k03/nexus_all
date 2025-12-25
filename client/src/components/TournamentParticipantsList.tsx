@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface TournamentParticipantsListProps {
   tournamentId: string;
@@ -10,6 +12,7 @@ interface TournamentParticipantsListProps {
 }
 
 export function TournamentParticipantsList({ tournamentId, isHost }: TournamentParticipantsListProps) {
+  const { toast } = useToast();
   const { data: participants = [], isLoading } = useQuery({
     queryKey: ["/api/tournaments", tournamentId, "participants"],
     queryFn: async () => {
@@ -19,6 +22,29 @@ export function TournamentParticipantsList({ tournamentId, isHost }: TournamentP
       if (!res.ok) throw new Error("Failed to fetch participants");
       return res.json();
     },
+    refetchInterval: 2000,
+  });
+
+  const removeParticipantMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${tournamentId}/participants/${participantId}`), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to remove participant");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournamentId, "participants"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({ title: "Success", description: "Participant removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
   });
 
   if (isLoading) {
@@ -49,7 +75,14 @@ export function TournamentParticipantsList({ tournamentId, isHost }: TournamentP
               </p>
             </div>
             {isHost && (
-              <Button size="icon" variant="ghost" className="h-6 w-6" data-testid={`button-remove-participant-${participant.id}`}>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6" 
+                onClick={() => removeParticipantMutation.mutate(participant.id)}
+                disabled={removeParticipantMutation.isPending}
+                data-testid={`button-remove-participant-${participant.id}`}
+              >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             )}
