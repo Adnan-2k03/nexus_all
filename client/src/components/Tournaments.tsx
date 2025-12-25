@@ -182,6 +182,12 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
   });
 
+  useEffect(() => {
+    if (tournaments.length > 0 && !expandedTournament) {
+      setExpandedTournament(tournaments[0].id);
+    }
+  }, [tournaments, expandedTournament]);
+
   const { data: userTournaments = [] } = useQuery<any[]>({
     queryKey: ["/api/user/tournaments", currentUserId],
     queryFn: async () => {
@@ -256,10 +262,12 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   });
 
   const activeTournaments = useMemo(() => {
+    if (!Array.isArray(tournaments)) return [];
     return tournaments.filter((t: any) => t.status !== "completed");
   }, [tournaments]);
 
   const completedTournaments = useMemo(() => {
+    if (!Array.isArray(tournaments)) return [];
     return tournaments.filter((t: any) => t.status === "completed");
   }, [tournaments]);
 
@@ -330,7 +338,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   startTime: "",
                   playersPerTeam: 1,
                   description: "",
-                  roadmapImageUrl: "",
                 });
               }
             }}>
@@ -410,7 +417,18 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                       <FormItem>
                         <FormLabel>Start Date & Time</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" data-testid="input-start-time" {...field} value={field.value ? (field.value instanceof Date ? field.value.toISOString().slice(0, 16) : field.value) : ""} />
+                          <Input 
+                            type="datetime-local" 
+                            data-testid="input-start-time" 
+                            {...field} 
+                            value={
+                              field.value 
+                                ? (typeof field.value === 'string' 
+                                    ? field.value 
+                                    : new Date(field.value).toISOString().slice(0, 16)) 
+                                : ""
+                            } 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -660,7 +678,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                             </div>
                           </Card>
 
-                          {isExpanded && (
+                          {isExpanded ? (
                             <div className="grid md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
                               <Card className="p-4 border-indigo-500/20">
                                 <h4 className="font-semibold flex items-center gap-2 mb-3">
@@ -716,7 +734,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                 </div>
                               </Card>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       );
                     })}
