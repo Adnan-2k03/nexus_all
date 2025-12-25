@@ -633,14 +633,18 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                             </div>
                           </Card>
 
-                          {/* Participants Details (For Host) */}
+                          {/* Registered Players Section */}
                           <Card className="p-4 border-muted">
                             <h4 className="font-semibold flex items-center gap-2 mb-3">
                               <Users className="h-4 w-4" />
                               Registered Players
                             </h4>
                             <div className="space-y-2 h-[240px] overflow-y-auto pr-2">
-                              <TournamentParticipantsList tournamentId={tournament.id} isHost={isCreator || isAdmin} />
+                              <TournamentParticipantsList 
+                                tournamentId={tournament.id} 
+                                isHost={isCreator || isAdmin} 
+                                onParticipantsChange={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
+                              />
                             </div>
                           </Card>
                         </div>
