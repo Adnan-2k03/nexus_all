@@ -35,7 +35,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [isLocked, setIsLocked] = useState(false);
   const { toast } = useToast();
   
-  const { data: user } = useQuery({
+  const { data: user = { coins: 0, gameProfiles: {} } } = useQuery({
     queryKey: ["/api/auth/user"],
   });
 
