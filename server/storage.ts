@@ -28,6 +28,7 @@ import {
   groupMessages,
   tournaments,
   tournamentParticipants,
+  userGameProfiles,
   featureFlags,
   type User,
   type FeatureFlag,
@@ -100,6 +101,8 @@ import {
   type InsertTournamentParticipant,
   type TournamentWithDetails,
   type TournamentParticipantWithUser,
+  type UserGameProfile,
+  type InsertUserGameProfile,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, sql, ne, notInArray } from "drizzle-orm";
@@ -284,6 +287,12 @@ export interface IStorage {
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   getUserTournaments(userId: string): Promise<TournamentWithDetails[]>;
   joinTournament(tournamentId: string, userId: string): Promise<TournamentParticipant>;
+
+  // User game profile operations
+  getUserGameProfiles(userId: string): Promise<UserGameProfile[]>;
+  getUserGameProfile(userId: string, game: string): Promise<UserGameProfile | undefined>;
+  createOrUpdateGameProfile(profile: InsertUserGameProfile): Promise<UserGameProfile>;
+  deleteGameProfile(userId: string, game: string): Promise<void>;
 
   // Feature Flags operations
   getFeatureFlag(featureName: string): Promise<FeatureFlag | undefined>;
@@ -2266,6 +2275,37 @@ export class DatabaseStorage implements IStorage {
       status: "joined",
     }).returning();
     return participant;
+  }
+
+  // User game profile operations
+  async getUserGameProfiles(userId: string): Promise<UserGameProfile[]> {
+    return await db.select().from(userGameProfiles).where(eq(userGameProfiles.userId, userId));
+  }
+
+  async getUserGameProfile(userId: string, game: string): Promise<UserGameProfile | undefined> {
+    const [profile] = await db.select().from(userGameProfiles)
+      .where(and(eq(userGameProfiles.userId, userId), eq(userGameProfiles.game, game)));
+    return profile;
+  }
+
+  async createOrUpdateGameProfile(profile: InsertUserGameProfile): Promise<UserGameProfile> {
+    const existing = await this.getUserGameProfile(profile.userId, profile.game);
+    
+    if (existing) {
+      const [updated] = await db.update(userGameProfiles)
+        .set({ gameId: profile.gameId, gameName: profile.gameName, updatedAt: new Date() })
+        .where(and(eq(userGameProfiles.userId, profile.userId), eq(userGameProfiles.game, profile.game)))
+        .returning();
+      return updated;
+    }
+    
+    const [newProfile] = await db.insert(userGameProfiles).values(profile).returning();
+    return newProfile;
+  }
+
+  async deleteGameProfile(userId: string, game: string): Promise<void> {
+    await db.delete(userGameProfiles)
+      .where(and(eq(userGameProfiles.userId, userId), eq(userGameProfiles.game, game)));
   }
 
   // Feature Flags operations

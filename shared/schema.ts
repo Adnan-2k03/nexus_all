@@ -682,6 +682,21 @@ export const tournamentMatches = pgTable("tournament_matches", {
   index("idx_tournament_matches_date").on(table.matchDate),
 ]);
 
+// User game profiles table - stores in-game IDs for specific games
+export const userGameProfiles = pgTable("user_game_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  game: varchar("game").notNull(), // e.g., "INDUS_BR", "FAUG"
+  gameId: varchar("game_id").notNull(), // In-game ID/username
+  gameName: varchar("game_name").notNull(), // Display name in-game
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_user_game_profiles_user").on(table.userId),
+  index("idx_user_game_profiles_game").on(table.game),
+  unique("unique_user_game").on(table.userId, table.game),
+]);
+
 // Derived types for userCredits
 export type UserCredits = typeof userCredits.$inferSelect;
 export type InsertUserCredits = typeof userCredits.$inferInsert;
@@ -778,9 +793,14 @@ export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;
 export type InsertTournamentParticipant = typeof tournamentParticipants.$inferInsert;
 export type TournamentMatch = typeof tournamentMatches.$inferSelect;
 export type InsertTournamentMatch = typeof tournamentMatches.$inferInsert;
+export type UserGameProfile = typeof userGameProfiles.$inferSelect;
+export type InsertUserGameProfile = typeof userGameProfiles.$inferInsert;
 
 // Insert schemas
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true, updatedAt: true });
+export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true, updatedAt: true }).extend({
+  prizePool: z.coerce.number(),
+  maxParticipants: z.coerce.number(),
+});
 export const insertTournamentParticipantSchema = createInsertSchema(tournamentParticipants).omit({ id: true, joinedAt: true });
 export const insertTournamentMatchSchema = createInsertSchema(tournamentMatches).omit({ id: true, createdAt: true });
 

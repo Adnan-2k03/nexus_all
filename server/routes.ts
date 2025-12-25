@@ -3435,6 +3435,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User game profiles routes
+  app.get("/api/user/game-profiles", authMiddleware, async (req: any, res) => {
+    try {
+      const profiles = await storage.getUserGameProfiles(req.user.id);
+      res.json(profiles);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/user/game-profiles", authMiddleware, async (req: any, res) => {
+    try {
+      const { game, gameId, gameName } = req.body;
+      if (!game || !gameId || !gameName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      const profile = await storage.createOrUpdateGameProfile({
+        userId: req.user.id,
+        game,
+        gameId,
+        gameName,
+      });
+      res.status(201).json(profile);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.delete("/api/user/game-profiles/:game", authMiddleware, async (req: any, res) => {
+    try {
+      await storage.deleteGameProfile(req.user.id, req.params.game);
+      res.json({ message: "Profile deleted" });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
   // Admin login - simple password-based login for admin panel
   app.post("/api/admin/login", async (req: any, res) => {
     try {
