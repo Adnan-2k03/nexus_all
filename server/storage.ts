@@ -21,6 +21,7 @@ export interface IStorage {
   createUser(data: any): Promise<User>;
   getMatchRequests(filters: any): Promise<any>;
   createMatchRequest(data: any): Promise<any>;
+  respondToInvitation(id: string, userId: string, accept: boolean): Promise<any>;
 }
 import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts } from "@shared/schema";
 import { db } from "./db";
@@ -265,6 +266,11 @@ export class DatabaseStorage implements IStorage {
   async createMatchRequest(data: any): Promise<any> {
     // Stub implementation for now
     return {};
+  }
+
+  async respondToInvitation(id: string, userId: string, accept: boolean): Promise<any> {
+    // Stub implementation for now
+    return { success: true };
   }
 }
 

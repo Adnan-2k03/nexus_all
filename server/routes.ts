@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update tournament
-  app.patch("/api/tournaments/:id", authMiddleware, async (req: any, res) => {
+  app.patch("/api/tournaments/:id", authMiddleware, async (req: any, res: any) => {
     try {
       const tournamentId = req.params.id;
       const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
@@ -397,8 +397,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only the host can edit this tournament" });
       }
 
-      const updateData = req.body;
+      const updateData = { ...req.body };
       console.log("[Tournament Update] Updating with data:", updateData);
+
+      // Convert startTime string to Date object if present
+      if (updateData.startTime && typeof updateData.startTime === 'string') {
+        const date = new Date(updateData.startTime);
+        if (!isNaN(date.getTime())) {
+          updateData.startTime = date;
+        } else {
+          delete updateData.startTime;
+        }
+      }
 
       const [updated] = await db.update(tournaments)
         .set(updateData)
@@ -429,7 +439,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!roomId) return res.status(400).json({ message: "Room ID is required" });
       
-      const token = await hmsService.generateAuthToken(roomId, userId, role || 'guest');
+      const token = await hmsService.generateAuthToken({
+        roomId,
+        userId,
+        role: (role as 'guest' | 'host' | 'speaker') || 'guest'
+      });
       res.json({ token });
     } catch (error) {
       console.error("HMS Token Error:", error);
