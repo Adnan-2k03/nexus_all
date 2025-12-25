@@ -133,12 +133,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tournaments", authMiddleware, async (req: any, res) => {
     try {
+      // Get user ID from request - either from passport user or admin session
+      const userId = req.user?.id || (req.session as any).isAdmin ? "admin-user" : null;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const tournament = await storage.createTournament({
         ...req.body,
-        createdBy: req.user.id,
+        createdBy: userId,
       });
       res.status(201).json(tournament);
     } catch (error) {
+      console.error("[Tournament Creation] Error:", error);
       res.status(500).json({ message: "Failed to create tournament" });
     }
   });
