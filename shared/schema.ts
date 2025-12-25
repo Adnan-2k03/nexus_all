@@ -71,6 +71,8 @@ export const tournaments = pgTable("tournaments", {
   prizePool: integer("prize_pool").notNull(),
   entryFee: integer("entry_fee").default(0),
   maxParticipants: integer("max_participants").notNull(),
+  startTime: timestamp("start_time"),
+  playersPerTeam: integer("players_per_team").default(1),
   status: varchar("status").notNull().default("upcoming"),
   createdBy: varchar("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),

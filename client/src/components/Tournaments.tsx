@@ -154,7 +154,10 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       name: "",
       gameName: "",
       prizePool: 100,
+      entryFee: 0,
       maxParticipants: 16,
+      startTime: "",
+      playersPerTeam: 1,
     },
   });
 
@@ -386,12 +389,53 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                     <FormItem>
                       <FormLabel>Prize Pool (Credits)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="100" data-testid="input-prize-pool" {...field} />
+                        <Input type="number" placeholder="100" data-testid="input-prize-pool" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="entryFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Entry Fee (Coins)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0" data-testid="input-entry-fee" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Date & Time</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" data-testid="input-start-time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="playersPerTeam"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Players Per Team</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="1" data-testid="input-players-per-team" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={form.control}
                   name="maxParticipants"
@@ -498,18 +542,28 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               <Badge variant={tournament.status === "active" ? "default" : "secondary"} data-testid={`badge-tournament-status-${tournament.id}`}>{tournament.status}</Badge>
                               {isCreator && <Badge variant="outline">Host</Badge>}
                             </div>
-                            <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <span>{tournament.gameName}</span>
                               </span>
                               <span className="flex items-center gap-1">
                                 <Coins className="h-4 w-4 text-yellow-500" />
-                                {tournament.prizePool} credits
+                                {tournament.prizePool} pool
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Lock className="h-4 w-4 text-orange-500" />
+                                {tournament.entryFee} fee
                               </span>
                               <span className="flex items-center gap-1">
                                 <Users className="h-4 w-4" />
-                                {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants}
+                                {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants} ({tournament.playersPerTeam}v{tournament.playersPerTeam})
                               </span>
+                              {tournament.startTime && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  {new Date(tournament.startTime).toLocaleString()}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="flex gap-2 items-center">

@@ -164,7 +164,7 @@ export class DatabaseStorage implements IStorage {
     }).from(tournamentMessages)
       .leftJoin(users, eq(tournamentMessages.senderId, users.id))
       .where(eq(tournamentMessages.tournamentId, tournamentId))
-      .orderBy(desc(tournamentMessages.createdAt));
+      .orderBy(tournamentMessages.createdAt);
   }
 
   async upsertUser(data: InsertUser): Promise<User> {
