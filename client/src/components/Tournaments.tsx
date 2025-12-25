@@ -182,12 +182,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
   });
 
-  useEffect(() => {
-    if (tournaments.length > 0 && !expandedTournament) {
-      setExpandedTournament(tournaments[0].id);
-    }
-  }, [tournaments, expandedTournament]);
-
   const { data: userTournaments = [] } = useQuery<any[]>({
     queryKey: ["/api/user/tournaments", currentUserId],
     queryFn: async () => {
@@ -678,12 +672,12 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                             </div>
                           </Card>
 
-                          {isExpanded ? (
+                          {isExpanded && (
                             <div className="grid md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
                               <Card className="p-4 border-indigo-500/20">
                                 <h4 className="font-semibold flex items-center gap-2 mb-3">
                                   <MessageSquare className="h-4 w-4 text-indigo-400" />
-                                  Announcements & Match Details
+                                  Announcements
                                 </h4>
                                 <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
                                   {messages.filter((m: any) => m.isAnnouncement).length === 0 ? (
@@ -705,7 +699,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                     <Input 
                                       value={announcement}
                                       onChange={(e) => setAnnouncement(e.target.value)}
-                                      placeholder="Post ID/Password or details..."
+                                      placeholder="Post announcement..."
                                       className="text-sm h-9"
                                     />
                                     <Button 
@@ -723,18 +717,52 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               <Card className="p-4 border-muted">
                                 <h4 className="font-semibold flex items-center gap-2 mb-3">
                                   <Users className="h-4 w-4" />
-                                  Registered Players
+                                  Queries
                                 </h4>
-                                <div className="space-y-2 h-[240px] overflow-y-auto pr-2">
-                                  <TournamentParticipantsList 
-                                    tournamentId={tournament.id} 
-                                    isHost={isCreator || isAdmin} 
-                                    onParticipantsChange={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
+                                <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
+                                  {messages.filter((m: any) => !m.isAnnouncement).length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-8">No messages yet</p>
+                                  ) : (
+                                    messages.filter((m: any) => !m.isAnnouncement).map((msg: any) => (
+                                      <div key={msg.id} className="p-2 rounded text-sm bg-muted/50">
+                                        <div className="flex justify-between items-start mb-1">
+                                          <span className="font-semibold">{msg.senderGamertag}</span>
+                                          <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                        </div>
+                                        <p className="whitespace-pre-wrap">{msg.message}</p>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Input 
+                                    placeholder="Ask a question..."
+                                    className="text-sm h-9"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                        sendAnnouncementMutation.mutate({ id: tournament.id, message: e.currentTarget.value });
+                                        e.currentTarget.value = '';
+                                      }
+                                    }}
                                   />
+                                  <Button 
+                                    size="icon" 
+                                    className="shrink-0 h-9 w-9"
+                                    disabled={sendAnnouncementMutation.isPending}
+                                    onClick={(e) => {
+                                      const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
+                                      if (input && input.value.trim()) {
+                                        sendAnnouncementMutation.mutate({ id: tournament.id, message: input.value });
+                                        input.value = '';
+                                      }
+                                    }}
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </Card>
                             </div>
-                          ) : null}
+                          )}
                         </div>
                       );
                     })}
