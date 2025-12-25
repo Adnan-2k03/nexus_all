@@ -2384,7 +2384,7 @@ export class DatabaseStorage implements IStorage {
     const [participant] = await db.insert(tournamentParticipants).values({
       tournamentId,
       userId,
-      status: "joined",
+      status: "registered",
     }).returning();
     return participant;
   }

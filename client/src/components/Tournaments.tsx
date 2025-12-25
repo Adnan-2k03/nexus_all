@@ -33,6 +33,11 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
 
   const { data: messages = [] } = useQuery({
     queryKey: ["/api/tournaments", expandedTournament, "messages"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/messages`), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch messages");
+      return res.json();
+    },
     enabled: !!expandedTournament,
     refetchInterval: 5000,
   });

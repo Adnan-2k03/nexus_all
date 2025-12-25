@@ -3661,3 +3661,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   return httpServer;
 }
+
+  // Daily reward endpoint
+  app.post("/api/user/claim-reward", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const result = await storage.claimDailyReward(userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error claiming reward:", error);
+      res.status(500).json({ message: "Failed to claim reward" });
+    }
+  });
+
+  // Tournament registration with coins and saved profile
+  app.post("/api/tournaments/:id/join-with-coins", authMiddleware, async (req: any, res) => {
+    try {
+      const { id: tournamentId } = req.params;
+      const userId = req.user.id;
+      const { inGameName, inGameId, saveProfile } = req.body;
+
+      if (!inGameName || !inGameId) {
+        return res.status(400).json({ message: "In-game name and ID are required" });
+      }
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) return res.status(404).json({ message: "Tournament not found" });
+
+      const entryFee = (tournament as any).entryFee || 0;
+
+      // Save profile if requested
+      if (saveProfile) {
+        await (storage as any).updateUserGameProfiles(userId, tournament.gameName, inGameName, inGameId);
+      }
+
+      const participant = await (storage as any).joinTournamentWithCoins(
+        tournamentId, 
+        userId, 
+        { inGameName, inGameId }, 
+        entryFee
+      );
+
+      res.status(201).json(participant);
+    } catch (error: any) {
+      console.error("Error joining tournament:", error);
+      res.status(error.message === "Insufficient coins" ? 400 : 500).json({ message: error.message });
+    }
+  });
+
+  // Tournament host messages
+  app.post("/api/tournaments/:id/announcements", authMiddleware, async (req: any, res) => {
+    try {
+      const { id: tournamentId } = req.params;
+      const userId = req.user.id;
+      const { message } = req.body;
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) return res.status(404).json({ message: "Tournament not found" });
+      
+      if (tournament.createdBy !== userId && !(req.user as any).isAdmin) {
+        return res.status(403).json({ message: "Only the host can send announcements" });
+      }
+
+      const msg = await (storage as any).sendTournamentMessage(tournamentId, userId, message, true);
+      res.status(201).json(msg);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to send announcement" });
+    }
+  });
+
+  app.get("/api/tournaments/:id/messages", authMiddleware, async (req: any, res) => {
+    try {
+      const { id: tournamentId } = req.params;
+      const messages = await (storage as any).getTournamentMessages(tournamentId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
