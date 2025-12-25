@@ -242,6 +242,11 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
+  // Check for admin session
+  if ((req.session as any).isAdmin && (req.session as any).adminToken) {
+    return next();
+  }
+  // Check for regular authentication
   if (req.isAuthenticated()) {
     return next();
   }
