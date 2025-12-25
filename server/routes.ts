@@ -152,8 +152,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Parse and validate tournament data
+      let tournamentData = { ...req.body };
+      
+      // Ensure maxParticipants is a number
+      if (typeof tournamentData.maxParticipants === 'string') {
+        tournamentData.maxParticipants = parseInt(tournamentData.maxParticipants);
+      }
+      
+      // Ensure playersPerTeam is a number
+      if (typeof tournamentData.playersPerTeam === 'string') {
+        tournamentData.playersPerTeam = parseInt(tournamentData.playersPerTeam);
+      }
+      
+      // Handle startTime - convert string to Date or keep as null
+      if (tournamentData.startTime) {
+        if (typeof tournamentData.startTime === 'string') {
+          tournamentData.startTime = new Date(tournamentData.startTime);
+        }
+        // If the date is invalid, set to undefined
+        if (isNaN(tournamentData.startTime.getTime())) {
+          tournamentData.startTime = undefined;
+        }
+      }
+
       const tournament = await storage.createTournament({
-        ...req.body,
+        ...tournamentData,
         createdBy: userId,
       });
       res.status(201).json(tournament);

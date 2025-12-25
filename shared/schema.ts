@@ -186,8 +186,8 @@ export type TournamentParticipantWithUser = TournamentParticipant & {
 export const insertTournamentSchema = createInsertSchema(tournaments)
   .omit({ id: true, createdBy: true, createdAt: true })
   .extend({
-    startTime: z.string().or(z.date()).transform(val => val ? new Date(val) : undefined).optional(),
-    maxParticipants: z.number().int().min(2).or(z.string().transform(v => parseInt(v))),
+    startTime: z.date().nullish(),
+    maxParticipants: z.number().int().min(2),
     roadmapImageUrl: z.string().optional()
   });
 export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true });
