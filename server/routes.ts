@@ -208,19 +208,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:id/announcements", authMiddleware, async (req: any, res) => {
     try {
       const { id: tournamentId } = req.params;
-      const userId = req.user.id;
+      // Handle both regular users and admin users
+      const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
       const { message } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
 
       const tournament = await storage.getTournament(tournamentId);
       if (!tournament) return res.status(404).json({ message: "Tournament not found" });
       
-      if (tournament.createdBy !== userId && !(req.user as any).isAdmin) {
+      // Allow if user is tournament creator OR is admin
+      if (tournament.createdBy !== userId && !(req.session as any).isAdmin) {
         return res.status(403).json({ message: "Only the host can send announcements" });
       }
 
       const msg = await storage.sendTournamentMessage(tournamentId, userId, message, true);
       res.status(201).json(msg);
     } catch (error) {
+      console.error("[Tournament Message] Error:", error);
       res.status(500).json({ message: "Failed to send announcement" });
     }
   });

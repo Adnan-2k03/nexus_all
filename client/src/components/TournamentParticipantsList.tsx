@@ -31,27 +31,31 @@ export function TournamentParticipantsList({ tournamentId, isHost }: TournamentP
 
   return (
     <div className="space-y-2">
-      {participants.map((participant: any) => (
-        <div
-          key={participant.id}
-          className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded text-sm"
-          data-testid={`participant-${participant.id}`}
-        >
-          <div>
-            <p className="font-medium" data-testid={`text-participant-name-${participant.id}`}>
-              {participant.inGameName}
-            </p>
-            <p className="text-xs text-muted-foreground" data-testid={`text-participant-id-${participant.id}`}>
-              {participant.inGameId}
-            </p>
+      {participants.map((participant: any) => {
+        const inGameName = participant.gameDetails?.inGameName || "Unknown";
+        const inGameId = participant.gameDetails?.inGameId || "N/A";
+        return (
+          <div
+            key={participant.id}
+            className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded text-sm"
+            data-testid={`participant-${participant.id}`}
+          >
+            <div>
+              <p className="font-medium" data-testid={`text-participant-name-${participant.id}`}>
+                {inGameName}
+              </p>
+              <p className="text-xs text-muted-foreground" data-testid={`text-participant-id-${participant.id}`}>
+                {inGameId}
+              </p>
+            </div>
+            {isHost && (
+              <Button size="icon" variant="ghost" className="h-6 w-6" data-testid={`button-remove-participant-${participant.id}`}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
           </div>
-          {isHost && (
-            <Button size="icon" variant="ghost" className="h-6 w-6" data-testid={`button-remove-participant-${participant.id}`}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
