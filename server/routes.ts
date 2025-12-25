@@ -16,7 +16,7 @@ import { sendPushNotification } from "./pushNotifications";
 import { r2Storage, generateFileKey } from "./services/r2-storage";
 import { hmsService, generateRoomName } from "./services/hms-service";
 import { verifyFirebaseToken, isPhoneAuthConfigured } from "./services/firebase-admin";
-import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema, creditTransactions, feedback as feedbackTable } from "@shared/schema";
+import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema, creditTransactions, feedback as feedbackTable, hobbies, Hobby, InsertHobby } from "@shared/schema";
 import { db } from "./db";
 import { eq as dbEq, desc as dbDesc, eq, and, desc, or } from "drizzle-orm";
 import { users, tournaments, tournamentParticipants, tournamentMessages } from "@shared/schema";
@@ -62,6 +62,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await setupAuth(app);
   }
 
+  // --- Admin Login ---
+  app.post("/api/admin/login", async (req, res) => {
+    const { password } = req.body;
+    console.log(`[Admin Login] Attempt with password: ${password}`);
+    console.log(`[Admin Login] Expected password: ${process.env.ADMIN_PASSWORD}`);
+    if (password === process.env.ADMIN_PASSWORD) {
+      const adminToken = "admin-token-" + Date.now();
+      (req.session as any).adminToken = adminToken;
+      (req.session as any).isAdmin = true;
+      req.session.save((err) => {
+        if (err) {
+          console.error("[Admin Login] Session save error:", err);
+          return res.status(500).json({ message: "Session save failed" });
+        }
+        console.log("[Admin Login] Success, token generated");
+        res.json({ token: adminToken });
+      });
+    } else {
+      console.warn("[Admin Login] Invalid password attempt");
+      res.status(401).json({ message: "Invalid admin password" });
+    }
+  });
+
+  // --- Gamertag Login ---
+  app.post("/api/auth/gamertag-login", async (req, res) => {
+    const { gamertag } = req.body;
+    if (!gamertag || gamertag.length < 3) {
+      return res.status(400).json({ message: "Gamertag must be at least 3 characters" });
+    }
+    try {
+      let user = await storage.getUserByGamertag(gamertag);
+      if (!user) {
+        user = await storage.createUser({ gamertag, coins: 100 });
+      }
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed" });
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ message: "Session save failed" });
+          res.json(user);
+        });
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // --- Daily Rewards ---
   app.post("/api/user/claim-reward", authMiddleware, async (req: any, res) => {
     try {
@@ -74,6 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Tournaments ---
   // --- Tournaments ---
   app.get("/api/tournaments", async (req, res) => {
     try {
@@ -230,13 +277,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid match request data" });
       } else {
+        console.error("[Match Request] Error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
   });
 
   app.get("/api/auth/user", (req, res) => {
+    // Session debug
+    console.log(`[Auth Check] Session ID: ${req.sessionID}`);
+    console.log(`[Auth Check] Session data: ${JSON.stringify(req.session)}`);
+    console.log(`[Auth Check] User authenticated: ${req.isAuthenticated()}`);
+    
     if (req.isAuthenticated()) {
+      console.log(`[Auth Check] User data: ${JSON.stringify(req.user)}`);
       res.json(req.user);
     } else {
       res.status(401).json({ message: "Unauthorized" });

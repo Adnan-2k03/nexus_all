@@ -51,8 +51,8 @@ import { subscribeToOverlayState } from "@/lib/voice-overlay-plugin";
 // Types
 import type { User } from "@shared/schema";
 
-// Utility function to convert database User (with nulls) to component-compatible user (with undefined)
-function mapUserForComponents(user: User) {
+const mapUserForComponents = (user: User | null) => {
+  if (!user) return undefined;
   return {
     id: user.id,
     gamertag: user.gamertag || "",
@@ -67,7 +67,7 @@ function mapUserForComponents(user: User) {
     preferredGames: user.preferredGames ?? undefined,
     isAdmin: user.isAdmin ?? false,
   };
-}
+};
 
 function Router() {
   // Real authentication using useAuth hook
@@ -371,7 +371,7 @@ function Router() {
               </h1>
               {user && user.gamertag && (
                 <UserProfile
-                  {...mapUserForComponents(user)}
+                  {...mapUserForComponents(user as User)}
                   isOwn={true}
                   onEdit={() => handleNavigation("profile-setup")}
                 />
@@ -560,7 +560,7 @@ function Router() {
                       <GameNavigation
                         currentPage={currentPage as any}
                         onNavigate={handleNavigation}
-                        user={mapUserForComponents(user)}
+                        user={mapUserForComponents(user as User) as any}
                         onLogout={handleLogout}
                       />
                     )}
@@ -579,11 +579,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}
@@ -604,11 +604,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}
@@ -631,7 +631,7 @@ function Router() {
                       <GameNavigation
                         currentPage={currentPage as any}
                         onNavigate={handleNavigation}
-                        user={mapUserForComponents(user)}
+                        user={mapUserForComponents(user as User) as any}
                         onLogout={handleLogout}
                       />
                     )}
@@ -658,7 +658,7 @@ function Router() {
                       <GameNavigation
                         currentPage={currentPage as any}
                         onNavigate={handleNavigation}
-                        user={mapUserForComponents(user)}
+                        user={mapUserForComponents(user as User) as any}
                         onLogout={handleLogout}
                       />
                     )}
@@ -677,11 +677,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}
@@ -716,11 +716,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}
@@ -738,11 +738,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}
@@ -760,11 +760,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}
@@ -782,11 +782,11 @@ function Router() {
               }
               return (
                 <div className="min-h-screen relative">
-                  {user && user.gamertag && (
+                  {mapUserForComponents(user as User | null) && (
                     <GameNavigation
                       currentPage={currentPage as any}
                       onNavigate={handleNavigation}
-                      user={mapUserForComponents(user)}
+                      user={mapUserForComponents(user as User | null) as any}
                       onLogout={handleLogout}
                     />
                   )}

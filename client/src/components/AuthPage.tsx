@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gamepad2, Phone, Shield } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
-import type { RegisterUser } from "@shared/schema";
+import type { User } from "@shared/schema";
 import { getApiUrl } from "@/lib/api";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
@@ -49,7 +49,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ message: "Failed to login" }));
         toast({
           title: "Error",
           description: error.message || "Failed to login",
@@ -58,8 +58,13 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         return;
       }
 
-      setGamertagInput("");
-      onAuthSuccess();
+      const userData = await response.json();
+      console.log("[Auth] Gamertag login successful:", userData);
+      
+      // Wait a moment for session to settle
+      setTimeout(() => {
+        onAuthSuccess();
+      }, 500);
     } catch (error) {
       toast({
         title: "Error",

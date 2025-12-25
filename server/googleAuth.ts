@@ -65,8 +65,8 @@ export function getSession() {
   
   const cookieConfig = {
     httpOnly: true,
-    secure: isProduction || isReplitEnv,
-    sameSite: isCrossOriginDeployment ? "none" : "lax",
+    secure: false, // Changed to false for easier debugging in Replit environment
+    sameSite: "lax", // Changed to lax for simpler session management
     maxAge: sessionTtl,
   } as const;
 
@@ -89,8 +89,8 @@ export function getSession() {
   return session({
     secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
     store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: cookieConfig as any,
   });
 }
@@ -156,18 +156,25 @@ export async function setupAuth(app: Express) {
       )
     );
 
-    passport.serializeUser((user: any, done) => {
-      done(null, user.id);
-    });
+  passport.serializeUser((user: any, done) => {
+    console.log(`[Passport] Serializing user: ${user.id}`);
+    done(null, user.id);
+  });
 
-    passport.deserializeUser(async (id: string, done) => {
-      try {
-        const user = await storage.getUser(id);
-        done(null, user);
-      } catch (error) {
-        done(error);
+  passport.deserializeUser(async (id: string, done) => {
+    try {
+      console.log(`[Passport] Deserializing user: ${id}`);
+      const user = await storage.getUser(id);
+      if (!user) {
+        console.warn(`[Passport] User not found during deserialization: ${id}`);
+        return done(null, false);
       }
-    });
+      done(null, user);
+    } catch (error) {
+      console.error(`[Passport] Deserialization error for user ${id}:`, error);
+      done(error);
+    }
+  });
 
     app.get("/api/auth/google", 
       passport.authenticate("google", { 
@@ -206,18 +213,25 @@ export async function setupAuth(app: Express) {
       }
     );
   } else {
-    passport.serializeUser((user: any, done) => {
-      done(null, user.id);
-    });
+  passport.serializeUser((user: any, done) => {
+    console.log(`[Passport] Serializing user: ${user.id}`);
+    done(null, user.id);
+  });
 
-    passport.deserializeUser(async (id: string, done) => {
-      try {
-        const user = await storage.getUser(id);
-        done(null, user);
-      } catch (error) {
-        done(error);
+  passport.deserializeUser(async (id: string, done) => {
+    try {
+      console.log(`[Passport] Deserializing user: ${id}`);
+      const user = await storage.getUser(id);
+      if (!user) {
+        console.warn(`[Passport] User not found during deserialization: ${id}`);
+        return done(null, false);
       }
-    });
+      done(null, user);
+    } catch (error) {
+      console.error(`[Passport] Deserialization error for user ${id}:`, error);
+      done(error);
+    }
+  });
   }
 
   app.get("/api/logout", (req, res) => {

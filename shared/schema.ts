@@ -126,6 +126,7 @@ export const insertHobbySchema = createInsertSchema(hobbies).omit({ id: true, us
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTournament = typeof tournaments.$inferInsert;
 export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;
@@ -136,3 +137,37 @@ export type TournamentParticipantWithUser = TournamentParticipant & {
 };
 export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true });
 export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true });
+
+export const sendPhoneCodeSchema = z.object({
+  phoneNumber: z.string().min(10)
+});
+
+export const verifyPhoneCodeSchema = z.object({
+  phoneNumber: z.string().min(10),
+  code: z.string().length(6)
+});
+
+export const phoneRegisterSchema = z.object({
+  phoneNumber: z.string().min(10),
+  gamertag: z.string().min(3)
+});
+
+export const registerUserSchema = z.object({
+  gamertag: z.string().min(3),
+  email: z.string().email().optional()
+});
+
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  amount: integer("amount").notNull(),
+  type: creditTransactionTypeEnum("type").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
