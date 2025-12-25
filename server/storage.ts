@@ -129,6 +129,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tournamentParticipants.tournamentId, tournamentId)) as any;
   }
 
+  async removeTournamentParticipant(tournamentId: string, participantId: string): Promise<void> {
+    await db.delete(tournamentParticipants)
+      .where(and(
+        eq(tournamentParticipants.tournamentId, tournamentId),
+        eq(tournamentParticipants.id, participantId)
+      ));
+  }
+
   async sendTournamentMessage(tournamentId: string, senderId: string, message: string, isAnnouncement: boolean): Promise<any> {
     const [m] = await db.insert(tournamentMessages).values({ tournamentId, senderId, message, isAnnouncement }).returning();
     return m;

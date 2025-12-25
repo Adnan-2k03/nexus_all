@@ -9,11 +9,12 @@ import { useToast } from "@/hooks/use-toast";
 interface TournamentParticipantsListProps {
   tournamentId: string;
   isHost?: boolean;
+  onParticipantsChange?: () => void;
 }
 
-export function TournamentParticipantsList({ tournamentId, isHost }: TournamentParticipantsListProps) {
+export function TournamentParticipantsList({ tournamentId, isHost, onParticipantsChange }: TournamentParticipantsListProps) {
   const { toast } = useToast();
-  const { data: participants = [], isLoading } = useQuery({
+  const { data: participants = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/tournaments", tournamentId, "participants"],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/api/tournaments/${tournamentId}/participants`), {
@@ -40,6 +41,7 @@ export function TournamentParticipantsList({ tournamentId, isHost }: TournamentP
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournamentId, "participants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      if (onParticipantsChange) onParticipantsChange();
       toast({ title: "Success", description: "Participant removed" });
     },
     onError: (err: Error) => {
