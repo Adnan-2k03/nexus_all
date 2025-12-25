@@ -176,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id: tournamentId } = req.params;
       const userId = req.user.id;
-      const { inGameName, inGameId, saveProfile } = req.body;
+      const { inGameName, inGameId, saveProfile, teammateIds } = req.body;
 
       if (!inGameName || !inGameId) {
         return res.status(400).json({ message: "In-game name and ID are required" });
@@ -186,23 +186,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!tournament) return res.status(404).json({ message: "Tournament not found" });
 
       const entryFee = (tournament as any).entryFee || 0;
+      
+      if (req.user.coins < entryFee) {
+        return res.status(400).json({ message: "Insufficient coins" });
+      }
+
+      if (tournament.playersPerTeam > 1) {
+        if (!teammateIds || teammateIds.length !== (tournament.playersPerTeam - 1)) {
+          return res.status(400).json({ message: `Invalid teammate IDs. Need ${tournament.playersPerTeam - 1} teammates.` });
+        }
+        await storage.createTeam({
+          tournamentId: tournament.id,
+          leaderId: userId,
+          memberIds: teammateIds
+        });
+      } else {
+        await storage.joinTournamentWithCoins(
+          tournamentId, 
+          userId, 
+          { inGameName, inGameId }, 
+          entryFee
+        );
+      }
 
       if (saveProfile) {
         await storage.updateUserGameProfiles(userId, tournament.gameName, inGameName, inGameId);
       }
 
-      const participant = await storage.joinTournamentWithCoins(
-        tournamentId, 
-        userId, 
-        { inGameName, inGameId }, 
-        entryFee
-      );
-
-      res.status(201).json(participant);
+      res.status(201).json({ success: true });
     } catch (error: any) {
       console.error("Error joining tournament:", error);
       res.status(error.message === "Insufficient coins" ? 400 : 500).json({ message: error.message });
     }
+  });
+
+  app.get("/api/tournaments/invitations", authMiddleware, async (req, res) => {
+    // Basic stub for invitations, real implementation would fetch from tournamentTeamMembers
+    res.json([]); 
+  });
+
+  app.get("/api/match-history", authMiddleware, async (req, res) => {
+    const history = await storage.getMatchHistory((req.user as any).id);
+    res.json(history);
+  });
+
+  app.get("/api/team-layouts", authMiddleware, async (req, res) => {
+    const layouts = await storage.getTeamLayouts((req.user as any).id);
+    res.json(layouts);
   });
 
   app.post("/api/tournaments/:id/announcements", authMiddleware, async (req: any, res) => {

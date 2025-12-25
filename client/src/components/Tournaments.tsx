@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { insertTournamentSchema } from "@shared/schema";
 import { z } from "zod";
-import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send, RefreshCw, Edit2, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DailyRewards } from "./DailyRewards";
 import { TournamentParticipantsList } from "./TournamentParticipantsList";
 
@@ -35,7 +35,36 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [teammateIds, setTeammateIds] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const { data: invitations = [] } = useQuery<any[]>({
+    queryKey: ["/api/tournaments/invitations"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/api/tournaments/invitations"), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch invitations");
+      return res.json();
+    },
+    refetchInterval: 5000,
+  });
+
+  const { data: teamLayouts = [] } = useQuery<any[]>({
+    queryKey: ["/api/team-layouts"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/api/team-layouts"), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch layouts");
+      return res.json();
+    },
+  });
+
+  const { data: matchHistory = [] } = useQuery<any[]>({
+    queryKey: ["/api/match-history"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl("/api/match-history"), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch history");
+      return res.json();
+    },
+  });
   
   const { data: user = { id: "", gamertag: "", coins: 0, gameProfiles: {} } } = useQuery<any>({
     queryKey: ["/api/auth/user"],
@@ -489,11 +518,38 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
           <DialogHeader>
             <DialogTitle>Tournament Registration</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="p-3 bg-indigo-500/10 rounded-md border border-indigo-500/20 text-sm">
-              <p className="font-semibold text-indigo-400">Entry Fee: {selectedTournament?.entryFee || 0} Coins</p>
-              <p className="text-muted-foreground mt-1">Your Balance: {user?.coins || 0} Coins</p>
-            </div>
+            <div className="space-y-4 py-4">
+              {selectedTournament?.description && (
+                <div className="p-3 bg-muted rounded-md text-sm italic">
+                  <p className="font-semibold not-italic mb-1">Host Instructions:</p>
+                  {selectedTournament.description}
+                </div>
+              )}
+              <div className="p-3 bg-indigo-500/10 rounded-md border border-indigo-500/20 text-sm">
+                <p className="font-semibold text-indigo-400">Entry Fee: {selectedTournament?.entryFee || 0} Coins</p>
+                <p className="text-muted-foreground mt-1">Your Balance: {user?.coins || 0} Coins</p>
+              </div>
+              
+              {selectedTournament?.playersPerTeam > 1 && (
+                <div className="space-y-3 p-3 bg-secondary/50 rounded-md">
+                  <p className="text-sm font-semibold">Team Registration ({selectedTournament.playersPerTeam} Members)</p>
+                  {Array.from({ length: selectedTournament.playersPerTeam - 1 }).map((_, i) => (
+                    <div key={i} className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Teammate {i + 1} NexusMatch ID</label>
+                      <Input 
+                        placeholder="Enter teammate's ID"
+                        value={teammateIds[i] || ""}
+                        onChange={(e) => {
+                          const newIds = [...teammateIds];
+                          newIds[i] = e.target.value;
+                          setTeammateIds(newIds);
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-muted-foreground italic">Registration will be "Pending" until all teammates accept.</p>
+                </div>
+              )}
             <div className="space-y-2">
               <label className="text-sm font-medium">In-Game Name (IGN)</label>
               <Input 
@@ -521,42 +577,51 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
             </div>
             <Button 
               className="w-full" 
-              disabled={joinWithCoinsMutation.isPending || !gameUsername || !gameId}
-              onClick={() => joinWithCoinsMutation.mutate({ inGameName: gameUsername, inGameId: gameId, saveProfile })}
+              disabled={joinWithCoinsMutation.isPending || !gameUsername || !gameId || (selectedTournament?.playersPerTeam > 1 && teammateIds.length !== selectedTournament.playersPerTeam - 1)}
+              onClick={() => joinWithCoinsMutation.mutate({ inGameName: gameUsername, inGameId: gameId, saveProfile, teammateIds })}
             >
-              {joinWithCoinsMutation.isPending ? "Registering..." : "Confirm Registration"}
+              {joinWithCoinsMutation.isPending ? "Registering..." : (selectedTournament?.playersPerTeam > 1 ? "Invite Team & Register" : "Confirm Registration")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {isLoading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        </div>
-      ) : (
-        <>
-          {/* Active Tournaments */}
-          {activeTournaments.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Active & Upcoming</h2>
-              <div className="grid gap-4">
-                {activeTournaments.map((tournament: any) => {
-                  const isJoined = userTournaments.some((ut: any) => ut.id === tournament.id);
-                  const isCreator = tournament.createdBy === currentUserId;
-                  const isExpanded = expandedTournament === tournament.id;
-                  
-                  return (
-                    <div key={tournament.id} className="space-y-2">
-                      <Card className="p-4 hover-elevate cursor-pointer transition" onClick={() => setExpandedTournament(isExpanded ? null : tournament.id)} data-testid={`card-tournament-${tournament.id}`}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg" data-testid={`text-tournament-name-${tournament.id}`}>{tournament.name}</h3>
-                              <Badge variant={tournament.status === "active" ? "default" : "secondary"} data-testid={`badge-tournament-status-${tournament.id}`}>{tournament.status}</Badge>
-                              {isCreator && <Badge variant="outline">Host</Badge>}
-                            </div>
-                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+      <Tabs defaultValue="tournaments" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
+          <TabsTrigger value="history">Match History</TabsTrigger>
+        </TabsList>
+        <TabsContent value="tournaments" className="space-y-6 mt-6">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            </div>
+          ) : (
+            <>
+              {/* Active Tournaments */}
+              {activeTournaments.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Active & Upcoming</h2>
+                  <div className="grid gap-4">
+                    {activeTournaments.map((tournament: any) => {
+                      const isJoined = userTournaments.some((ut: any) => ut.id === tournament.id);
+                      const isCreator = tournament.createdBy === currentUserId;
+                      const isExpanded = expandedTournament === tournament.id;
+                      
+                      return (
+                        <div key={tournament.id} className="space-y-2">
+                          <Card className="p-4 hover-elevate cursor-pointer transition" onClick={() => setExpandedTournament(isExpanded ? null : tournament.id)} data-testid={`card-tournament-${tournament.id}`}>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-bold text-lg" data-testid={`text-tournament-name-${tournament.id}`}>{tournament.name}</h3>
+                                  <Badge variant={tournament.status === "active" ? "default" : "secondary"} data-testid={`badge-tournament-status-${tournament.id}`}>{tournament.status}</Badge>
+                                  {isCreator && <Badge variant="outline">Host</Badge>}
+                                </div>
+                                {tournament.description && (
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{tournament.description}</p>
+                                )}
+                                <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <span>{tournament.gameName}</span>
                               </span>
