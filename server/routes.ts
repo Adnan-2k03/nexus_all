@@ -397,15 +397,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only the host can edit this tournament" });
       }
 
+      const updateData = req.body;
+      console.log("[Tournament Update] Updating with data:", updateData);
+
       const [updated] = await db.update(tournaments)
-        .set(req.body)
+        .set(updateData)
         .where(eq(tournaments.id, tournamentId))
         .returning();
 
-      res.json(updated);
+      if (!updated) {
+        console.error("[Tournament Update] No data returned from update");
+        return res.status(500).json({ message: "Failed to update tournament" });
+      }
+
+      res.setHeader("Content-Type", "application/json");
+      return res.json(updated);
     } catch (error) {
       console.error("[Tournament Update] Error:", error);
-      res.status(500).json({ message: "Failed to update tournament" });
+      res.setHeader("Content-Type", "application/json");
+      return res.status(500).json({ message: "Failed to update tournament" });
     }
   });
 
@@ -514,6 +524,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) return next(err);
       res.sendStatus(200);
     });
+  });
+
+  // Feature flags endpoint
+  app.get("/api/feature-flags", async (req, res) => {
+    try {
+      // Return empty array for now - can be extended for actual feature flag management
+      res.json([]);
+    } catch (error) {
+      console.error("[Feature Flags] Error:", error);
+      res.status(500).json({ message: "Failed to fetch feature flags" });
+    }
   });
 
   return httpServer;
