@@ -34,6 +34,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [query, setQuery] = useState("");
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
   const { data: user = { id: "", gamertag: "", coins: 0, gameProfiles: {} } } = useQuery<any>({
@@ -61,6 +62,13 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     enabled: !!expandedTournament,
     refetchInterval: 2000,
   });
+
+  // Re-fetch tournaments when participants change to update counts
+  useEffect(() => {
+    if (expandedTournament) {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+    }
+  }, [participants.length, expandedTournament]);
 
   const sendChatMutation = useMutation({
     mutationFn: async ({ id, message }: { id: string; message: string }) => {
@@ -297,17 +305,23 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-              // Also invalidate expanded tournament details if one is expanded
-              if (expandedTournament) {
-                queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
-                queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
+            onClick={async () => {
+              setIsRefreshing(true);
+              try {
+                await queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+                if (expandedTournament) {
+                  await queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
+                  await queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
+                }
+                // Small delay to ensure animation is visible
+                await new Promise(resolve => setTimeout(resolve, 500));
+              } finally {
+                setIsRefreshing(false);
               }
             }}
             data-testid="button-refresh-tournaments"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${isRefreshing || isLoading ? "animate-spin" : ""}`} />
           </Button>
           {isAdmin && (
             <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -494,7 +508,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Users className="h-4 w-4" />
-                                {tournament.participantCount || tournament.participants?.length || 0}/{tournament.maxParticipants}
+                                {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants}
                               </span>
                             </div>
                           </div>

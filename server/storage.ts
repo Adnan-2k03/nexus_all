@@ -77,7 +77,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTournaments(): Promise<any[]> {
-    return db.select().from(tournaments).orderBy(desc(tournaments.createdAt));
+    const ts = await db.select().from(tournaments).orderBy(desc(tournaments.createdAt));
+    const results = [];
+    for (const t of ts) {
+      const [participantCountRow] = await db
+        .select({ count: sql`count(*)` })
+        .from(tournamentParticipants)
+        .where(eq(tournamentParticipants.tournamentId, t.id));
+      results.push({
+        ...t,
+        participantCount: Number(participantCountRow?.count || 0)
+      });
+    }
+    return results;
   }
 
   async getTournament(id: string): Promise<Tournament | undefined> {
