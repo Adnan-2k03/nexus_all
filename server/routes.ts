@@ -134,10 +134,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments", authMiddleware, async (req: any, res) => {
     try {
       // Get user ID from request - either from passport user or admin session
-      const userId = req.user?.id || (req.session as any).isAdmin ? "admin-user" : null;
+      let userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
       
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Ensure admin user exists in database
+      if (userId === "admin-user") {
+        const existingAdmin = await storage.getUser("admin-user");
+        if (!existingAdmin) {
+          await storage.upsertUser({
+            id: "admin-user",
+            gamertag: "admin",
+            coins: 10000,
+          });
+        }
       }
 
       const tournament = await storage.createTournament({
