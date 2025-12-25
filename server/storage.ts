@@ -20,7 +20,11 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db.update(users).set(data).where(eq(users.id, existing.id)).returning();
       return updated;
     }
-    const [inserted] = await db.insert(users).values({ ...data, gamertag: `player_${Math.floor(Math.random() * 10000)}` }).returning();
+    const [inserted] = await db.insert(users).values({ 
+      ...data, 
+      gamertag: `player_${Math.floor(Math.random() * 10000)}`,
+      coins: 100
+    }).returning();
     return inserted;
   }
 
