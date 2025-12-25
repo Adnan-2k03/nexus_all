@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { insertTournamentSchema } from "@shared/schema";
 import { z } from "zod";
+import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send, RefreshCw, Edit2, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DailyRewards } from "./DailyRewards";
 import { TournamentParticipantsList } from "./TournamentParticipantsList";
@@ -65,7 +66,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       return res.json();
     },
   });
-  
+
   const { data: user = { id: "", gamertag: "", coins: 0, gameProfiles: {} } } = useQuery<any>({
     queryKey: ["/api/auth/user"],
   });
@@ -99,23 +100,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     }
   }, [participants.length, expandedTournament]);
 
-  const sendChatMutation = useMutation({
-    mutationFn: async ({ id, message }: { id: string; message: string }) => {
-      const res = await fetch(getApiUrl(`/api/tournaments/${id}/messages`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ message, isAnnouncement: false }),
-      });
-      if (!res.ok) throw new Error("Failed to send message");
-      return res.json();
-    },
-    onSuccess: () => {
-      setQuery("");
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
-    }
-  });
-
   const sendAnnouncementMutation = useMutation({
     mutationFn: async ({ id, message }: { id: string; message: string }) => {
       const res = await fetch(getApiUrl(`/api/tournaments/${id}/announcements`), {
@@ -129,7 +113,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
     onSuccess: () => {
       setAnnouncement("");
-      // Invalidate both messages and participants to ensure everything is up to date
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
       toast({ title: "Success", description: "Announcement sent!" });
@@ -175,8 +158,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     }
   }, [selectedTournament, user?.gameProfiles]);
 
-  // ... rest of component logic
-
   const form = useForm({
     resolver: zodResolver(insertTournamentSchema),
     defaultValues: {
@@ -191,7 +172,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
   });
 
-  // Fetch tournaments
   const { data: tournaments = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/tournaments"],
     queryFn: async () => {
@@ -201,7 +181,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
   });
 
-  // Fetch user's tournaments
   const { data: userTournaments = [] } = useQuery<any[]>({
     queryKey: ["/api/user/tournaments", currentUserId],
     queryFn: async () => {
@@ -213,7 +192,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     enabled: !!currentUserId,
   });
 
-  // Create tournament mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
       const isEditing = !!selectedTournament?.id && isCreateOpen;
@@ -244,33 +222,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       toast({
         title: "Error",
         description: err.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Join tournament mutation
-  const joinMutation = useMutation({
-    mutationFn: async (tournamentId: string) => {
-      const res = await fetch(getApiUrl(`/api/tournaments/${tournamentId}/join`), {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to join tournament");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user/tournaments"] });
-      toast({
-        title: "Success",
-        description: "Joined tournament!",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to join tournament",
         variant: "destructive",
       });
     },
@@ -320,8 +271,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     setIsRegisterOpen(true);
   };
 
-  const currentTournamentMessages = messages.filter((m: any) => m.tournamentId === expandedTournament);
-
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <DailyRewards userId={currentUserId} />
@@ -346,7 +295,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   await queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
                   await queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
                 }
-                // Small delay to ensure animation is visible
                 await new Promise(resolve => setTimeout(resolve, 500));
               } finally {
                 setIsRefreshing(false);
@@ -365,7 +313,11 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   name: "",
                   gameName: "",
                   prizePool: 100,
+                  entryFee: 0,
                   maxParticipants: 16,
+                  startTime: "",
+                  playersPerTeam: 1,
+                  description: "",
                 });
               }
             }}>
@@ -373,10 +325,9 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
               <Button 
                 disabled={isLocked} 
                 data-testid="button-create-tournament"
-                className={isLocked ? "opacity-100" : ""}
                 onClick={() => setSelectedTournament(null)}
               >
-                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
+                {isLocked && <Lock className="h-4 w-4 mr-2" />}
                 Create Tournament
               </Button>
             </DialogTrigger>
@@ -503,7 +454,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={createMutation.isPending || isLocked} data-testid="button-submit-tournament">
-                  {createMutation.isPending ? (selectedTournament ? "Updating..." : "Creating...") : (selectedTournament ? "Update Tournament" : "Create Tournament")}
+                  {createMutation.isPending ? "Saving..." : (selectedTournament ? "Update Tournament" : "Create Tournament")}
                 </Button>
               </form>
             </Form>
@@ -598,7 +549,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
             </div>
           ) : (
             <>
-              {/* Active Tournaments */}
               {activeTournaments.length > 0 && (
                 <div className="space-y-4">
                   <h2 className="text-xl font-semibold">Active & Upcoming</h2>
@@ -614,241 +564,195 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-bold text-lg" data-testid={`text-tournament-name-${tournament.id}`}>{tournament.name}</h3>
-                                  <Badge variant={tournament.status === "active" ? "default" : "secondary"} data-testid={`badge-tournament-status-${tournament.id}`}>{tournament.status}</Badge>
+                                  <h3 className="font-bold text-lg">{tournament.name}</h3>
+                                  <Badge variant={tournament.status === "active" ? "default" : "secondary"}>{tournament.status}</Badge>
                                   {isCreator && <Badge variant="outline">Host</Badge>}
                                 </div>
                                 {tournament.description && (
                                   <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{tournament.description}</p>
                                 )}
                                 <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <span>{tournament.gameName}</span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Coins className="h-4 w-4 text-yellow-500" />
-                                {tournament.prizePool} pool
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Lock className="h-4 w-4 text-orange-500" />
-                                {tournament.entryFee} fee
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Users className="h-4 w-4" />
-                                {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants} ({tournament.playersPerTeam}v{tournament.playersPerTeam})
-                              </span>
-                              {tournament.startTime && (
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  {new Date(tournament.startTime).toLocaleString()}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-2 items-center">
-                            {!isCreator && !isJoined && (
-                              <Button 
-                                onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
-                                disabled={joinWithCoinsMutation.isPending || isLocked} 
-                                data-testid={`button-join-tournament-${tournament.id}`}
-                                className={isLocked ? "opacity-100" : ""}
-                              >
-                                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
-                                Join
-                              </Button>
-                            )}
-                            {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
-                            {isCreator && (
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost"
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setSelectedTournament(tournament);
-                                    form.reset({
-                                      name: tournament.name,
-                                      gameName: tournament.gameName,
-                                      prizePool: tournament.prizePool,
-                                      maxParticipants: tournament.maxParticipants,
-                                    });
-                                    setIsCreateOpen(true);
-                                  }}
-                                  data-testid={`button-edit-tournament-${tournament.id}`}
-                                  className="hover:text-blue-400"
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(tournament.id); }}
-                                  disabled={deleteMutation.isPending}
-                                  data-testid={`button-delete-tournament-${tournament.id}`}
-                                  className="hover:text-red-400"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                  <span className="flex items-center gap-1">
+                                    <span>{tournament.gameName}</span>
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Coins className="h-4 w-4 text-yellow-500" />
+                                    {tournament.prizePool} pool
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Lock className="h-4 w-4 text-orange-500" />
+                                    {tournament.entryFee} fee
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-4 w-4" />
+                                    {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants} ({tournament.playersPerTeam}v{tournament.playersPerTeam})
+                                  </span>
+                                  {tournament.startTime && (
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
+                                      {new Date(tournament.startTime).toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            )}
+                              <div className="flex gap-2 items-center">
+                                {!isCreator && !isJoined && (
+                                  <Button 
+                                    onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
+                                    disabled={joinWithCoinsMutation.isPending || isLocked} 
+                                  >
+                                    Join
+                                  </Button>
+                                )}
+                                {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
+                                {isCreator && (
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="icon" 
+                                      variant="ghost"
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        setSelectedTournament(tournament);
+                                        form.reset({
+                                          name: tournament.name,
+                                          gameName: tournament.gameName,
+                                          prizePool: tournament.prizePool,
+                                          entryFee: tournament.entryFee,
+                                          maxParticipants: tournament.maxParticipants,
+                                          startTime: tournament.startTime,
+                                          playersPerTeam: tournament.playersPerTeam,
+                                          description: tournament.description,
+                                        });
+                                        setIsCreateOpen(true);
+                                      }}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      size="icon" 
+                                      variant="ghost"
+                                      onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(tournament.id); }}
+                                      disabled={deleteMutation.isPending}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+
+                          {isExpanded && (
+                            <div className="grid md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                              <Card className="p-4 border-indigo-500/20">
+                                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                                  <MessageSquare className="h-4 w-4 text-indigo-400" />
+                                  Announcements & Match Details
+                                </h4>
+                                <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
+                                  {messages.filter((m: any) => m.isAnnouncement).length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-8">No announcements yet</p>
+                                  ) : (
+                                    messages.filter((m: any) => m.isAnnouncement).map((msg: any) => (
+                                      <div key={msg.id} className="p-2 rounded text-sm bg-indigo-500/10 border-l-2 border-indigo-500">
+                                        <div className="flex justify-between items-start mb-1">
+                                          <span className="font-bold text-indigo-400">{msg.senderGamertag}</span>
+                                          <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                        </div>
+                                        <p className="whitespace-pre-wrap">{msg.message}</p>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                                {(isCreator || isAdmin) && (
+                                  <div className="flex gap-2">
+                                    <Input 
+                                      value={announcement}
+                                      onChange={(e) => setAnnouncement(e.target.value)}
+                                      placeholder="Post ID/Password or details..."
+                                      className="text-sm h-9"
+                                    />
+                                    <Button 
+                                      size="icon" 
+                                      className="shrink-0 h-9 w-9"
+                                      disabled={sendAnnouncementMutation.isPending || !announcement.trim()}
+                                      onClick={() => sendAnnouncementMutation.mutate({ id: tournament.id, message: announcement })}
+                                    >
+                                      <Send className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </Card>
+
+                              <Card className="p-4 border-muted">
+                                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                                  <Users className="h-4 w-4" />
+                                  Registered Players
+                                </h4>
+                                <div className="space-y-2 h-[240px] overflow-y-auto pr-2">
+                                  <TournamentParticipantsList 
+                                    tournamentId={tournament.id} 
+                                    isHost={isCreator || isAdmin} 
+                                    onParticipantsChange={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
+                                  />
+                                </div>
+                              </Card>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {completedTournaments.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold opacity-60">Past Tournaments</h2>
+                  <div className="grid gap-4 opacity-75">
+                    {completedTournaments.map((tournament: any) => (
+                      <Card key={tournament.id} className="p-4 grayscale">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-bold">{tournament.name}</h3>
+                            <p className="text-sm text-muted-foreground">{tournament.gameName} • {tournament.prizePool} pool</p>
                           </div>
+                          <Badge variant="outline">Completed</Badge>
                         </div>
                       </Card>
-
-                      {isExpanded && (
-                        <div className="grid md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                          {/* Announcements Section */}
-                          <Card className="p-4 border-indigo-500/20">
-                            <h4 className="font-semibold flex items-center gap-2 mb-3">
-                              <MessageSquare className="h-4 w-4 text-indigo-400" />
-                              Announcements & Match Details
-                            </h4>
-                            <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
-                              {messages.filter((m: any) => m.isAnnouncement).length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">No announcements yet</p>
-                              ) : (
-                                messages.filter((m: any) => m.isAnnouncement).map((msg: any) => (
-                                  <div key={msg.id} className="p-2 rounded text-sm bg-indigo-500/10 border-l-2 border-indigo-500">
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className="font-bold text-indigo-400">{msg.senderGamertag}</span>
-                                      <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
-                                    </div>
-                                    <p className="whitespace-pre-wrap">{msg.message}</p>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                            {(isCreator || isAdmin) && (
-                              <div className="flex gap-2">
-                                <Input 
-                                  value={announcement}
-                                  onChange={(e) => setAnnouncement(e.target.value)}
-                                  placeholder="Post ID/Password or details..."
-                                  className="text-sm"
-                                />
-                                <Button 
-                                  size="icon" 
-                                  disabled={!announcement || sendAnnouncementMutation.isPending}
-                                  onClick={() => sendAnnouncementMutation.mutate({ id: tournament.id, message: announcement })}
-                                >
-                                  <Send className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
-                          </Card>
-
-                          {/* Queries & Channels Section */}
-                          <Card className="p-4 border-indigo-500/20">
-                            <h4 className="font-semibold flex items-center gap-2 mb-3">
-                              <MessageSquare className="h-4 w-4 text-indigo-400" />
-                              Queries & Voice Channels
-                            </h4>
-                            <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
-                              {messages.filter((m: any) => !m.isAnnouncement).length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">No queries or voice updates</p>
-                              ) : (
-                                messages.filter((m: any) => !m.isAnnouncement).map((msg: any) => (
-                                  <div key={msg.id} className="p-2 rounded text-sm bg-muted">
-                                    <div className="flex justify-between items-start mb-1">
-                                      <span className="font-bold text-indigo-400">{msg.senderGamertag}</span>
-                                      <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
-                                    </div>
-                                    <p className="whitespace-pre-wrap">{msg.message}</p>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Input 
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Type a message or voice channel..."
-                                className="text-sm"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && query && !sendChatMutation.isPending) {
-                                    sendChatMutation.mutate({ id: tournament.id, message: query });
-                                  }
-                                }}
-                              />
-                              <Button 
-                                size="icon" 
-                                disabled={!query || sendChatMutation.isPending}
-                                onClick={() => sendChatMutation.mutate({ id: tournament.id, message: query })}
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </Card>
-
-                          {/* Registered Players Section */}
-                          <Card className="p-4 border-muted">
-                            <h4 className="font-semibold flex items-center gap-2 mb-3">
-                              <Users className="h-4 w-4" />
-                              Registered Players
-                            </h4>
-                            <div className="space-y-2 h-[240px] overflow-y-auto pr-2">
-                              <TournamentParticipantsList 
-                                tournamentId={tournament.id} 
-                                isHost={isCreator || isAdmin} 
-                                onParticipantsChange={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
-                              />
-                            </div>
-                          </Card>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
-
-          {/* ... Completed Tournaments section remains same but needs to use cards grid */}
-
-
-          {/* Completed Tournaments */}
-          {completedTournaments.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Completed</h2>
-              <div className="grid gap-4">
-                {completedTournaments.map((tournament: any) => (
-                  <Card key={tournament.id} className="p-4" data-testid={`card-completed-tournament-${tournament.id}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold" data-testid={`text-completed-tournament-${tournament.id}`}>{tournament.name}</h3>
-                        <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>{tournament.gameName}</span>
-                          <span className="flex items-center gap-1">
-                            <Coins className="h-4 w-4" />
-                            {tournament.prizePool} credits distributed
-                          </span>
-                        </div>
-                      </div>
-                      <Badge variant="outline">Completed</Badge>
+        </TabsContent>
+        <TabsContent value="history" className="mt-6">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Match History</h2>
+            {matchHistory.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Trophy className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p>No matches played yet. Join a tournament to start your history!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {matchHistory.map((item: any) => (
+                  <Card key={item.id} className="p-4 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold">{item.tournamentName}</h3>
+                      <p className="text-sm text-muted-foreground">{new Date(item.date).toLocaleDateString()}</p>
                     </div>
+                    <Badge variant="outline" className="text-indigo-400 border-indigo-500/30">
+                      {item.highestRound}
+                    </Badge>
                   </Card>
                 ))}
               </div>
-            </div>
-          )}
-
-          {tournaments.length === 0 && (
-            <Card className="p-8 text-center">
-              <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">No tournaments yet. Create the first one or check back soon!</p>
-              <Button 
-                onClick={() => setIsCreateOpen(true)} 
-                disabled={isLocked} 
-                data-testid="button-create-first-tournament"
-                className={isLocked ? "opacity-100" : ""}
-              >
-                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
-                Create Tournament
-              </Button>
-            </Card>
-          )}
-        </>
-      )}
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

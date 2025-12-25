@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Insufficient coins" });
       }
 
-      if (tournament.playersPerTeam > 1) {
+      if (tournament.playersPerTeam && tournament.playersPerTeam > 1) {
         if (!teammateIds || teammateIds.length !== (tournament.playersPerTeam - 1)) {
           return res.status(400).json({ message: `Invalid teammate IDs. Need ${tournament.playersPerTeam - 1} teammates.` });
         }
@@ -390,6 +390,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("HMS Token Error:", error);
       res.status(500).json({ message: "Failed to generate voice channel token" });
+    }
+  });
+
+  // Tournament Invitation Accept/Reject
+  app.post("/api/tournaments/invitations/:id/respond", authMiddleware, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { accept } = req.body;
+      const userId = req.user.id;
+      
+      const result = await storage.respondToInvitation(id, userId, accept);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
 
