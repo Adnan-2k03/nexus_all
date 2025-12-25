@@ -291,7 +291,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (req.isAuthenticated()) {
       console.log(`[Auth Check] User data: ${JSON.stringify(req.user)}`);
-      res.json(req.user);
+      // Include admin status from session
+      const userData = {
+        ...req.user,
+        isAdmin: (req.session as any).isAdmin || false,
+      };
+      res.json(userData);
     } else {
       res.status(401).json({ message: "Unauthorized" });
     }
