@@ -35,11 +35,11 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [isLocked, setIsLocked] = useState(false);
   const { toast } = useToast();
   
-  const { data: user = { coins: 0, gameProfiles: {} } } = useQuery({
+  const { data: user = { id: "", gamertag: "", coins: 0, gameProfiles: {} } } = useQuery<any>({
     queryKey: ["/api/auth/user"],
   });
 
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [] } = useQuery<any[]>({
     queryKey: ["/api/tournaments", expandedTournament, "messages"],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/messages`), { credentials: "include" });
@@ -50,7 +50,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     refetchInterval: 2000,
   });
 
-  const { data: participants = [] } = useQuery({
+  const { data: participants = [] } = useQuery<any[]>({
     queryKey: ["/api/tournaments", expandedTournament, "participants"],
     queryFn: async () => {
       const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/participants`), { credentials: "include" });
@@ -150,7 +150,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   });
 
   // Fetch tournaments
-  const { data: tournaments = [], isLoading } = useQuery({
+  const { data: tournaments = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/tournaments"],
     queryFn: async () => {
       const res = await fetch(getApiUrl("/api/tournaments"), { credentials: "include" });
@@ -160,7 +160,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   });
 
   // Fetch user's tournaments
-  const { data: userTournaments = [] } = useQuery({
+  const { data: userTournaments = [] } = useQuery<any[]>({
     queryKey: ["/api/user/tournaments", currentUserId],
     queryFn: async () => {
       if (!currentUserId) return [];
