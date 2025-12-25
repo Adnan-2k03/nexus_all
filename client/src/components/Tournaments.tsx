@@ -39,6 +39,17 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     queryKey: ["/api/auth/user"],
   });
 
+  const { data: participants = [] } = useQuery({
+    queryKey: ["/api/tournaments", expandedTournament, "participants"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/participants`), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch participants");
+      return res.json();
+    },
+    enabled: !!expandedTournament,
+    refetchInterval: 3000,
+  });
+
   const { data: messages = [] } = useQuery({
     queryKey: ["/api/tournaments", expandedTournament, "messages"],
     queryFn: async () => {
@@ -47,7 +58,25 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       return res.json();
     },
     enabled: !!expandedTournament,
-    refetchInterval: 5000,
+    refetchInterval: 2000,
+  });
+
+  const deleteTournamentMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${tournamentId}`), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete tournament");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      toast({ title: "Success", description: "Tournament deleted!" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete tournament", variant: "destructive" });
+    }
   });
 
   const sendAnnouncementMutation = useMutation({
@@ -230,8 +259,12 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
           </h1>
           <p className="text-muted-foreground mt-1">Join gaming tournaments with prize pools funded by ad revenue</p>
         </div>
-        {isAdmin && (
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })} data-testid="button-refresh-tournaments">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          </Button>
+          {isAdmin && (
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button 
                 disabled={isLocked} 
@@ -402,22 +435,35 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Users className="h-4 w-4" />
-                                {tournament.participantCount || 0}/{tournament.maxParticipants}
+                                {expandedTournament === tournament.id ? participants.length : tournament.participantCount || 0}/{tournament.maxParticipants}
                               </span>
                             </div>
                           </div>
-                          {!isCreator && !isJoined && (
-                            <Button 
-                              onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
-                              disabled={joinWithCoinsMutation.isPending || isLocked} 
-                              data-testid={`button-join-tournament-${tournament.id}`}
-                              className={isLocked ? "opacity-100" : ""}
-                            >
-                              {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
-                              Join
-                            </Button>
-                          )}
-                          {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
+                          <div className="flex gap-2">
+                            {!isCreator && !isJoined && (
+                              <Button 
+                                onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
+                                disabled={joinWithCoinsMutation.isPending || isLocked} 
+                                data-testid={`button-join-tournament-${tournament.id}`}
+                                className={isLocked ? "opacity-100" : ""}
+                              >
+                                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
+                                Join
+                              </Button>
+                            )}
+                            {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
+                            {(isCreator || isAdmin) && (
+                              <Button 
+                                onClick={(e) => { e.stopPropagation(); deleteTournamentMutation.mutate(tournament.id); }} 
+                                variant="ghost" 
+                                size="sm"
+                                disabled={deleteTournamentMutation.isPending}
+                                data-testid={`button-delete-tournament-${tournament.id}`}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </Card>
 
