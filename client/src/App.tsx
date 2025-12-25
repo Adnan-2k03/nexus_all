@@ -371,7 +371,7 @@ function Router() {
               </h1>
               {user && user.gamertag && (
                 <UserProfile
-                  {...mapUserForComponents(user as User)}
+                  {...mapUserForComponents(user as User | null)}
                   isOwn={true}
                   onEdit={() => handleNavigation("profile-setup")}
                 />

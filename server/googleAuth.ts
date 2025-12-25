@@ -234,7 +234,7 @@ export async function setupAuth(app: Express) {
   });
   }
 
-  app.get("/api/logout", (req, res) => {
+  app.get("/api/logout", (req: any, res) => {
     req.logout(() => {
       res.redirect("/");
     });

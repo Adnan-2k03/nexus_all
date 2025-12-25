@@ -9,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gamepad2, Phone, Shield } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@shared/schema";
+import { registerUserSchema, type User } from "@shared/schema";
 import { getApiUrl } from "@/lib/api";
-import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { z } from "zod";
+type RegisterUser = z.infer<typeof registerUserSchema>;
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 
 interface AuthPageProps {

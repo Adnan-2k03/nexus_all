@@ -60,6 +60,7 @@ export const users = pgTable("users", {
   coins: integer("coins").default(100),
   dailyRewardLastClaimed: timestamp("daily_reward_last_claimed"),
   gameProfiles: jsonb("game_profiles").default({}),
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
