@@ -601,7 +601,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                   </span>
                                   <span className="flex items-center gap-1">
                                     <Users className="h-4 w-4" />
-                                    {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants} ({tournament.playersPerTeam}v{tournament.playersPerTeam})
+                                    {tournament.participantCount !== undefined ? tournament.participantCount : (tournament.participants?.length || 0)}/{tournament.maxParticipants} ({tournament.playersPerTeam}/team)
                                   </span>
                                   {tournament.startTime && (
                                     <span className="flex items-center gap-1">
@@ -612,7 +612,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                 </div>
                               </div>
                               <div className="flex gap-2 items-center">
-                                {!isCreator && !isJoined && (
+                                {!isCreator && !isJoined && !isAdmin && (
                                   <Button 
                                     onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
                                     disabled={joinWithCoinsMutation.isPending || isLocked} 
@@ -621,7 +621,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                   </Button>
                                 )}
                                 {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
-                                {isCreator && (
+                                {(isCreator || isAdmin) && (
                                   <div className="flex gap-2">
                                     <Button 
                                       size="icon" 
@@ -641,6 +641,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                         });
                                         setIsCreateOpen(true);
                                       }}
+                                      data-testid="button-edit-tournament"
                                     >
                                       <Edit2 className="h-4 w-4" />
                                     </Button>
@@ -649,6 +650,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                       variant="ghost"
                                       onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(tournament.id); }}
                                       disabled={deleteMutation.isPending}
+                                      data-testid="button-delete-tournament"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
