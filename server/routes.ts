@@ -289,7 +289,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`[Auth Check] Session data: ${JSON.stringify(req.session)}`);
     console.log(`[Auth Check] User authenticated: ${req.isAuthenticated()}`);
     
-    if (req.isAuthenticated()) {
+    // Check for admin login (admin-only session)
+    if ((req.session as any).isAdmin && (req.session as any).adminToken) {
+      console.log(`[Auth Check] Admin authenticated via session`);
+      // Return admin user data
+      res.json({
+        id: "admin-user",
+        gamertag: "admin",
+        isAdmin: true,
+      });
+    } else if (req.isAuthenticated()) {
       console.log(`[Auth Check] User data: ${JSON.stringify(req.user)}`);
       // Include admin status from session
       const userData = {
