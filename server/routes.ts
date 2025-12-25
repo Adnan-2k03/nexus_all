@@ -226,13 +226,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/match-history", authMiddleware, async (req, res) => {
-    const history = await storage.getMatchHistory((req.user as any).id);
-    res.json(history);
+    try {
+      const history = await storage.getMatchHistory((req.user as any).id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching match history:", error);
+      res.json([]);
+    }
   });
 
   app.get("/api/team-layouts", authMiddleware, async (req, res) => {
-    const layouts = await storage.getTeamLayouts((req.user as any).id);
-    res.json(layouts);
+    try {
+      const layouts = await storage.getTeamLayouts((req.user as any).id);
+      res.json(layouts);
+    } catch (error) {
+      console.error("Error fetching team layouts:", error);
+      res.json([]);
+    }
   });
 
   app.post("/api/tournaments/:id/announcements", authMiddleware, async (req: any, res) => {
