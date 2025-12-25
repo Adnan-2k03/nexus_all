@@ -47,7 +47,35 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       return res.json();
     },
     enabled: !!expandedTournament,
-    refetchInterval: 5000,
+    refetchInterval: 2000,
+  });
+
+  const { data: participants = [] } = useQuery({
+    queryKey: ["/api/tournaments", expandedTournament, "participants"],
+    queryFn: async () => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/participants`), { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch participants");
+      return res.json();
+    },
+    enabled: !!expandedTournament,
+    refetchInterval: 2000,
+  });
+
+  const sendChatMutation = useMutation({
+    mutationFn: async ({ id, message }: { id: string; message: string }) => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${id}/messages`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message, isAnnouncement: false }),
+      });
+      if (!res.ok) throw new Error("Failed to send message");
+      return res.json();
+    },
+    onSuccess: () => {
+      setAnnouncement("");
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
+    }
   });
 
   const sendAnnouncementMutation = useMutation({
@@ -145,30 +173,35 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
 
   // Create tournament mutation
   const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const res = await fetch(getApiUrl("/api/tournaments"), {
-        method: "POST",
+    mutationFn: async (data: any) => {
+      const isEditing = !!selectedTournament?.id && isCreateOpen;
+      const url = isEditing ? `/api/tournaments/${selectedTournament.id}` : "/api/tournaments";
+      const method = isEditing ? "PATCH" : "POST";
+      
+      const res = await fetch(getApiUrl(url), {
+        method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create tournament");
+      if (!res.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} tournament`);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/tournaments"] });
       setIsCreateOpen(false);
+      setSelectedTournament(null);
       form.reset();
       toast({
         title: "Success",
-        description: "Tournament created successfully!",
+        description: `Tournament ${selectedTournament ? 'updated' : 'created'} successfully!`,
       });
     },
-    onError: () => {
+    onError: (err: Error) => {
       toast({
         title: "Error",
-        description: "Failed to create tournament",
+        description: err.message,
         variant: "destructive",
       });
     },
@@ -266,15 +299,27 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
             onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
             data-testid="button-refresh-tournaments"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
           {isAdmin && (
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <Dialog open={isCreateOpen} onOpenChange={(open) => {
+              setIsCreateOpen(open);
+              if (!open) {
+                setSelectedTournament(null);
+                form.reset({
+                  name: "",
+                  gameName: "",
+                  prizePool: 100,
+                  maxParticipants: 16,
+                });
+              }
+            }}>
               <DialogTrigger asChild>
               <Button 
                 disabled={isLocked} 
                 data-testid="button-create-tournament"
                 className={isLocked ? "opacity-100" : ""}
+                onClick={() => setSelectedTournament(null)}
               >
                 {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
                 Create Tournament
@@ -282,7 +327,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
             </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Tournament</DialogTitle>
+              <DialogTitle>{selectedTournament ? "Edit Tournament" : "Create New Tournament"}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleCreateTournament)} className="space-y-4">
@@ -349,7 +394,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={createMutation.isPending || isLocked} data-testid="button-submit-tournament">
-                  {createMutation.isPending ? "Creating..." : "Create Tournament"}
+                  {createMutation.isPending ? (selectedTournament ? "Updating..." : "Creating...") : (selectedTournament ? "Update Tournament" : "Create Tournament")}
                 </Button>
               </form>
             </Form>
@@ -441,7 +486,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Users className="h-4 w-4" />
-                                {tournament.participantCount || 0}/{tournament.maxParticipants}
+                                {tournament.participantCount || tournament.participants?.length || 0}/{tournament.maxParticipants}
                               </span>
                             </div>
                           </div>
@@ -463,7 +508,17 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                 <Button 
                                   size="icon" 
                                   variant="ghost"
-                                  onClick={(e) => { e.stopPropagation(); }}
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setSelectedTournament(tournament);
+                                    form.reset({
+                                      name: tournament.name,
+                                      gameName: tournament.gameName,
+                                      prizePool: tournament.prizePool,
+                                      maxParticipants: tournament.maxParticipants,
+                                    });
+                                    setIsCreateOpen(true);
+                                  }}
                                   data-testid={`button-edit-tournament-${tournament.id}`}
                                   className="hover:text-blue-400"
                                 >
@@ -494,11 +549,11 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               Announcements & Match Details
                             </h4>
                             <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
-                              {currentTournamentMessages.length === 0 ? (
+                              {messages.filter((m: any) => m.isAnnouncement).length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-8">No announcements yet</p>
                               ) : (
-                                currentTournamentMessages.map((msg: any) => (
-                                  <div key={msg.id} className={`p-2 rounded text-sm ${msg.isAnnouncement ? 'bg-indigo-500/10 border-l-2 border-indigo-500' : 'bg-muted'}`}>
+                                messages.filter((m: any) => m.isAnnouncement).map((msg: any) => (
+                                  <div key={msg.id} className="p-2 rounded text-sm bg-indigo-500/10 border-l-2 border-indigo-500">
                                     <div className="flex justify-between items-start mb-1">
                                       <span className="font-bold text-indigo-400">{msg.senderGamertag}</span>
                                       <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
@@ -525,6 +580,49 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                 </Button>
                               </div>
                             )}
+                          </Card>
+
+                          {/* Queries & Channels Section */}
+                          <Card className="p-4 border-indigo-500/20">
+                            <h4 className="font-semibold flex items-center gap-2 mb-3">
+                              <MessageSquare className="h-4 w-4 text-indigo-400" />
+                              Queries & Voice Channels
+                            </h4>
+                            <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
+                              {messages.filter((m: any) => !m.isAnnouncement).length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-8">No queries or voice updates</p>
+                              ) : (
+                                messages.filter((m: any) => !m.isAnnouncement).map((msg: any) => (
+                                  <div key={msg.id} className="p-2 rounded text-sm bg-muted">
+                                    <div className="flex justify-between items-start mb-1">
+                                      <span className="font-bold text-indigo-400">{msg.senderGamertag}</span>
+                                      <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                    </div>
+                                    <p className="whitespace-pre-wrap">{msg.message}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Input 
+                                value={announcement}
+                                onChange={(e) => setAnnouncement(e.target.value)}
+                                placeholder="Type a message or voice channel..."
+                                className="text-sm"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && announcement && !sendChatMutation.isPending) {
+                                    sendChatMutation.mutate({ id: tournament.id, message: announcement });
+                                  }
+                                }}
+                              />
+                              <Button 
+                                size="icon" 
+                                disabled={!announcement || sendChatMutation.isPending}
+                                onClick={() => sendChatMutation.mutate({ id: tournament.id, message: announcement })}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </Card>
 
                           {/* Participants Details (For Host) */}
