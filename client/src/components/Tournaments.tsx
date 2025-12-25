@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { insertTournamentSchema } from "@shared/schema";
 import { z } from "zod";
-import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send } from "lucide-react";
+import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send, RefreshCw, Edit2, Trash2 } from "lucide-react";
 import { DailyRewards } from "./DailyRewards";
 import { TournamentParticipantsList } from "./TournamentParticipantsList";
 
@@ -63,7 +63,9 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
     onSuccess: () => {
       setAnnouncement("");
+      // Invalidate both messages and participants to ensure everything is up to date
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
       toast({ title: "Success", description: "Announcement sent!" });
     }
   });
@@ -199,6 +201,33 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${tournamentId}`), {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete tournament");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tournaments"] });
+      setExpandedTournament(null);
+      toast({
+        title: "Success",
+        description: "Tournament deleted!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete tournament",
+        variant: "destructive",
+      });
+    },
+  });
+
   const activeTournaments = useMemo(() => {
     return tournaments.filter((t: any) => t.status !== "completed");
   }, [tournaments]);
@@ -230,9 +259,18 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
           </h1>
           <p className="text-muted-foreground mt-1">Join gaming tournaments with prize pools funded by ad revenue</p>
         </div>
-        {isAdmin && (
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] })}
+            data-testid="button-refresh-tournaments"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          {isAdmin && (
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
               <Button 
                 disabled={isLocked} 
                 data-testid="button-create-tournament"
@@ -315,9 +353,10 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                 </Button>
               </form>
             </Form>
-          </DialogContent>
-        </Dialog>
-        )}
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
@@ -406,18 +445,43 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               </span>
                             </div>
                           </div>
-                          {!isCreator && !isJoined && (
-                            <Button 
-                              onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
-                              disabled={joinWithCoinsMutation.isPending || isLocked} 
-                              data-testid={`button-join-tournament-${tournament.id}`}
-                              className={isLocked ? "opacity-100" : ""}
-                            >
-                              {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
-                              Join
-                            </Button>
-                          )}
-                          {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
+                          <div className="flex gap-2 items-center">
+                            {!isCreator && !isJoined && (
+                              <Button 
+                                onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
+                                disabled={joinWithCoinsMutation.isPending || isLocked} 
+                                data-testid={`button-join-tournament-${tournament.id}`}
+                                className={isLocked ? "opacity-100" : ""}
+                              >
+                                {isLocked && <Lock className="h-4 w-4 mr-2 opacity-100" />}
+                                Join
+                              </Button>
+                            )}
+                            {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
+                            {isCreator && (
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); }}
+                                  data-testid={`button-edit-tournament-${tournament.id}`}
+                                  className="hover:text-blue-400"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost"
+                                  onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(tournament.id); }}
+                                  disabled={deleteMutation.isPending}
+                                  data-testid={`button-delete-tournament-${tournament.id}`}
+                                  className="hover:text-red-400"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </Card>
 

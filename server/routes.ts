@@ -252,6 +252,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete tournament
+  app.delete("/api/tournaments/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const tournamentId = req.params.id;
+      const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ message: "Tournament not found" });
+      }
+
+      if (tournament.createdBy !== userId && !(req.session as any).isAdmin) {
+        return res.status(403).json({ message: "Only the host can delete this tournament" });
+      }
+
+      await db.delete(tournaments).where(eq(tournaments.id, tournamentId));
+      res.json({ message: "Tournament deleted" });
+    } catch (error) {
+      console.error("[Tournament Delete] Error:", error);
+      res.status(500).json({ message: "Failed to delete tournament" });
+    }
+  });
+
+  // Update tournament
+  app.patch("/api/tournaments/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const tournamentId = req.params.id;
+      const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const tournament = await storage.getTournament(tournamentId);
+      if (!tournament) {
+        return res.status(404).json({ message: "Tournament not found" });
+      }
+
+      if (tournament.createdBy !== userId && !(req.session as any).isAdmin) {
+        return res.status(403).json({ message: "Only the host can edit this tournament" });
+      }
+
+      const [updated] = await db.update(tournaments)
+        .set(req.body)
+        .where(eq(tournaments.id, tournamentId))
+        .returning();
+
+      res.json(updated);
+    } catch (error) {
+      console.error("[Tournament Update] Error:", error);
+      res.status(500).json({ message: "Failed to update tournament" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // HMS Token Generation for Voice Channels
