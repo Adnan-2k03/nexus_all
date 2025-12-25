@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { getApiUrl } from "@/lib/api";
@@ -16,8 +16,13 @@ import { insertTournamentSchema } from "@shared/schema";
 import { z } from "zod";
 import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send } from "lucide-react";
 import { DailyRewards } from "./DailyRewards";
+import { TournamentParticipantsList } from "./TournamentParticipantsList";
 
-// Add these to interface TournamentsProps if needed or use from user hook
+interface TournamentsProps {
+  currentUserId?: string;
+  isAdmin?: boolean;
+}
+
 export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -26,6 +31,9 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [gameUsername, setGameUsername] = useState("");
   const [saveProfile, setSaveProfile] = useState(true);
   const [announcement, setAnnouncement] = useState("");
+  const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const { toast } = useToast();
   
   const { data: user } = useQuery({
     queryKey: ["/api/auth/user"],
