@@ -22,7 +22,7 @@ export interface IStorage {
   getMatchRequests(filters: any): Promise<any>;
   createMatchRequest(data: any): Promise<any>;
 }
-import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby } from "@shared/schema";
+import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
@@ -165,6 +165,62 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(tournamentMessages.senderId, users.id))
       .where(eq(tournamentMessages.tournamentId, tournamentId))
       .orderBy(tournamentMessages.createdAt);
+  }
+
+  async createTeam(data: any): Promise<any> {
+    return db.transaction(async (tx) => {
+      const [team] = await tx.insert(tournamentTeams).values({
+        tournamentId: data.tournamentId,
+        leaderId: data.leaderId,
+        status: "pending"
+      }).returning();
+
+      // Add leader as accepted member
+      await tx.insert(tournamentTeamMembers).values({
+        teamId: team.id,
+        userId: data.leaderId,
+        status: "accepted"
+      });
+
+      // Invite teammates
+      for (const memberId of data.memberIds) {
+        // Check auto-confirm
+        const [settings] = await tx.select().from(userSettings).where(eq(userSettings.userId, memberId));
+        const status = settings?.autoAcceptFrom?.includes(data.leaderId) ? "accepted" : "pending";
+        
+        await tx.insert(tournamentTeamMembers).values({
+          teamId: team.id,
+          userId: memberId,
+          status
+        });
+      }
+
+      return team;
+    });
+  }
+
+  async acceptInvite(teamId: string, userId: string): Promise<void> {
+    await db.update(tournamentTeamMembers)
+      .set({ status: "accepted" })
+      .where(and(eq(tournamentTeamMembers.teamId, teamId), eq(tournamentTeamMembers.userId, userId)));
+
+    // Check if all members accepted
+    const members = await db.select().from(tournamentTeamMembers).where(eq(tournamentTeamMembers.teamId, teamId));
+    if (members.every(m => m.status === "accepted")) {
+      await db.update(tournamentTeams).set({ status: "confirmed" }).where(eq(tournamentTeams.id, teamId));
+    }
+  }
+
+  async getMatchHistory(userId: string): Promise<any[]> {
+    return db.select().from(matchHistory).where(eq(matchHistory.userId, userId)).orderBy(desc(matchHistory.date));
+  }
+
+  async saveTeamLayout(data: any): Promise<void> {
+    await db.insert(teamLayouts).values(data);
+  }
+
+  async getTeamLayouts(userId: string): Promise<any[]> {
+    return db.select().from(teamLayouts).where(eq(teamLayouts.userId, userId));
   }
 
   async upsertUser(data: InsertUser): Promise<User> {

@@ -74,7 +74,51 @@ export const tournaments = pgTable("tournaments", {
   startTime: timestamp("start_time"),
   playersPerTeam: integer("players_per_team").default(1),
   status: varchar("status").notNull().default("upcoming"),
+  description: text("description"), // Admin Description field
   createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const tournamentTeams = pgTable("tournament_teams", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
+  leaderId: varchar("leader_id").notNull().references(() => users.id),
+  name: varchar("name"), // For saved layouts
+  status: varchar("status").notNull().default("pending"), // pending until all members accept
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const tournamentTeamMembers = pgTable("tournament_team_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull().references(() => tournamentTeams.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: varchar("status").notNull().default("pending"), // pending, accepted, rejected
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  unique("unique_tournament_user").on(table.teamId, table.userId),
+]);
+
+export const userSettings = pgTable("user_settings", {
+  userId: varchar("user_id").primaryKey().references(() => users.id),
+  autoAcceptFrom: text("auto_accept_from").array().default(sql`'{}'::text[]`), // List of user IDs to auto-accept invites from
+});
+
+export const matchHistory = pgTable("match_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id),
+  tournamentName: varchar("tournament_name").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  highestRound: varchar("highest_round").notNull(), // Winner, Semi-Finalist, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const teamLayouts = pgTable("team_layouts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  gameName: varchar("game_name").notNull(),
+  memberIds: text("member_ids").array().notNull(), // NexusMatch IDs of teammates
   createdAt: timestamp("created_at").defaultNow(),
 });
 

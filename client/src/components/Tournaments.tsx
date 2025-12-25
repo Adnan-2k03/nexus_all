@@ -158,6 +158,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
       maxParticipants: 16,
       startTime: "",
       playersPerTeam: 1,
+      description: "",
     },
   });
 
@@ -455,6 +456,19 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                           <SelectItem value="32">32</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Admin Description</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rules, map info, etc." data-testid="input-tournament-description" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
