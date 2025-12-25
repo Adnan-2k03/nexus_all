@@ -2233,6 +2233,118 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getTournamentParticipants(tournamentId: string): Promise<TournamentParticipantWithUser[]> {
+    const participants = await db.select({
+      id: tournamentParticipants.id,
+      tournamentId: tournamentParticipants.tournamentId,
+      userId: tournamentParticipants.userId,
+      status: tournamentParticipants.status,
+      createdAt: tournamentParticipants.createdAt,
+      gamertag: users.gamertag,
+      profileImageUrl: users.profileImageUrl,
+      gameDetails: tournamentParticipants.gameDetails,
+    }).from(tournamentParticipants)
+      .innerJoin(users, eq(tournamentParticipants.userId, users.id))
+      .where(eq(tournamentParticipants.tournamentId, tournamentId));
+    return participants as any;
+  }
+
+  async claimDailyReward(userId: string): Promise<{ success: boolean; coins: number; message: string }> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    const now = new Date();
+    const lastClaimed = user.dailyRewardLastClaimed;
+    
+    if (lastClaimed) {
+      const hoursSinceLast = (now.getTime() - new Date(lastClaimed).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceLast < 24) {
+        return { 
+          success: false, 
+          coins: user.coins || 0, 
+          message: `Reward already claimed. Try again in ${Math.ceil(24 - hoursSinceLast)} hours.` 
+        };
+      }
+    }
+
+    const rewardAmount = 50; 
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        coins: (user.coins || 0) + rewardAmount,
+        dailyRewardLastClaimed: now,
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    return { 
+      success: true, 
+      coins: updatedUser.coins || 0, 
+      message: `Successfully claimed ${rewardAmount} coins!` 
+    };
+  }
+
+  async updateUserGameProfiles(userId: string, gameName: string, inGameName: string, inGameId: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    const currentProfiles = (user.gameProfiles as Record<string, any>) || {};
+    currentProfiles[gameName] = { inGameName, inGameId };
+
+    await db
+      .update(users)
+      .set({ gameProfiles: currentProfiles })
+      .where(eq(users.id, userId));
+  }
+
+  async joinTournamentWithCoins(tournamentId: string, userId: string, gameDetails: any, entryFee: number): Promise<TournamentParticipant> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    if ((user.coins || 0) < entryFee) throw new Error("Insufficient coins");
+
+    const [participant] = await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({ coins: (user.coins || 0) - entryFee })
+        .where(eq(users.id, userId));
+
+      return tx
+        .insert(tournamentParticipants)
+        .values({
+          tournamentId,
+          userId,
+          gameDetails,
+          status: "registered",
+        })
+        .returning();
+    });
+
+    return participant;
+  }
+
+  async sendTournamentMessage(tournamentId: string, senderId: string, message: string, isAnnouncement: boolean = false): Promise<any> {
+    const [msg] = await db.insert(tournamentMessages).values({
+      tournamentId,
+      senderId,
+      message,
+      isAnnouncement,
+    }).returning();
+    return msg;
+  }
+
+  async getTournamentMessages(tournamentId: string): Promise<any[]> {
+    return db.select({
+      id: tournamentMessages.id,
+      message: tournamentMessages.message,
+      isAnnouncement: tournamentMessages.isAnnouncement,
+      createdAt: tournamentMessages.createdAt,
+      senderGamertag: users.gamertag,
+    }).from(tournamentMessages)
+      .leftJoin(users, eq(tournamentMessages.senderId, users.id))
+      .where(eq(tournamentMessages.tournamentId, tournamentId))
+      .orderBy(desc(tournamentMessages.createdAt));
+  }
+
   async createTournament(tournament: InsertTournament): Promise<Tournament> {
     const [newTournament] = await db.insert(tournaments).values(tournament).returning();
     return newTournament;

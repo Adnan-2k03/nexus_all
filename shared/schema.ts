@@ -89,6 +89,9 @@ export const users = pgTable("users", {
   lastConnectionRequestReset: timestamp("last_connection_request_reset").defaultNow(),
   adRevenueEarned: integer("ad_revenue_earned").default(0),
   isAdmin: boolean("is_admin").default(false),
+  coins: integer("coins").default(100),
+  dailyRewardLastClaimed: timestamp("daily_reward_last_claimed"),
+  gameProfiles: jsonb("game_profiles").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -661,11 +664,24 @@ export const tournamentParticipants = pgTable("tournament_participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  status: varchar("status").notNull().default("joined"), // joined, eliminated, winner
-  joinedAt: timestamp("joined_at").defaultNow(),
+  gameDetails: jsonb("game_details"), // Store in-game name and ID here
+  status: varchar("status").notNull().default("registered"), // registered, checked_in, disqualified, knocked_out
+  createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_tournament_participants_tournament").on(table.tournamentId),
   index("idx_tournament_participants_user").on(table.userId),
+]);
+
+// Tournament Announcement Messages - for hosts to send IDs and passwords
+export const tournamentMessages = pgTable("tournament_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  isAnnouncement: boolean("is_announcement").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_tournament_messages_tournament").on(table.tournamentId),
 ]);
 
 // Tournament matches table
