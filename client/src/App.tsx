@@ -38,6 +38,7 @@ import DataDeletionRequest from "@/pages/DataDeletionRequest";
 import ChildSafetyStandards from "@/pages/ChildSafetyStandards";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { AdminPage } from "@/pages/AdminPage";
+import { TournamentPlayersPage } from "@/pages/TournamentPlayersPage";
 import { LockedFeaturePage } from "@/components/LockedFeaturePage";
 import NotFound from "@/pages/not-found";
 import { StarBackground } from "@/components/StarBackground";
@@ -511,6 +512,30 @@ function Router() {
             <JoinChannelPage />
           </div>
         )}
+      </Route>
+
+      {/* Tournament players page */}
+      <Route path="/tournaments/:id/players">
+        {() => {
+          if (!isAuthenticated || !user?.gamertag) {
+            return null;
+          }
+          return (
+            <div className="min-h-screen relative">
+              {user && user.gamertag && (
+                <GameNavigation
+                  currentPage="tournaments"
+                  onNavigate={handleNavigation}
+                  user={mapUserForComponents(user as User) as any}
+                  onLogout={handleLogout}
+                />
+              )}
+              <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4 relative z-10">
+                <TournamentPlayersPage />
+              </div>
+            </div>
+          );
+        }}
       </Route>
       
       {!isAuthenticated && !isLoading ? (

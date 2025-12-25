@@ -14,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { insertTournamentSchema } from "@shared/schema";
 import { z } from "zod";
-import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send, RefreshCw, Edit2, Trash2 } from "lucide-react";
+import { Trophy, Users, Calendar, Coins, Lock, MessageSquare, Send, RefreshCw, Edit2, Trash2, Eye } from "lucide-react";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DailyRewards } from "./DailyRewards";
 import { TournamentParticipantsList } from "./TournamentParticipantsList";
@@ -25,6 +26,7 @@ interface TournamentsProps {
 }
 
 export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
+  const [, setLocation] = useLocation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<any>(null);
@@ -623,7 +625,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex gap-2 items-center">
+                              <div className="flex gap-2 items-center flex-wrap">
                                 {!isCreator && !isJoined && !isAdmin && (
                                   <Button 
                                     onClick={(e) => { e.stopPropagation(); handleJoinTournament(tournament); }} 
@@ -633,6 +635,15 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                   </Button>
                                 )}
                                 {isJoined && <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/20">Joined</Badge>}
+                                <Button 
+                                  size="icon" 
+                                  variant="outline"
+                                  onClick={(e) => { e.stopPropagation(); setLocation(`/tournaments/${tournament.id}/players`); }}
+                                  data-testid="button-view-players"
+                                  title="View all registered players"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
                                 {(isCreator || isAdmin) && (
                                   <div className="flex gap-2">
                                     <Button 
