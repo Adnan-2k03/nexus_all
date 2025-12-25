@@ -110,6 +110,20 @@ export const matchRequests = pgTable("match_requests", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const hobbies = pgTable("hobbies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  category: varchar("category").notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  link: varchar("link"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Hobby = typeof hobbies.$inferSelect;
+export type InsertHobby = typeof hobbies.$inferInsert;
+export const insertHobbySchema = createInsertSchema(hobbies).omit({ id: true, userId: true, createdAt: true });
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Tournament = typeof tournaments.$inferSelect;
