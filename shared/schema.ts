@@ -1,36 +1,9 @@
-import { sql } from 'drizzle-orm';
-import {
-  index,
-  jsonb,
-  pgTable,
-  timestamp,
-  varchar,
-  text,
-  integer,
-  real,
-  pgEnum,
-  boolean,
-  unique,
-} from "drizzle-orm/pg-core";
+import { pgTable, varchar, timestamp, text, integer, jsonb, boolean, pgEnum, index, unique, serial, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 
-// Enums
-export const matchRequestStatusEnum = pgEnum("match_request_status", ["waiting", "connected", "declined"]);
-export const matchTypeEnum = pgEnum("match_type", ["lfg", "lfo"]);
-export const durationEnum = pgEnum("duration", ["short-term", "long-term"]);
-export const genderEnum = pgEnum("gender", ["male", "female", "custom", "prefer_not_to_say"]);
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "connection_request",
-  "connection_accepted",
-  "connection_declined",
-  "match_application",
-  "match_accepted",
-  "match_declined",
-  "voice_channel_invite",
-  "voice_channel_invite_accepted",
-  "voice_channel_invite_declined"
-]);
+export const genderEnum = pgEnum("gender", ["male", "female", "other", "prefer_not_to_say"]);
 export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "pro", "gold"]);
 export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", [
   "match_posting",
@@ -56,7 +29,7 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table - supports both OAuth and local registration
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   googleId: varchar("google_id").unique(),
@@ -66,7 +39,6 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  // Gaming profile fields
   gamertag: varchar("gamertag").unique().notNull(),
   bio: text("bio"),
   location: varchar("location"),
@@ -76,603 +48,45 @@ export const users = pgTable("users", {
   gender: genderEnum("gender"),
   language: varchar("language"),
   preferredGames: text("preferred_games").array(),
-  // Privacy settings for mutuals display
-  showMutualGames: varchar("show_mutual_games").default("everyone"), // everyone, connections, nobody
+  showMutualGames: varchar("show_mutual_games").default("everyone"),
   showMutualFriends: varchar("show_mutual_friends").default("everyone"),
   showMutualHobbies: varchar("show_mutual_hobbies").default("everyone"),
-  // Voice overlay settings (mobile only)
   voiceOverlayEnabled: boolean("voice_overlay_enabled").default(false),
-  // Monetization fields
   subscriptionTier: subscriptionTierEnum("subscription_tier").default("free"),
   subscriptionEndDate: timestamp("subscription_end_date"),
   connectionRequestsUsedToday: integer("connection_requests_used_today").default(0),
   lastConnectionRequestReset: timestamp("last_connection_request_reset").defaultNow(),
   adRevenueEarned: integer("ad_revenue_earned").default(0),
-  isAdmin: boolean("is_admin").default(false),
   coins: integer("coins").default(100),
   dailyRewardLastClaimed: timestamp("daily_reward_last_claimed"),
   gameProfiles: jsonb("game_profiles").default({}),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_users_gender").on(table.gender),
-  index("idx_users_language").on(table.language),
-  index("idx_users_created_at").on(table.createdAt),
-  index("idx_users_phone_number").on(table.phoneNumber),
-  index("idx_users_subscription_tier").on(table.subscriptionTier),
-]);
-
-// Match requests table
-export const matchRequests = pgTable("match_requests", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  gameName: varchar("game_name").notNull(),
-  gameMode: varchar("game_mode").notNull(), // 1v1, 2v2, 3v3, etc.
-  matchType: matchTypeEnum("match_type").notNull().default("lfg"), // lfg (Looking for Group) or lfo (Looking for Opponent)
-  duration: durationEnum("duration").notNull().default("short-term"), // short-term or long-term
-  tournamentName: varchar("tournament_name"),
-  description: text("description").notNull(),
-  status: matchRequestStatusEnum("status").notNull().default("waiting"),
-  region: varchar("region"),
-  costCredits: integer("cost_credits").default(5), // Cost to post this match
-  isBoosted: boolean("is_boosted").default(false), // Portfolio boost flag
-  boostExpiresAt: timestamp("boost_expires_at"), // Boost expiry time
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_match_requests_user_id").on(table.userId),
-  index("idx_match_requests_status").on(table.status),
-  index("idx_match_requests_game_name").on(table.gameName),
-  index("idx_match_requests_created_at").on(table.createdAt),
-  index("idx_match_requests_is_boosted").on(table.isBoosted),
-]);
-
-// Direct connection requests (user-to-user, no match required)
-export const connectionRequests = pgTable("connection_requests", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  senderId: varchar("sender_id").notNull().references(() => users.id),
-  receiverId: varchar("receiver_id").notNull().references(() => users.id),
-  status: varchar("status").notNull().default("pending"), // pending, accepted, declined
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_connection_requests_sender").on(table.senderId),
-  index("idx_connection_requests_receiver").on(table.receiverId),
-  index("idx_connection_requests_status").on(table.status),
-]);
-
-// Match connections table (for match-based connections)
-export const matchConnections = pgTable("match_connections", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => matchRequests.id, { onDelete: "cascade" }),
-  requesterId: varchar("requester_id").notNull().references(() => users.id),
-  accepterId: varchar("accepter_id").notNull().references(() => users.id),
-  status: varchar("status").notNull().default("pending"), // pending, accepted, declined
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_match_connections_requester").on(table.requesterId),
-  index("idx_match_connections_accepter").on(table.accepterId),
-  index("idx_match_connections_request").on(table.requestId),
-]);
-
-// Hidden matches table - tracks which users have hidden which match requests
-export const hiddenMatches = pgTable("hidden_matches", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  matchRequestId: varchar("match_request_id").notNull().references(() => matchRequests.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_user_hidden_matches").on(table.userId),
-]);
-
-// Chat messages table - stores messages between connected users
-// connectionId can reference either connectionRequests or matchConnections
-export const chatMessages = pgTable("chat_messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  connectionId: varchar("connection_id").notNull(),
-  senderId: varchar("sender_id").notNull().references(() => users.id),
-  receiverId: varchar("receiver_id").notNull().references(() => users.id),
-  message: text("message").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Notifications table - stores user notifications for various events
-export const notifications = pgTable("notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  type: varchar("type").notNull(), // connection_request, connection_accepted, connection_declined, match_application, match_accepted, match_declined, voice_channel_invite, etc.
-  title: varchar("title").notNull(),
-  message: text("message").notNull(),
-  relatedUserId: varchar("related_user_id").references(() => users.id), // The user who triggered this notification
-  relatedMatchId: varchar("related_match_id").references(() => matchRequests.id),
-  actionUrl: varchar("action_url"), // URL to navigate to when notification is clicked
-  actionData: jsonb("action_data"), // Additional data needed for notification action
-  isRead: boolean("is_read").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_user_notifications").on(table.userId),
-  index("idx_notifications_is_read").on(table.isRead),
-]);
-
-// Game profiles table - stores detailed game achievements per user per game
-export const gameProfiles = pgTable("game_profiles", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  gameName: varchar("game_name").notNull(),
-  highestRank: varchar("highest_rank"),
-  currentRank: varchar("current_rank"),
-  hoursPlayed: integer("hours_played"),
-  clipUrls: jsonb("clip_urls"),
-  achievements: text("achievements").array(),
-  achievementDetails: jsonb("achievement_details"),
-  stats: jsonb("stats"),
-  statsPhotoUrl: varchar("stats_photo_url"),
-  statsPhotoDate: varchar("stats_photo_date"),
-  customSections: jsonb("custom_sections"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_user_game_profiles").on(table.userId),
-]);
-
-// Hobbies/Interests table - stores user interests beyond gaming
-export const hobbies = pgTable("hobbies", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  category: varchar("category").notNull(), // anime, dance, books, music, art, writing, etc.
-  title: varchar("title").notNull(),
-  description: text("description"),
-  link: varchar("link"), // URL to content, video, article, etc.
-  imageUrl: varchar("image_url"), // Optional image
-  metadata: jsonb("metadata"), // Additional flexible data
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_user_hobbies").on(table.userId),
-  index("idx_hobbies_category").on(table.category),
-]);
-
-// Portfolio Pages table - stores AI-generated or custom portfolio pages
-export const portfolioPages = pgTable("portfolio_pages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  themeName: varchar("theme_name").notNull(), // e.g., "modern", "minimal", "vibrant"
-  layout: jsonb("layout").notNull(), // JSON structure with sections, colors, components
-  prompt: text("prompt"), // Original prompt used for AI generation
-  isActive: boolean("is_active").notNull().default(true), // Whether this is the active portfolio
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_user_portfolios").on(table.userId),
-]);
-
-// Voice Channels table - tracks active voice channels per connection
-export const voiceChannels = pgTable("voice_channels", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  connectionId: varchar("connection_id").notNull().unique(), // References either connectionRequests or matchConnections - UNIQUE to prevent duplicate channels
-  hmsRoomId: varchar("hms_room_id"), // 100ms room ID for reusing existing rooms
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_connection_voice_channels").on(table.connectionId),
-]);
-
-// Group Voice Channels table - supports multi-user voice channels
-export const groupVoiceChannels = pgTable("group_voice_channels", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(),
-  creatorId: varchar("creator_id").notNull().references(() => users.id),
-  hmsRoomId: varchar("hms_room_id"), // 100ms room ID
-  inviteCode: varchar("invite_code").notNull().unique(), // Unique invite link code
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_group_voice_creator").on(table.creatorId),
-  index("idx_group_voice_invite").on(table.inviteCode),
-]);
-
-// Group Voice Channel Members table - tracks invited/joined members
-export const groupVoiceMembers = pgTable("group_voice_members", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  channelId: varchar("channel_id").notNull().references(() => groupVoiceChannels.id, { onDelete: "cascade" }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  isActive: boolean("is_active").notNull().default(false), // Currently in the channel
-  isMuted: boolean("is_muted").notNull().default(false),
-  joinedAt: timestamp("joined_at").defaultNow(),
-}, (table) => [
-  index("idx_group_voice_channel_members").on(table.channelId),
-  index("idx_group_voice_user_members").on(table.userId),
-]);
-
-// Group Voice Channel Invites table - tracks pending invitations
-export const groupVoiceInvites = pgTable("group_voice_invites", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  channelId: varchar("channel_id").notNull().references(() => groupVoiceChannels.id, { onDelete: "cascade" }),
-  inviterId: varchar("inviter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  inviteeId: varchar("invitee_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  status: varchar("status").notNull().default("pending"), // pending, accepted, declined
-  createdAt: timestamp("created_at").defaultNow(),
-  respondedAt: timestamp("responded_at"),
-}, (table) => [
-  index("idx_group_voice_invites_channel").on(table.channelId),
-  index("idx_group_voice_invites_invitee").on(table.inviteeId),
-  index("idx_group_voice_invites_status").on(table.status),
-]);
-
-// Voice Participants table - tracks who's currently in each voice channel
-export const voiceParticipants = pgTable("voice_participants", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  voiceChannelId: varchar("voice_channel_id").notNull().references(() => voiceChannels.id, { onDelete: "cascade" }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  isMuted: boolean("is_muted").notNull().default(false),
-  joinedAt: timestamp("joined_at").defaultNow(),
-}, (table) => [
-  index("idx_voice_channel_participants").on(table.voiceChannelId),
-  index("idx_user_voice_participants").on(table.userId),
-  unique("unique_voice_participant").on(table.voiceChannelId, table.userId), // Composite unique constraint
-]);
-
-// Push Subscriptions table - stores browser push notification subscriptions
-export const pushSubscriptions = pgTable("push_subscriptions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  endpoint: text("endpoint").notNull().unique(),
-  p256dh: text("p256dh").notNull(),
-  auth: text("auth").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_user_push_subscriptions").on(table.userId),
-]);
-
-// Phone Verification Codes table - stores OTP codes for phone verification
-export const phoneVerificationCodes = pgTable("phone_verification_codes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  phoneNumber: varchar("phone_number").notNull(),
-  code: varchar("code").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  verified: boolean("verified").notNull().default(false),
-  attempts: integer("attempts").notNull().default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_phone_verification_phone").on(table.phoneNumber),
-  index("idx_phone_verification_expires").on(table.expiresAt),
-]);
-
-export type UpsertUser = typeof users.$inferInsert;
-export type User = typeof users.$inferSelect;
-export type InsertMatchRequest = typeof matchRequests.$inferInsert;
-export type MatchRequest = typeof matchRequests.$inferSelect;
-export type InsertConnectionRequest = typeof connectionRequests.$inferInsert;
-export type ConnectionRequest = typeof connectionRequests.$inferSelect;
-export type InsertMatchConnection = typeof matchConnections.$inferInsert;
-export type MatchConnection = typeof matchConnections.$inferSelect;
-export type InsertHiddenMatch = typeof hiddenMatches.$inferInsert;
-export type HiddenMatch = typeof hiddenMatches.$inferSelect;
-export type InsertChatMessage = typeof chatMessages.$inferInsert;
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type InsertNotification = typeof notifications.$inferInsert;
-export type Notification = typeof notifications.$inferSelect;
-export type InsertGameProfile = typeof gameProfiles.$inferInsert;
-export type GameProfile = typeof gameProfiles.$inferSelect;
-export type InsertHobby = typeof hobbies.$inferInsert;
-export type Hobby = typeof hobbies.$inferSelect;
-export type InsertPortfolioPage = typeof portfolioPages.$inferInsert;
-export type PortfolioPage = typeof portfolioPages.$inferSelect;
-export type InsertVoiceChannel = typeof voiceChannels.$inferInsert;
-export type VoiceChannel = typeof voiceChannels.$inferSelect;
-export type InsertGroupVoiceChannel = typeof groupVoiceChannels.$inferInsert;
-export type GroupVoiceChannel = typeof groupVoiceChannels.$inferSelect;
-export type InsertGroupVoiceMember = typeof groupVoiceMembers.$inferInsert;
-export type GroupVoiceMember = typeof groupVoiceMembers.$inferSelect;
-export type InsertGroupVoiceInvite = typeof groupVoiceInvites.$inferInsert;
-export type GroupVoiceInvite = typeof groupVoiceInvites.$inferSelect;
-export type InsertVoiceParticipant = typeof voiceParticipants.$inferInsert;
-export type VoiceParticipant = typeof voiceParticipants.$inferSelect;
-export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
-export type PushSubscription = typeof pushSubscriptions.$inferSelect;
-export type InsertPhoneVerificationCode = typeof phoneVerificationCodes.$inferInsert;
-export type PhoneVerificationCode = typeof phoneVerificationCodes.$inferSelect;
-
-// Enhanced match request type that includes user profile data
-export type MatchRequestWithUser = MatchRequest & {
-  gamertag: string | null;
-  profileImageUrl: string | null;
-};
-
-// Chat message with sender information
-export type ChatMessageWithSender = ChatMessage & {
-  senderGamertag: string | null;
-  senderProfileImageUrl: string | null;
-};
-
-// Connection request with user information
-export type ConnectionRequestWithUser = ConnectionRequest & {
-  senderGamertag: string | null;
-  senderProfileImageUrl: string | null;
-  receiverGamertag: string | null;
-  receiverProfileImageUrl: string | null;
-};
-
-// Match connection with user information
-export type MatchConnectionWithUser = MatchConnection & {
-  requesterGamertag: string | null;
-  requesterProfileImageUrl: string | null;
-  accepterGamertag: string | null;
-  accepterProfileImageUrl: string | null;
-  gameName?: string | null;
-  gameMode?: string | null;
-};
-
-// Voice participant with user information
-export type VoiceParticipantWithUser = VoiceParticipant & {
-  gamertag: string | null;
-  profileImageUrl: string | null;
-};
-
-// Group voice channel with creator and members information
-export type GroupVoiceChannelWithDetails = GroupVoiceChannel & {
-  creatorGamertag: string | null;
-  creatorProfileImageUrl: string | null;
-  memberCount: number;
-  activeCount: number;
-  members?: GroupVoiceMemberWithUser[];
-};
-
-// Group voice member with user information
-export type GroupVoiceMemberWithUser = GroupVoiceMember & {
-  gamertag: string | null;
-  profileImageUrl: string | null;
-  firstName: string | null;
-  lastName: string | null;
-};
-
-// Group voice invite with user information
-export type GroupVoiceInviteWithUser = GroupVoiceInvite & {
-  inviterGamertag: string | null;
-  inviterProfileImageUrl: string | null;
-  inviteeGamertag: string | null;
-  inviteeProfileImageUrl: string | null;
-  channelName: string | null;
-};
-
-export const insertUserSchema = createInsertSchema(users);
-
-// Local registration schema - minimal fields required to create account
-export const registerUserSchema = z.object({
-  gamertag: z.string().min(3, "Gamertag must be at least 3 characters").max(20, "Gamertag must be at most 20 characters"),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().email().optional(),
-  phoneNumber: z.string().optional(),
-  age: z.number().min(13, "You must be at least 13 years old").max(120).optional(),
-  gender: z.enum(["male", "female", "custom", "prefer_not_to_say"]).optional(),
-  bio: z.string().max(500).optional(),
-  location: z.string().optional(),
-  preferredGames: z.array(z.string()).optional(),
-});
-
-export type RegisterUser = z.infer<typeof registerUserSchema>;
-
-// Phone verification schemas
-export const sendPhoneCodeSchema = z.object({
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number must be at most 15 digits"),
-});
-
-export const verifyPhoneCodeSchema = z.object({
-  phoneNumber: z.string().min(10).max(15),
-  code: z.string().length(6, "Verification code must be 6 digits"),
-});
-
-export const phoneRegisterSchema = registerUserSchema.extend({
-  phoneNumber: z.string().min(10).max(15),
-  verificationCode: z.string().length(6),
-});
-
-export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true, updatedAt: true }).required({ matchType: true, duration: true });
-export const insertConnectionRequestSchema = createInsertSchema(connectionRequests).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertMatchConnectionSchema = createInsertSchema(matchConnections).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertHiddenMatchSchema = createInsertSchema(hiddenMatches).omit({ id: true, createdAt: true });
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
-export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
-export const insertGameProfileSchema = createInsertSchema(gameProfiles).omit({ id: true, userId: true, createdAt: true, updatedAt: true });
-export const insertHobbySchema = createInsertSchema(hobbies).omit({ id: true, userId: true, createdAt: true, updatedAt: true });
-export const insertPortfolioPageSchema = createInsertSchema(portfolioPages).omit({ id: true, userId: true, createdAt: true, updatedAt: true });
-export const insertVoiceChannelSchema = createInsertSchema(voiceChannels).omit({ id: true, createdAt: true });
-export const insertGroupVoiceChannelSchema = createInsertSchema(groupVoiceChannels).omit({ id: true, createdAt: true });
-export const insertGroupVoiceMemberSchema = createInsertSchema(groupVoiceMembers).omit({ id: true, joinedAt: true });
-export const insertGroupVoiceInviteSchema = createInsertSchema(groupVoiceInvites).omit({ id: true, createdAt: true, respondedAt: true });
-export const insertVoiceParticipantSchema = createInsertSchema(voiceParticipants).omit({ id: true, joinedAt: true });
-export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
-
-// User credits table - tracks credit balance per user
-export const userCredits = pgTable("user_credits", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
-  balance: integer("balance").notNull().default(10), // Start with 10 free credits
-  lastUpdated: timestamp("last_updated").defaultNow(),
-}, (table) => [
-  index("idx_user_credits_user_id").on(table.userId),
-]);
-
-// Credit transactions table - audit trail for all credit operations
-export const creditTransactions = pgTable("credit_transactions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  amount: integer("amount").notNull(), // Can be negative (deduction) or positive (reward)
-  type: creditTransactionTypeEnum("type").notNull(),
-  description: text("description"),
-  relatedId: varchar("related_id"), // References match ID, subscription ID, etc.
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_credit_transactions_user_id").on(table.userId),
-  index("idx_credit_transactions_type").on(table.type),
-  index("idx_credit_transactions_created_at").on(table.createdAt),
-]);
-
-// Subscriptions table - track active subscriptions
-export const subscriptions = pgTable("subscriptions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
-  tier: subscriptionTierEnum("tier").notNull().default("free"),
-  status: varchar("status").notNull().default("active"), // active, cancelled, expired
-  startDate: timestamp("start_date").defaultNow(),
-  endDate: timestamp("end_date"),
-  autoRenew: boolean("auto_renew").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_subscriptions_user_id").on(table.userId),
-  index("idx_subscriptions_tier").on(table.tier),
-  index("idx_subscriptions_status").on(table.status),
-]);
-
-// Portfolio boosts table - track active portfolio boosts
-export const portfolioBoosts = pgTable("portfolio_boosts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  matchRequestId: varchar("match_request_id").references(() => matchRequests.id, { onDelete: "cascade" }),
-  costCredits: integer("cost_credits").notNull().default(50),
-  expiresAt: timestamp("expires_at").notNull(),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_portfolio_boosts_user_id").on(table.userId),
-  index("idx_portfolio_boosts_expires_at").on(table.expiresAt),
-  index("idx_portfolio_boosts_is_active").on(table.isActive),
-]);
-
-// Feedback table - store user feedback and suggestions
-export const feedback = pgTable("feedback", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  message: text("message").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_feedback_user_id").on(table.userId),
-  index("idx_feedback_created_at").on(table.createdAt),
-]);
-
-// User roles enum for feedback system
-export const userRoleEnum = pgEnum("user_role", ["member", "admin", "moderator"]);
-
-// Feedback channels table - text and voice channels
-export const feedbackChannels = pgTable("feedback_channels", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull().unique(),
-  description: text("description"),
-  type: varchar("type").notNull(), // "text" or "voice"
-  creatorId: varchar("creator_id").notNull().references(() => users.id),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_feedback_channels_creator").on(table.creatorId),
-  index("idx_feedback_channels_active").on(table.isActive),
-]);
-
-// Feedback channel messages - messages in text channels
-export const feedbackMessages = pgTable("feedback_messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  channelId: varchar("channel_id").notNull().references(() => feedbackChannels.id, { onDelete: "cascade" }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  message: text("message").notNull(),
-  isDeleted: boolean("is_deleted").notNull().default(false),
-  deletedBy: varchar("deleted_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_feedback_messages_channel").on(table.channelId),
-  index("idx_feedback_messages_user").on(table.userId),
-  index("idx_feedback_messages_created").on(table.createdAt),
-]);
-
-// Channel members - track who is in which channel and their roles
-export const channelMembers = pgTable("channel_members", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  channelId: varchar("channel_id").notNull().references(() => feedbackChannels.id, { onDelete: "cascade" }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  role: userRoleEnum("role").notNull().default("member"),
-  isMuted: boolean("is_muted").notNull().default(false),
-  joinedAt: timestamp("joined_at").defaultNow(),
-}, (table) => [
-  index("idx_channel_members_channel").on(table.channelId),
-  index("idx_channel_members_user").on(table.userId),
-  unique("unique_channel_member").on(table.channelId, table.userId),
-]);
-
-// Groups table - for user-created groups (WhatsApp/Discord style)
-export const groups = pgTable("groups", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  creatorId: varchar("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  profileImageUrl: varchar("profile_image_url"),
-  groupLanguage: varchar("group_language"), // Primary language for the group
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_groups_creator").on(table.creatorId),
-  index("idx_groups_created").on(table.createdAt),
-]);
-
-// Group members table
-export const groupMembers = pgTable("group_members", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  role: groupRoleEnum("role").notNull().default("member"),
-  joinedAt: timestamp("joined_at").defaultNow(),
-}, (table) => [
-  index("idx_group_members_group").on(table.groupId),
-  index("idx_group_members_user").on(table.userId),
-  unique("unique_group_member").on(table.groupId, table.userId),
-]);
-
-// Group messages table
-export const groupMessages = pgTable("group_messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  groupId: varchar("group_id").notNull().references(() => groups.id, { onDelete: "cascade" }),
-  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  message: text("message").notNull(),
-  senderLanguage: varchar("sender_language"), // Language the sender wrote in
-  translations: jsonb("translations").default({}), // JSON cache: { "en": "translated text", "fr": "...", etc }
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_group_messages_group").on(table.groupId),
-  index("idx_group_messages_sender").on(table.senderId),
-  index("idx_group_messages_created").on(table.createdAt),
-]);
-
-// Tournaments table
 export const tournaments = pgTable("tournaments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   gameName: varchar("game_name").notNull(),
-  prizePool: integer("prize_pool").notNull().default(0), // in credits
-  status: varchar("status").notNull().default("upcoming"), // upcoming, active, completed
+  prizePool: integer("prize_pool").notNull(),
+  entryFee: integer("entry_fee").default(0),
+  maxParticipants: integer("max_participants").notNull(),
+  status: varchar("status").notNull().default("upcoming"),
   createdBy: varchar("created_by").notNull().references(() => users.id),
-  maxParticipants: integer("max_participants").notNull().default(16),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_tournaments_game").on(table.gameName),
-  index("idx_tournaments_status").on(table.status),
-  index("idx_tournaments_creator").on(table.createdBy),
-]);
+});
 
-// Tournament participants table
 export const tournamentParticipants = pgTable("tournament_participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  gameDetails: jsonb("game_details"), // Store in-game name and ID here
-  status: varchar("status").notNull().default("registered"), // registered, checked_in, disqualified, knocked_out
+  gameDetails: jsonb("game_details"),
+  status: varchar("status").notNull().default("registered"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_tournament_participants_tournament").on(table.tournamentId),
   index("idx_tournament_participants_user").on(table.userId),
 ]);
 
-// Tournament Announcement Messages - for hosts to send IDs and passwords
 export const tournamentMessages = pgTable("tournament_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
@@ -684,177 +98,27 @@ export const tournamentMessages = pgTable("tournament_messages", {
   index("idx_tournament_messages_tournament").on(table.tournamentId),
 ]);
 
-// Tournament matches table
-export const tournamentMatches = pgTable("tournament_matches", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  tournamentId: varchar("tournament_id").notNull().references(() => tournaments.id, { onDelete: "cascade" }),
-  participant1Id: varchar("participant1_id").notNull().references(() => tournamentParticipants.id),
-  participant2Id: varchar("participant2_id").references(() => tournamentParticipants.id),
-  winnerId: varchar("winner_id").references(() => tournamentParticipants.id),
-  matchDate: timestamp("match_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_tournament_matches_tournament").on(table.tournamentId),
-  index("idx_tournament_matches_date").on(table.matchDate),
-]);
-
-// User game profiles table - stores in-game IDs for specific games
-export const userGameProfiles = pgTable("user_game_profiles", {
+export const matchRequests = pgTable("match_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  game: varchar("game").notNull(), // e.g., "INDUS_BR", "FAUG"
-  gameId: varchar("game_id").notNull(), // In-game ID/username
-  gameName: varchar("game_name").notNull(), // Display name in-game
+  game: varchar("game").notNull(),
+  mode: varchar("mode").notNull(),
+  platform: varchar("platform").notNull(),
+  language: varchar("language").notNull(),
+  description: text("description"),
+  status: varchar("status").notNull().default("open"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_user_game_profiles_user").on(table.userId),
-  index("idx_user_game_profiles_game").on(table.game),
-  unique("unique_user_game").on(table.userId, table.game),
-]);
-
-// Derived types for userCredits
-export type UserCredits = typeof userCredits.$inferSelect;
-export type InsertUserCredits = typeof userCredits.$inferInsert;
-
-// Derived types for creditTransactions
-export type CreditTransaction = typeof creditTransactions.$inferSelect;
-export type InsertCreditTransaction = typeof creditTransactions.$inferInsert;
-
-// Derived types for subscriptions
-export type Subscription = typeof subscriptions.$inferSelect;
-export type InsertSubscription = typeof subscriptions.$inferInsert;
-
-// Derived types for portfolioBoosts
-export type PortfolioBoost = typeof portfolioBoosts.$inferSelect;
-export type InsertPortfolioBoost = typeof portfolioBoosts.$inferInsert;
-
-// Derived types for feedback channels and messages
-export type FeedbackChannel = typeof feedbackChannels.$inferSelect;
-export type InsertFeedbackChannel = typeof feedbackChannels.$inferInsert;
-export type FeedbackMessage = typeof feedbackMessages.$inferSelect;
-export type InsertFeedbackMessage = typeof feedbackMessages.$inferInsert;
-export type ChannelMember = typeof channelMembers.$inferSelect;
-export type InsertChannelMember = typeof channelMembers.$inferInsert;
-
-// Insert schemas
-export const insertFeedbackChannelSchema = createInsertSchema(feedbackChannels).omit({ id: true, creatorId: true, createdAt: true });
-export const insertFeedbackMessageSchema = createInsertSchema(feedbackMessages).omit({ id: true, userId: true, createdAt: true, updatedAt: true, isDeleted: true, deletedBy: true });
-export const insertChannelMemberSchema = createInsertSchema(channelMembers).omit({ id: true, joinedAt: true });
-
-// Message with sender info
-export type FeedbackMessageWithSender = FeedbackMessage & {
-  gamertag: string | null;
-  profileImageUrl: string | null;
-};
-
-// Channel with member count
-export type FeedbackChannelWithMembers = FeedbackChannel & {
-  memberCount: number;
-  creatorGamertag: string | null;
-};
-
-// Derived types for feedback
-export type Feedback = typeof feedback.$inferSelect;
-export type InsertFeedback = typeof feedback.$inferInsert;
-
-// Credit-related schemas for validation
-export const insertUserCreditsSchema = createInsertSchema(userCredits).omit({ id: true, lastUpdated: true });
-export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({ id: true, createdAt: true });
-export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true });
-export const insertPortfolioBoostSchema = createInsertSchema(portfolioBoosts).omit({ id: true, createdAt: true });
-
-// Feedback schemas
-export const insertFeedbackSchema = createInsertSchema(feedback).omit({ id: true, createdAt: true });
-export type InsertFeedbackInput = z.infer<typeof insertFeedbackSchema>;
-
-// Privacy settings validation
-export const privacyVisibilityEnum = z.enum(["everyone", "connections", "nobody"]);
-export const updatePrivacySettingsSchema = z.object({
-  showMutualGames: privacyVisibilityEnum.optional(),
-  showMutualFriends: privacyVisibilityEnum.optional(),
-  showMutualHobbies: privacyVisibilityEnum.optional(),
 });
 
-// Group-related types and schemas
-export type Group = typeof groups.$inferSelect;
-export type InsertGroup = typeof groups.$inferInsert;
-export type GroupMember = typeof groupMembers.$inferSelect;
-export type InsertGroupMember = typeof groupMembers.$inferInsert;
-export type GroupMessage = typeof groupMessages.$inferSelect;
-export type InsertGroupMessage = typeof groupMessages.$inferInsert;
-
-// Insert schemas
-export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, creatorId: true, createdAt: true, updatedAt: true });
-export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({ id: true, joinedAt: true });
-export const insertGroupMessageSchema = createInsertSchema(groupMessages).omit({ id: true, createdAt: true });
-
-// Group with member count and message info
-export type GroupWithDetails = Group & {
-  memberCount: number;
-  creatorGamertag: string | null;
-  lastMessageTime: Date | null;
-};
-
-// Group message with sender info
-export type GroupMessageWithSender = GroupMessage & {
-  senderGamertag: string | null;
-  senderProfileImageUrl: string | null;
-};
-
-// Tournament-related types and schemas
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTournament = typeof tournaments.$inferInsert;
 export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;
 export type InsertTournamentParticipant = typeof tournamentParticipants.$inferInsert;
-export type TournamentMatch = typeof tournamentMatches.$inferSelect;
-export type InsertTournamentMatch = typeof tournamentMatches.$inferInsert;
-export type UserGameProfile = typeof userGameProfiles.$inferSelect;
-export type InsertUserGameProfile = typeof userGameProfiles.$inferInsert;
-
-// Insert schemas
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true, updatedAt: true }).extend({
-  prizePool: z.coerce.number(),
-  maxParticipants: z.coerce.number(),
-});
-export const insertTournamentParticipantSchema = createInsertSchema(tournamentParticipants).omit({ id: true, joinedAt: true });
-export const insertTournamentMatchSchema = createInsertSchema(tournamentMatches).omit({ id: true, createdAt: true });
-
-// Tournament with details
-export type TournamentWithDetails = Tournament & {
-  participantCount: number;
-  creatorGamertag: string | null;
-};
-
-// Tournament participant with user info
 export type TournamentParticipantWithUser = TournamentParticipant & {
   gamertag: string | null;
   profileImageUrl: string | null;
 };
-
-// Feature Flags table - controls which features are enabled/disabled across all app installations
-export const featureFlags = pgTable("feature_flags", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  featureName: varchar("feature_name").notNull().unique(), // tournaments, voice_channels, groups, etc
-  isEnabled: boolean("is_enabled").notNull().default(true), // Global toggle
-  filters: jsonb("filters").default({}), // Individual filter toggles: { tournamentCreation: false, tournamentJoin: true, advancedFilters: false }
-  description: text("description"), // What this feature does
-  updatedAt: timestamp("updated_at").defaultNow(),
-  updatedBy: varchar("updated_by"), // Admin who last updated (no foreign key - can be "admin" or user ID)
-}, (table) => [
-  index("idx_feature_flags_name").on(table.featureName),
-]);
-
-// Types
-export type FeatureFlag = typeof featureFlags.$inferSelect;
-export type InsertFeatureFlag = typeof featureFlags.$inferInsert;
-
-// Schemas
-export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({ id: true, updatedAt: true, updatedBy: true });
-export const updateFeatureFlagSchema = z.object({
-  isEnabled: z.boolean().optional(),
-  filters: z.record(z.any()).optional(),
-  description: z.string().optional(),
-});
-
-export type UpdateFeatureFlag = z.infer<typeof updateFeatureFlagSchema>;
+export const insertTournamentSchema = createInsertSchema(tournaments).omit({ id: true, createdBy: true, createdAt: true });
+export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true });
