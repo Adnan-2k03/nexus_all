@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Gift, X, Trophy, TrendingUp, Coins, CheckCircle2, Circle, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -13,8 +13,7 @@ export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ x: 20, y: 80 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
   
   const { data: user } = useQuery<any>({ 
     queryKey: ["/api/auth/user"]
@@ -77,28 +76,30 @@ export function RewardsOverlay() {
   // Handle mouse down for dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
     if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
-      setIsDragging(true);
-      const button = e.currentTarget;
-      const rect = button.getBoundingClientRect();
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
+      dragStateRef.current = {
+        isDragging: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        startPosX: position.x,
+        startPosY: position.y,
+      };
     }
   };
 
-  // Handle mouse move for dragging
+  // Handle mouse move and up with a single effect
   useEffect(() => {
-    if (!isDragging) return;
-
     const handleMouseMove = (e: MouseEvent) => {
-      // For fixed positioning, calculate relative to viewport
-      let newX = e.clientX - dragOffset.x;
-      let newY = e.clientY - dragOffset.y;
+      if (!dragStateRef.current.isDragging) return;
+
+      const deltaX = e.clientX - dragStateRef.current.startX;
+      const deltaY = e.clientY - dragStateRef.current.startY;
+
+      let newX = dragStateRef.current.startPosX + deltaX;
+      let newY = dragStateRef.current.startPosY + deltaY;
 
       // Keep button within viewport bounds
-      const maxX = window.innerWidth - 56; // Button width is 56px (w-14)
-      const maxY = window.innerHeight - 56; // Button height is 56px (h-14)
+      const maxX = window.innerWidth - 56;
+      const maxY = window.innerHeight - 56;
       
       newX = Math.max(0, Math.min(newX, maxX));
       newY = Math.max(0, Math.min(newY, maxY));
@@ -107,9 +108,10 @@ export function RewardsOverlay() {
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
-      // Save position to localStorage
-      localStorage.setItem('rewardsButtonPosition', JSON.stringify(position));
+      if (dragStateRef.current.isDragging) {
+        dragStateRef.current.isDragging = false;
+        localStorage.setItem('rewardsButtonPosition', JSON.stringify(position));
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -119,7 +121,7 @@ export function RewardsOverlay() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, position]);
+  }, [position]);
 
   return (
     <>
