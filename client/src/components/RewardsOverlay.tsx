@@ -107,7 +107,7 @@ export function RewardsOverlay() {
         <Button
           onMouseDown={handleMouseDown}
           onClick={() => !dragStateRef.current.isDragging && setIsOpen(true)}
-          className="fixed z-[99999] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+          className="fixed z-[999999] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
           style={{
             left: `${position.x}px`,
             top: `${position.y}px`,
@@ -131,7 +131,7 @@ export function RewardsOverlay() {
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[110] flex items-end justify-center p-4 sm:items-center bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[1000000] flex items-end justify-center p-4 sm:items-center bg-background/80 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
