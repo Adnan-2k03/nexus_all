@@ -298,20 +298,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserTasks(userId: string): Promise<any[]> {
-    return db.select({
-      id: userTasks.id,
-      taskId: userTasks.taskId,
-      status: userTasks.status,
-      completedAt: userTasks.completedAt,
-      title: tasks.title,
-      description: tasks.description,
-      type: tasks.type,
-      rewardCoins: tasks.rewardCoins,
-      rewardXp: tasks.rewardXp,
-    })
-    .from(userTasks)
-    .innerJoin(tasks, eq(userTasks.taskId, tasks.id))
-    .where(eq(userTasks.userId, userId));
+    const allTasks = await db.select().from(tasks);
+    const userCompletedTasks = await db.select()
+      .from(userTasks)
+      .where(eq(userTasks.userId, userId));
+
+    return allTasks.map(task => {
+      const completed = userCompletedTasks.find(ut => ut.taskId === task.id);
+      return {
+        ...task,
+        taskId: task.id,
+        status: completed ? "completed" : "pending",
+        completedAt: completed?.completedAt || null,
+      };
+    });
   }
 
   async completeTask(userId: string, taskId: string): Promise<{ success: boolean; message: string }> {
