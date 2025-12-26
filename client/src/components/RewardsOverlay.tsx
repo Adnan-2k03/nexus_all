@@ -67,9 +67,9 @@ export function RewardsOverlay() {
 
   // Handle mouse down for dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Allow dragging from anywhere on the button
+    // Start tracking potential drag
     dragStateRef.current = {
-      isDragging: true,
+      isDragging: false, // Set to false until movement threshold is reached
       startX: e.clientX,
       startY: e.clientY,
       startPosX: position.x,
@@ -77,22 +77,21 @@ export function RewardsOverlay() {
     };
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
-        if (!dragStateRef.current.isDragging) return;
-
         const deltaX = moveEvent.clientX - dragStateRef.current.startX;
         const deltaY = moveEvent.clientY - dragStateRef.current.startY;
+        
+        // Only treat as actual drag if moved more than 5px
+        const isActualDrag = Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5;
+        if (!isActualDrag) return;
+
+        dragStateRef.current.isDragging = true;
 
         let newX = dragStateRef.current.startPosX + deltaX;
         let newY = dragStateRef.current.startPosY + deltaY;
 
-        // Keep button within viewport bounds
-        const minX = 0;
-        const maxX = window.innerWidth - 56;
-        const minY = 0;
-        const maxY = window.innerHeight - 56;
-        
-        newX = Math.max(minX, Math.min(newX, maxX));
-        newY = Math.max(minY, Math.min(newY, maxY));
+        // Keep button within viewport bounds (allow full range)
+        newX = Math.max(0, Math.min(newX, window.innerWidth - 56));
+        newY = Math.max(0, Math.min(newY, window.innerHeight - 56));
 
         setPosition({ x: newX, y: newY });
       };
