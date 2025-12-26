@@ -25,17 +25,6 @@ export function RewardsOverlay() {
     enabled: !!user?.id
   });
 
-  // If overlay is disabled by user, don't show the button
-  if (user && user.rewardsOverlayEnabled === false) {
-    return null;
-  }
-
-  // Don't show on tournaments page
-  if (document.documentElement.getAttribute('data-hide-rewards-overlay') === 'true' || 
-      document.querySelector('[data-hide-rewards-overlay="true"]')) {
-    return null;
-  }
-
   const claimMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/user/claim-reward");
@@ -64,6 +53,12 @@ export function RewardsOverlay() {
       }
     }
   });
+
+  // Check if should be hidden (before any conditional rendering)
+  const isHiddenByUser = user && user.rewardsOverlayEnabled === false;
+  const isHiddenByPage = document.documentElement.getAttribute('data-hide-rewards-overlay') === 'true' || 
+                         document.querySelector('[data-hide-rewards-overlay="true"]');
+  const shouldHideOverlay = isHiddenByUser || isHiddenByPage;
 
   const level = user?.level || 1;
   const xp = user?.xp || 0;
@@ -125,30 +120,32 @@ export function RewardsOverlay() {
   return (
     <>
       {/* Floating Toggle Button - Draggable */}
-      <Button
-        onMouseDown={handleMouseDown}
-        onClick={() => !isDragging && setIsOpen(true)}
-        className="fixed z-[100] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
-        style={{
-          left: `${position.x}px`,
-          bottom: position.y ? 'auto' : '5rem',
-          top: position.y ? `${position.y}px` : 'auto',
-        }}
-        size="icon"
-        data-testid="button-rewards-overlay-toggle"
-        title="Drag to move, click to open"
-      >
-        <Trophy className="h-6 w-6" />
-        {tasks.some(t => t.status === 'pending') && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-background"></span>
-          </span>
-        )}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" data-drag-handle>
-          <GripHorizontal className="h-4 w-4" />
-        </div>
-      </Button>
+      {!shouldHideOverlay && (
+        <Button
+          onMouseDown={handleMouseDown}
+          onClick={() => !isDragging && setIsOpen(true)}
+          className="fixed z-[100] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+          style={{
+            left: `${position.x}px`,
+            bottom: position.y ? 'auto' : '5rem',
+            top: position.y ? `${position.y}px` : 'auto',
+          }}
+          size="icon"
+          data-testid="button-rewards-overlay-toggle"
+          title="Drag to move, click to open"
+        >
+          <Trophy className="h-6 w-6" />
+          {tasks.some(t => t.status === 'pending') && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-background"></span>
+            </span>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" data-drag-handle>
+            <GripHorizontal className="h-4 w-4" />
+          </div>
+        </Button>
+      )}
 
       <AnimatePresence>
         {isOpen && (
