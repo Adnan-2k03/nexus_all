@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
@@ -131,8 +131,7 @@ export function RewardsOverlay() {
           className="fixed z-[100] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
           style={{
             left: `${position.x}px`,
-            bottom: position.y ? 'auto' : '5rem',
-            top: position.y ? `${position.y}px` : 'auto',
+            top: `${position.y}px`,
           }}
           size="icon"
           data-testid="button-rewards-overlay-toggle"
