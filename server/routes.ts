@@ -563,9 +563,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- User Profile Update ---
   app.patch("/api/user/profile", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id || (req.session as any).userId || ((req.session as any).isAdmin ? "admin-user" : null);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
       const { rewardsOverlayEnabled } = req.body;
-      
       const result = await storage.updateUser(userId, { rewardsOverlayEnabled });
       res.json(result);
     } catch (error) {

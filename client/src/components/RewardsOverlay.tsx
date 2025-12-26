@@ -14,9 +14,23 @@ export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  // Start on the right side, near the top
-  const [position, setPosition] = useState({ x: typeof window !== 'undefined' ? Math.max(window.innerWidth - 100, 200) : 300, y: 20 });
-  const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
+  // Start near the top-right corner, ensuring it's visible on smaller screens
+  const [position, setPosition] = useState({ 
+    x: typeof window !== 'undefined' ? Math.min(window.innerWidth - 70, 300) : 250, 
+    y: 80 
+  });
+
+  // Re-calculate position on window resize to keep it in view
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition(prev => ({
+        x: Math.min(prev.x, window.innerWidth - 70),
+        y: Math.min(prev.y, window.innerHeight - 70)
+      }));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   useEffect(() => {
     setMounted(true);
@@ -91,9 +105,9 @@ export function RewardsOverlay() {
       hasMoved = true;
       dragStateRef.current.isDragging = true;
 
-      // No constraints - let it move freely
-      const newX = startPosX + deltaX;
-      const newY = startPosY + deltaY;
+      // Ensure it stays within viewport
+      const newX = Math.max(0, Math.min(window.innerWidth - 60, startPosX + deltaX));
+      const newY = Math.max(0, Math.min(window.innerHeight - 60, startPosY + deltaY));
 
       setPosition({ x: newX, y: newY });
     };
@@ -123,7 +137,7 @@ export function RewardsOverlay() {
             setIsOpen(true);
           }
         }}
-        className="fixed pointer-events-auto rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+        className="fixed pointer-events-auto rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing touch-none"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
