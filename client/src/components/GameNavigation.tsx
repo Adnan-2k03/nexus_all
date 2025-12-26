@@ -218,12 +218,23 @@ export function GameNavigation({
           <CreditsDisplay compact={true} />
           
           {user && (
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user.profileImageUrl} alt={user.gamertag} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                {user.gamertag.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onNavigate("profile");
+                setIsMobileMenuOpen(false);
+              }}
+              className="rounded-full p-0 h-8 w-8"
+              data-testid="button-mobile-profile"
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.profileImageUrl} alt={user.gamertag} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {user.gamertag.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
           )}
           
           <NotificationBell />
