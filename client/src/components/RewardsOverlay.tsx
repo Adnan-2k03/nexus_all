@@ -14,6 +14,7 @@ export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const dragStateRef = useRef({ isDragging: false });
   // Start near the top-right corner, ensuring it's visible on smaller screens
   const [position, setPosition] = useState({ 
     x: typeof window !== 'undefined' ? Math.min(window.innerWidth - 70, 300) : 250, 
