@@ -77,6 +77,8 @@ export function RewardsOverlay() {
 
   // Check if should be hidden (before any conditional rendering)
   const isHiddenByUser = user && user.rewardsOverlayEnabled === false;
+  
+  // Also check session for admin users if needed, or just rely on the user object which we just fixed in the API
   const isHiddenByPage = typeof document !== 'undefined' && (document.documentElement.getAttribute('data-hide-rewards-overlay') === 'true' || 
                          document.querySelector('[data-hide-rewards-overlay="true"]'));
   const shouldHideOverlay = isHiddenByUser || isHiddenByPage;

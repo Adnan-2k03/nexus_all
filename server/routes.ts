@@ -567,7 +567,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       const { rewardsOverlayEnabled } = req.body;
+      
       const result = await storage.updateUser(userId, { rewardsOverlayEnabled });
+      
+      // If we're updating the admin user, we need to handle the session as well
+      if (userId === "admin-user") {
+        (req.session as any).rewardsOverlayEnabled = rewardsOverlayEnabled;
+        req.session.save();
+      }
+      
       res.json(result);
     } catch (error) {
       console.error("Error updating user profile:", error);
