@@ -12,7 +12,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState({ x: typeof window !== 'undefined' ? window.innerWidth - 100 : 300, y: 80 });
+  // Start on the right side, near the top
+  const [position, setPosition] = useState({ x: typeof window !== 'undefined' ? Math.max(window.innerWidth - 100, 200) : 300, y: 20 });
   const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
   
   const { data: user } = useQuery<any>({ 
@@ -83,9 +84,18 @@ export function RewardsOverlay() {
       }
       hasMoved = true;
 
-      // No constraints - let it move freely anywhere
-      const newX = startPosX + deltaX;
-      const newY = startPosY + deltaY;
+      let newX = startPosX + deltaX;
+      let newY = startPosY + deltaY;
+
+      // Keep on-screen but allow full movement within viewport
+      const BUTTON_SIZE = 56;
+      const minX = -BUTTON_SIZE + 20; // Allow 20px to show
+      const maxX = window.innerWidth - 20;
+      const minY = -BUTTON_SIZE + 20;
+      const maxY = window.innerHeight - 20;
+      
+      newX = Math.max(minX, Math.min(newX, maxX));
+      newY = Math.max(minY, Math.min(newY, maxY));
 
       setPosition({ x: newX, y: newY });
     };
