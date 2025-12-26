@@ -33,8 +33,6 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
   const [gameId, setGameId] = useState("");
   const [gameUsername, setGameUsername] = useState("");
   const [saveProfile, setSaveProfile] = useState(true);
-  const [announcement, setAnnouncement] = useState("");
-  const [query, setQuery] = useState("");
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -103,13 +101,16 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     }
   }, [participants.length, expandedTournament]);
 
+  const [announcement, setAnnouncement] = useState("");
+  const [query, setQuery] = useState("");
+
   const sendAnnouncementMutation = useMutation({
-    mutationFn: async ({ id, message }: { id: string; message: string }) => {
-      const res = await fetch(getApiUrl(`/api/tournaments/${id}/announcements`), {
+    mutationFn: async () => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/announcements`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message: announcement }),
       });
       if (!res.ok) throw new Error("Failed to send announcement");
       return res.json();
@@ -117,8 +118,25 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     onSuccess: () => {
       setAnnouncement("");
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "participants"] });
       toast({ title: "Success", description: "Announcement sent!" });
+    }
+  });
+
+  const sendQueryMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(getApiUrl(`/api/tournaments/${expandedTournament}/messages`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message: query }),
+      });
+      if (!res.ok) throw new Error("Failed to send query");
+      return res.json();
+    },
+    onSuccess: () => {
+      setQuery("");
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", expandedTournament, "messages"] });
+      toast({ title: "Success", description: "Query sent!" });
     }
   });
 
@@ -688,24 +706,26 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               <Card className="p-4 border-indigo-500/20">
                                 <h4 className="font-semibold flex items-center gap-2 mb-3">
                                   <MessageSquare className="h-4 w-4 text-indigo-400" />
-                                  Announcements
+                                  Official Announcements
                                 </h4>
-                                <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
-                                  {messages.filter((m: any) => m.isAnnouncement).length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-8">No announcements yet</p>
-                                  ) : (
-                                    messages.filter((m: any) => m.isAnnouncement).map((msg: any) => (
-                                      <div key={msg.id} className="p-2 rounded text-sm bg-indigo-500/10 border-l-2 border-indigo-500">
-                                        <div className="flex justify-between items-start mb-1">
-                                          <span className="font-bold text-indigo-400">{msg.senderGamertag}</span>
-                                          <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                <ScrollArea className="h-[200px] mb-3 bg-black/20 p-2 rounded">
+                                  <div className="space-y-3">
+                                    {messages.filter((m: any) => m.isAnnouncement).length === 0 ? (
+                                      <p className="text-sm text-muted-foreground text-center py-8">No announcements yet</p>
+                                    ) : (
+                                      messages.filter((m: any) => m.isAnnouncement).map((msg: any) => (
+                                        <div key={msg.id} className="p-2 rounded text-sm bg-indigo-500/10 border-l-2 border-indigo-500">
+                                          <div className="flex justify-between items-start mb-1">
+                                            <span className="font-bold text-indigo-400 text-[10px] tracking-wider">OFFICIAL</span>
+                                            <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                          </div>
+                                          <p className="whitespace-pre-wrap">{msg.message}</p>
                                         </div>
-                                        <p className="whitespace-pre-wrap">{msg.message}</p>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                                {(isCreator || isAdmin) && (
+                                      ))
+                                    )}
+                                  </div>
+                                </ScrollArea>
+                                {isAdmin && (
                                   <div className="flex gap-2">
                                     <Input 
                                       value={announcement}
@@ -717,7 +737,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                                       size="icon" 
                                       className="shrink-0 h-9 w-9"
                                       disabled={sendAnnouncementMutation.isPending || !announcement.trim()}
-                                      onClick={() => sendAnnouncementMutation.mutate({ id: tournament.id, message: announcement })}
+                                      onClick={() => sendAnnouncementMutation.mutate()}
                                     >
                                       <Send className="h-4 w-4" />
                                     </Button>
@@ -728,45 +748,46 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
                               <Card className="p-4 border-muted">
                                 <h4 className="font-semibold flex items-center gap-2 mb-3">
                                   <Users className="h-4 w-4" />
-                                  Queries
+                                  Queries & Support
                                 </h4>
-                                <div className="space-y-3 h-[200px] overflow-y-auto mb-3 bg-black/20 p-2 rounded">
-                                  {messages.filter((m: any) => !m.isAnnouncement).length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-8">No messages yet</p>
-                                  ) : (
-                                    messages.filter((m: any) => !m.isAnnouncement).map((msg: any) => (
-                                      <div key={msg.id} className="p-2 rounded text-sm bg-muted/50">
-                                        <div className="flex justify-between items-start mb-1">
-                                          <span className="font-semibold">{msg.senderGamertag}</span>
-                                          <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                <ScrollArea className="h-[200px] mb-3 bg-black/20 p-2 rounded">
+                                  <div className="space-y-3">
+                                    {messages.filter((m: any) => !m.isAnnouncement).length === 0 ? (
+                                      <p className="text-sm text-muted-foreground text-center py-8">No messages yet</p>
+                                    ) : (
+                                      messages.filter((m: any) => !m.isAnnouncement).map((msg: any) => (
+                                        <div key={msg.id} className="p-2 rounded text-sm bg-muted/50 border">
+                                          <div className="flex justify-between items-start mb-1">
+                                            <span className="font-semibold text-xs flex items-center gap-1">
+                                              {msg.senderGamertag}
+                                              {msg.senderGamertag === 'admin' && <Badge className="h-3 text-[8px] px-1">ADMIN</Badge>}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                                          </div>
+                                          <p className="whitespace-pre-wrap text-sm">{msg.message}</p>
                                         </div>
-                                        <p className="whitespace-pre-wrap">{msg.message}</p>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </ScrollArea>
                                 <div className="flex gap-2">
                                   <Input 
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Ask a question..."
                                     className="text-sm h-9"
                                     onKeyDown={(e) => {
-                                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                        sendAnnouncementMutation.mutate({ id: tournament.id, message: e.currentTarget.value });
-                                        e.currentTarget.value = '';
+                                      if (e.key === 'Enter' && query.trim()) {
+                                        sendQueryMutation.mutate();
                                       }
                                     }}
                                   />
                                   <Button 
                                     size="icon" 
+                                    variant="outline"
                                     className="shrink-0 h-9 w-9"
-                                    disabled={sendAnnouncementMutation.isPending}
-                                    onClick={(e) => {
-                                      const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement);
-                                      if (input && input.value.trim()) {
-                                        sendAnnouncementMutation.mutate({ id: tournament.id, message: input.value });
-                                        input.value = '';
-                                      }
-                                    }}
+                                    disabled={sendQueryMutation.isPending || !query.trim()}
+                                    onClick={() => sendQueryMutation.mutate()}
                                   >
                                     <Send className="h-4 w-4" />
                                   </Button>
