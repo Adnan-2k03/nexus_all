@@ -67,14 +67,14 @@ export function RewardsOverlay() {
 
   // Handle mouse down for dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
-      dragStateRef.current = {
-        isDragging: true,
-        startX: e.clientX,
-        startY: e.clientY,
-        startPosX: position.x,
-        startPosY: position.y,
-      };
+    // Allow dragging from anywhere on the button
+    dragStateRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPosX: position.x,
+      startPosY: position.y,
+    };
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         if (!dragStateRef.current.isDragging) return;
@@ -105,7 +105,6 @@ export function RewardsOverlay() {
 
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-    }
   };
 
   return (
@@ -131,7 +130,7 @@ export function RewardsOverlay() {
               <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-background"></span>
             </span>
           )}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" data-drag-handle>
+          <div className="absolute inset-0 flex items-center justify-center" data-drag-handle>
             <GripHorizontal className="h-4 w-4" />
           </div>
         </Button>
