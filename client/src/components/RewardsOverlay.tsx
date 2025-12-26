@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState({ x: 20, y: 80 });
+  const [position, setPosition] = useState({ x: typeof window !== 'undefined' ? window.innerWidth - 100 : 300, y: 80 });
   const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
   
   const { data: user } = useQuery<any>({ 
