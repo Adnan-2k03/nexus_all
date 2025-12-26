@@ -123,7 +123,7 @@ export function RewardsOverlay() {
         <Button
           onMouseDown={handleMouseDown}
           onClick={() => !isDragging && setIsOpen(true)}
-          className="fixed z-[100] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+          className="fixed z-[9999] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
           style={{
             left: `${position.x}px`,
             top: `${position.y}px`,
