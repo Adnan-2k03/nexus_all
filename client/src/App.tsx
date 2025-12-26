@@ -33,6 +33,7 @@ import { RewardedAdsPage } from "@/pages/RewardedAdsPage";
 import { FeedbackPage } from "@/pages/FeedbackPage";
 import { Groups } from "@/components/Groups";
 import { Tournaments } from "@/components/Tournaments";
+import { EarnPage } from "@/pages/EarnPage";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import DataDeletionRequest from "@/pages/DataDeletionRequest";
 import ChildSafetyStandards from "@/pages/ChildSafetyStandards";
@@ -83,8 +84,8 @@ function Router() {
   const [location, setLocation] = useLocation();
 
   // Helper to map URL to page name
-  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" | "tournaments" => {
-    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" | "tournaments" } = {
+  const getPageFromUrl = (url: string): "home" | "search" | "create" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" | "tournaments" | "earn" => {
+    const urlToPage: { [key: string]: "home" | "search" | "profile" | "messages" | "voice-channels" | "settings" | "profile-setup" | "connections" | "ads" | "feedback" | "groups" | "tournaments" | "earn" } = {
       "/": "home",
       "/discover": "search",
       "/connections": "connections",
@@ -93,6 +94,7 @@ function Router() {
       "/groups": "groups",
       "/tournaments": "tournaments",
       "/ads": "ads",
+      "/earn": "earn",
       "/feedback": "feedback",
       "/profile": "profile",
       "/settings": "settings",
@@ -117,6 +119,7 @@ function Router() {
     | "feedback"
     | "groups"
     | "tournaments"
+    | "earn"
   >(() => getPageFromUrl(location));
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
@@ -132,6 +135,7 @@ function Router() {
       "groups": "/groups",
       "tournaments": "/tournaments",
       "ads": "/ads",
+      "earn": "/earn",
       "feedback": "/feedback",
       "profile": "/profile",
       "settings": "/settings",
@@ -436,6 +440,12 @@ function Router() {
             <RewardedAdsPage />
           </div>
         );
+      case "earn":
+        return (
+          <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
+            <EarnPage currentUserId={user?.id} />
+          </div>
+        );
       case "feedback":
         return (
           <div className="md:ml-20 pt-16 md:pt-6 pb-16 md:pb-6 px-4">
@@ -608,6 +618,28 @@ function Router() {
             {() => {
               if (currentPage !== "ads") {
                 setCurrentPage("ads");
+              }
+              return (
+                <div className="min-h-screen relative">
+                  {mapUserForComponents(user as User | null) && (
+                    <GameNavigation
+                      currentPage={currentPage as any}
+                      onNavigate={handleNavigation}
+                      user={mapUserForComponents(user as User | null) as any}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    {renderMainContent()}
+                  </div>
+                </div>
+              );
+            }}
+          </Route>
+          <Route path="/earn">
+            {() => {
+              if (currentPage !== "earn") {
+                setCurrentPage("earn");
               }
               return (
                 <div className="min-h-screen relative">
