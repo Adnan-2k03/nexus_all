@@ -8,14 +8,20 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 
 export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   // Start on the right side, near the top
   const [position, setPosition] = useState({ x: typeof window !== 'undefined' ? Math.max(window.innerWidth - 100, 200) : 300, y: 20 });
   const dragStateRef = useRef({ isDragging: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
   
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { data: user } = useQuery<any>({ 
     queryKey: ["/api/auth/user"]
   });
@@ -56,8 +62,8 @@ export function RewardsOverlay() {
 
   // Check if should be hidden (before any conditional rendering)
   const isHiddenByUser = user && user.rewardsOverlayEnabled === false;
-  const isHiddenByPage = document.documentElement.getAttribute('data-hide-rewards-overlay') === 'true' || 
-                         document.querySelector('[data-hide-rewards-overlay="true"]');
+  const isHiddenByPage = typeof document !== 'undefined' && (document.documentElement.getAttribute('data-hide-rewards-overlay') === 'true' || 
+                         document.querySelector('[data-hide-rewards-overlay="true"]'));
   const shouldHideOverlay = isHiddenByUser || isHiddenByPage;
 
   const level = user?.level || 1;
@@ -83,6 +89,7 @@ export function RewardsOverlay() {
         return;
       }
       hasMoved = true;
+      dragStateRef.current.isDragging = true;
 
       // No constraints - let it move freely
       const newX = startPosX + deltaX;
@@ -92,6 +99,9 @@ export function RewardsOverlay() {
     };
 
     const handleMouseUp = () => {
+      setTimeout(() => {
+        dragStateRef.current.isDragging = false;
+      }, 50);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -100,34 +110,38 @@ export function RewardsOverlay() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  return (
+  if (!mounted || shouldHideOverlay) return null;
+
+  const overlayContent = (
     <>
       {/* Floating Toggle Button - Draggable */}
-      {!shouldHideOverlay && (
-        <Button
-          onMouseDown={handleMouseDown}
-          onClick={() => !dragStateRef.current.isDragging && setIsOpen(true)}
-          className="fixed z-[2147483647] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
-          style={{
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-          }}
-          size="icon"
-          data-testid="button-rewards-overlay-toggle"
-          title="Drag to move, click to open"
-        >
-          <Trophy className="h-6 w-6" />
-          {tasks.some(t => t.status === 'pending') && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-background"></span>
-            </span>
-          )}
-          <div className="absolute inset-0 flex items-center justify-center" data-drag-handle>
-            <GripHorizontal className="h-4 w-4" />
-          </div>
-        </Button>
-      )}
+      <Button
+        onMouseDown={handleMouseDown}
+        onClick={(e) => {
+          if (!dragStateRef.current.isDragging) {
+            setIsOpen(true);
+          }
+        }}
+        className="fixed z-[2147483647] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+        }}
+        size="icon"
+        data-testid="button-rewards-overlay-toggle"
+        title="Drag to move, click to open"
+      >
+        <Trophy className="h-6 w-6" />
+        {tasks.some((t: any) => t.status === 'pending') && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-background"></span>
+          </span>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center" data-drag-handle>
+          <GripHorizontal className="h-4 w-4" />
+        </div>
+      </Button>
 
       <AnimatePresence>
         {isOpen && (
@@ -226,4 +240,6 @@ export function RewardsOverlay() {
       </AnimatePresence>
     </>
   );
+
+  return createPortal(overlayContent, document.body);
 }
