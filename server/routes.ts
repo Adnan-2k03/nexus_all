@@ -395,6 +395,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Ensure ROADMAP field isn't overwritten unless explicitly provided
+      if (updateData.roadmapImageUrl === undefined) {
+        delete updateData.roadmapImageUrl;
+      }
+
       const [updated] = await db.update(tournaments)
         .set(updateData)
         .where(eq(tournaments.id, tournamentId))
@@ -523,6 +528,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) return next(err);
       res.sendStatus(200);
     });
+  });
+
+  // --- Tasks and Levels ---
+  app.get("/api/tasks", authMiddleware, async (req, res) => {
+    try {
+      const type = req.query.type as string;
+      const result = await storage.getTasks(type);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.get("/api/user/tasks", authMiddleware, async (req: any, res) => {
+    try {
+      const result = await storage.getUserTasks(req.user.id);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user tasks" });
+    }
+  });
+
+  app.post("/api/tasks/:id/complete", authMiddleware, async (req: any, res) => {
+    try {
+      const result = await storage.completeTask(req.user.id, req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error completing task:", error);
+      res.status(500).json({ message: "Failed to complete task" });
+    }
   });
 
   // Feature flags endpoint

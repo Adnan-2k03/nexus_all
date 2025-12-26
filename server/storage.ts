@@ -22,6 +22,9 @@ export interface IStorage {
   getMatchRequests(filters: any): Promise<any>;
   createMatchRequest(data: any): Promise<any>;
   respondToInvitation(id: string, userId: string, accept: boolean): Promise<any>;
+  getTasks(type?: string): Promise<Task[]>;
+  getUserTasks(userId: string): Promise<any[]>;
+  completeTask(userId: string, taskId: string): Promise<{ success: boolean; message: string }>;
 }
 import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts } from "@shared/schema";
 import { db } from "./db";
@@ -285,6 +288,74 @@ export class DatabaseStorage implements IStorage {
   async respondToInvitation(id: string, userId: string, accept: boolean): Promise<any> {
     // Stub implementation for now
     return { success: true };
+  }
+
+  async getTasks(type?: string): Promise<Task[]> {
+    if (type) {
+      return db.select().from(tasks).where(eq(tasks.type, type));
+    }
+    return db.select().from(tasks);
+  }
+
+  async getUserTasks(userId: string): Promise<any[]> {
+    return db.select({
+      id: userTasks.id,
+      taskId: userTasks.taskId,
+      status: userTasks.status,
+      completedAt: userTasks.completedAt,
+      title: tasks.title,
+      description: tasks.description,
+      type: tasks.type,
+      rewardCoins: tasks.rewardCoins,
+      rewardXp: tasks.rewardXp,
+    })
+    .from(userTasks)
+    .innerJoin(tasks, eq(userTasks.taskId, tasks.id))
+    .where(eq(userTasks.userId, userId));
+  }
+
+  async completeTask(userId: string, taskId: string): Promise<{ success: boolean; message: string }> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    if (!task) throw new Error("Task not found");
+
+    const [existingUserTask] = await db.select()
+      .from(userTasks)
+      .where(and(eq(userTasks.userId, userId), eq(userTasks.taskId, taskId)));
+
+    if (existingUserTask?.status === "completed") {
+      return { success: false, message: "Task already completed" };
+    }
+
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    return db.transaction(async (tx) => {
+      if (existingUserTask) {
+        await tx.update(userTasks)
+          .set({ status: "completed", completedAt: new Date() })
+          .where(eq(userTasks.id, existingUserTask.id));
+      } else {
+        await tx.insert(userTasks).values({
+          userId,
+          taskId,
+          status: "completed",
+          completedAt: new Date(),
+        });
+      }
+
+      const newXp = (user.xp || 0) + task.rewardXp;
+      const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
+
+      await tx.update(users)
+        .set({
+          coins: (user.coins || 0) + task.rewardCoins,
+          xp: newXp,
+          level: newLevel,
+        })
+        .where(eq(users.id, userId));
+
+      return { success: true, message: `Task completed! Gained ${task.rewardCoins} coins and ${task.rewardXp} XP!` };
+    });
   }
 }
 
