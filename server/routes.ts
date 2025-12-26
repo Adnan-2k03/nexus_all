@@ -560,6 +560,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- User Profile Update ---
+  app.patch("/api/user/profile", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { rewardsOverlayEnabled } = req.body;
+      
+      const result = await storage.updateUser(userId, { rewardsOverlayEnabled });
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Feature flags endpoint
   app.get("/api/feature-flags", async (req, res) => {
     try {

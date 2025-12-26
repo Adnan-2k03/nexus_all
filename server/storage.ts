@@ -9,6 +9,7 @@ export interface IStorage {
   getUserTournaments(userId: string): Promise<any[]>;
   joinTournamentWithCoins(tournamentId: string, userId: string, gameDetails: any, entryFee: number): Promise<TournamentParticipant>;
   updateUserGameProfiles(userId: string, game: string, name: string, id: string): Promise<void>;
+  updateUser(userId: string, data: any): Promise<User>;
   getTournamentParticipants(tournamentId: string): Promise<TournamentParticipantWithUser[]>;
   sendTournamentMessage(tournamentId: string, senderId: string, message: string, isAnnouncement: boolean): Promise<any>;
   getTournamentMessages(tournamentId: string): Promise<any[]>;
@@ -142,6 +143,11 @@ export class DatabaseStorage implements IStorage {
     const profiles = (user?.gameProfiles as any) || {};
     profiles[game] = { inGameName: name, inGameId: id };
     await db.update(users).set({ gameProfiles: profiles }).where(eq(users.id, userId));
+  }
+
+  async updateUser(userId: string, data: any): Promise<User> {
+    const [updated] = await db.update(users).set(data).where(eq(users.id, userId)).returning();
+    return updated;
   }
 
   async getTournamentParticipants(tournamentId: string): Promise<TournamentParticipantWithUser[]> {

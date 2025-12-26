@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Gift, X, Trophy, TrendingUp, Coins, CheckCircle2, Circle } from "lucide-react";
+import { Gift, X, Trophy, TrendingUp, Coins, CheckCircle2, Circle, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +12,9 @@ import { motion, AnimatePresence } from "framer-motion";
 export function RewardsOverlay() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
   const { data: user } = useQuery<any>({ 
     queryKey: ["/api/auth/user"]
@@ -24,6 +27,12 @@ export function RewardsOverlay() {
 
   // If overlay is disabled by user, don't show the button
   if (user && user.rewardsOverlayEnabled === false) {
+    return null;
+  }
+
+  // Don't show on tournaments page
+  if (document.documentElement.getAttribute('data-hide-rewards-overlay') === 'true' || 
+      document.querySelector('[data-hide-rewards-overlay="true"]')) {
     return null;
   }
 
@@ -62,14 +71,72 @@ export function RewardsOverlay() {
   const currentLevelXp = Math.pow(level - 1, 2) * 100;
   const progress = ((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
 
+  // Load saved position from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('rewardsButtonPosition');
+    if (saved) {
+      setPosition(JSON.parse(saved));
+    }
+  }, []);
+
+  // Handle mouse down for dragging
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
+      setIsDragging(true);
+      const button = e.currentTarget;
+      const rect = button.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
+
+  // Handle mouse move for dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const button = document.querySelector('[data-testid="button-rewards-overlay-toggle"]') as HTMLElement;
+      if (!button) return;
+
+      const parentRect = button.parentElement?.getBoundingClientRect() || { left: 0, top: 0 };
+      const newX = e.clientX - parentRect.left - dragOffset.x;
+      const newY = e.clientY - parentRect.top - dragOffset.y;
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      // Save position to localStorage
+      localStorage.setItem('rewardsButtonPosition', JSON.stringify(position));
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, position]);
+
   return (
     <>
-      {/* Floating Toggle Button */}
+      {/* Floating Toggle Button - Draggable */}
       <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-4 z-[100] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 md:bottom-6"
+        onMouseDown={handleMouseDown}
+        onClick={() => !isDragging && setIsOpen(true)}
+        className="fixed z-[100] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+        style={{
+          left: `${position.x}px`,
+          bottom: position.y ? 'auto' : '5rem',
+          top: position.y ? `${position.y}px` : 'auto',
+        }}
         size="icon"
         data-testid="button-rewards-overlay-toggle"
+        title="Drag to move, click to open"
       >
         <Trophy className="h-6 w-6" />
         {tasks.some(t => t.status === 'pending') && (
@@ -78,6 +145,9 @@ export function RewardsOverlay() {
             <span className="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-background"></span>
           </span>
         )}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" data-drag-handle>
+          <GripHorizontal className="h-4 w-4" />
+        </div>
       </Button>
 
       <AnimatePresence>

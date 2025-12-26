@@ -521,14 +521,14 @@ function Router() {
         )}
       </Route>
 
-      {/* Tournament players page */}
+      {/* Tournament players page - no rewards overlay */}
       <Route path="/tournaments/:id/players">
         {() => {
           if (!isAuthenticated || !user?.gamertag) {
             return null;
           }
           return (
-            <div className="min-h-screen relative">
+            <div className="min-h-screen relative" data-hide-rewards-overlay="true">
               {user && user.gamertag && (
                 <GameNavigation
                   currentPage="tournaments"
