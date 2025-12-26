@@ -911,6 +911,9 @@ function App() {
                   isVisible={isOverlayVisible}
                   onClose={handleCloseOverlay}
                 />
+                
+                {/* Rewards overlay - visible on all pages */}
+                <RewardsOverlay />
               </TooltipProvider>
             </LayoutProvider>
           </BackgroundProvider>
