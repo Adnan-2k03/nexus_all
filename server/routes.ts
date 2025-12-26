@@ -133,44 +133,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tournaments", authMiddleware, async (req: any, res) => {
     try {
-      // Get user ID from request - either from passport user or admin session
-      let userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
-      
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+      const isAdmin = (req.session as any).isAdmin;
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only administrators can create tournaments" });
       }
 
+      const userId = "admin-user";
       // Ensure admin user exists in database
-      if (userId === "admin-user") {
-        const existingAdmin = await storage.getUser("admin-user");
-        if (!existingAdmin) {
-          await storage.upsertUser({
-            id: "admin-user",
-            gamertag: "admin",
-            coins: 10000,
-          });
-        }
+      const existingAdmin = await storage.getUser("admin-user");
+      if (!existingAdmin) {
+        await storage.upsertUser({
+          id: "admin-user",
+          gamertag: "admin",
+          coins: 10000,
+        });
       }
 
       // Parse and validate tournament data
       let tournamentData = { ...req.body };
       
-      // Ensure maxParticipants is a number
       if (typeof tournamentData.maxParticipants === 'string') {
         tournamentData.maxParticipants = parseInt(tournamentData.maxParticipants);
       }
       
-      // Ensure playersPerTeam is a number
       if (typeof tournamentData.playersPerTeam === 'string') {
         tournamentData.playersPerTeam = parseInt(tournamentData.playersPerTeam);
       }
       
-      // Handle startTime - convert string to Date or keep as null
       if (tournamentData.startTime) {
         if (typeof tournamentData.startTime === 'string') {
           tournamentData.startTime = new Date(tournamentData.startTime);
         }
-        // If the date is invalid, set to undefined
         if (isNaN(tournamentData.startTime.getTime())) {
           tournamentData.startTime = undefined;
         }
@@ -272,22 +265,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tournaments/:id/announcements", authMiddleware, async (req: any, res) => {
     try {
       const { id: tournamentId } = req.params;
-      const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
-      const { message, isAnnouncement = true } = req.body;
+      const isAdmin = (req.session as any).isAdmin;
+      const { message } = req.body;
 
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only administrators can send announcements" });
       }
 
+      const userId = "admin-user";
       const tournament = await storage.getTournament(tournamentId);
       if (!tournament) return res.status(404).json({ message: "Tournament not found" });
       
-      // For announcements, only host or admin
-      if (isAnnouncement && tournament.createdBy !== userId && !(req.session as any).isAdmin) {
-        return res.status(403).json({ message: "Only the host can send announcements" });
-      }
-
-      const msg = await storage.sendTournamentMessage(tournamentId, userId, message, isAnnouncement);
+      const msg = await storage.sendTournamentMessage(tournamentId, userId, message, true);
       res.status(201).json(msg);
     } catch (error) {
       console.error("[Tournament Message] Error:", error);
@@ -382,19 +371,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/tournaments/:id", authMiddleware, async (req: any, res: any) => {
     try {
       const tournamentId = req.params.id;
-      const userId = req.user?.id || ((req.session as any).isAdmin ? "admin-user" : null);
+      const isAdmin = (req.session as any).isAdmin;
       
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Only administrators can edit tournaments" });
       }
 
       const tournament = await storage.getTournament(tournamentId);
       if (!tournament) {
         return res.status(404).json({ message: "Tournament not found" });
-      }
-
-      if (tournament.createdBy !== userId && !(req.session as any).isAdmin) {
-        return res.status(403).json({ message: "Only the host can edit this tournament" });
       }
 
       const updateData = { ...req.body };

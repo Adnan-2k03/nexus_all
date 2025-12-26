@@ -58,6 +58,8 @@ export const users = pgTable("users", {
   lastConnectionRequestReset: timestamp("last_connection_request_reset").defaultNow(),
   adRevenueEarned: integer("ad_revenue_earned").default(0),
   coins: integer("coins").default(100),
+  xp: integer("xp").default(0),
+  level: integer("level").default(1),
   dailyRewardLastClaimed: timestamp("daily_reward_last_claimed"),
   gameProfiles: jsonb("game_profiles").default({}),
   isAdmin: boolean("is_admin").default(false),
@@ -167,6 +169,30 @@ export const hobbies = pgTable("hobbies", {
   link: varchar("link"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  type: varchar("type").notNull(), // daily, weekly
+  rewardCoins: integer("reward_coins").notNull(),
+  rewardXp: integer("reward_xp").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userTasks = pgTable("user_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  taskId: varchar("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  status: varchar("status").notNull().default("pending"), // pending, completed
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
+export type UserTask = typeof userTasks.$inferSelect;
+export type InsertUserTask = typeof userTasks.$inferInsert;
 
 export type Hobby = typeof hobbies.$inferSelect;
 export type InsertHobby = typeof hobbies.$inferInsert;

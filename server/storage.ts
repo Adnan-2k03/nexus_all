@@ -73,8 +73,22 @@ export class DatabaseStorage implements IStorage {
         return { success: false, coins: user.coins || 0, message: "Too early!" };
       }
     }
-    const [updated] = await db.update(users).set({ coins: (user.coins || 0) + 50, dailyRewardLastClaimed: now }).where(eq(users.id, userId)).returning();
-    return { success: true, coins: updated.coins || 0, message: "Claimed 50 coins!" };
+    
+    // Add XP for claiming daily reward
+    const xpGain = 50;
+    const currentXp = (user.xp || 0) + xpGain;
+    const currentLevel = Math.floor(Math.sqrt(currentXp / 100)) + 1;
+
+    const [updated] = await db.update(users)
+      .set({ 
+        coins: (user.coins || 0) + 50, 
+        dailyRewardLastClaimed: now,
+        xp: currentXp,
+        level: currentLevel
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return { success: true, coins: updated.coins || 0, message: `Claimed 50 coins and ${xpGain} XP!` };
   }
 
   async getAllTournaments(): Promise<any[]> {
