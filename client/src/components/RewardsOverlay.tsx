@@ -83,15 +83,9 @@ export function RewardsOverlay() {
       }
       hasMoved = true;
 
-      let newX = startPosX + deltaX;
-      let newY = startPosY + deltaY;
-
-      // Keep button within viewport bounds
-      const maxX = window.innerWidth - 56;
-      const maxY = window.innerHeight - 56;
-      
-      newX = Math.max(0, Math.min(newX, maxX));
-      newY = Math.max(0, Math.min(newY, maxY));
+      // No constraints - let it move freely anywhere
+      const newX = startPosX + deltaX;
+      const newY = startPosY + deltaY;
 
       setPosition({ x: newX, y: newY });
     };
