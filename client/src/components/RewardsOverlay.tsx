@@ -110,7 +110,8 @@ export function RewardsOverlay() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  if (!mounted || shouldHideOverlay) return null;
+  if (!mounted) return null;
+  if (shouldHideOverlay) return null;
 
   const overlayContent = (
     <div className="fixed inset-0 pointer-events-none z-[2147483647]">
