@@ -87,15 +87,10 @@ export function RewardsOverlay() {
       let newX = startPosX + deltaX;
       let newY = startPosY + deltaY;
 
-      // Keep on-screen but allow full movement within viewport
+      // Keep fully on-screen with simple bounds
       const BUTTON_SIZE = 56;
-      const minX = -BUTTON_SIZE + 20; // Allow 20px to show
-      const maxX = window.innerWidth - 20;
-      const minY = -BUTTON_SIZE + 20;
-      const maxY = window.innerHeight - 20;
-      
-      newX = Math.max(minX, Math.min(newX, maxX));
-      newY = Math.max(minY, Math.min(newY, maxY));
+      newX = Math.max(0, Math.min(newX, window.innerWidth - BUTTON_SIZE));
+      newY = Math.max(0, Math.min(newY, window.innerHeight - BUTTON_SIZE));
 
       setPosition({ x: newX, y: newY });
     };
