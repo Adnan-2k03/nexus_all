@@ -65,14 +65,6 @@ export function RewardsOverlay() {
   const currentLevelXp = Math.pow(level - 1, 2) * 100;
   const progress = ((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
 
-  // Load saved position from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('rewardsButtonPosition');
-    if (saved) {
-      setPosition(JSON.parse(saved));
-    }
-  }, []);
-
   // Handle mouse down for dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
     if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
@@ -86,7 +78,7 @@ export function RewardsOverlay() {
     }
   };
 
-  // Handle mouse move and up with a single effect
+  // Handle mouse move and up
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragStateRef.current.isDragging) return;
@@ -97,30 +89,31 @@ export function RewardsOverlay() {
       let newX = dragStateRef.current.startPosX + deltaX;
       let newY = dragStateRef.current.startPosY + deltaY;
 
-      // Keep button within viewport bounds
+      // Keep button within viewport bounds (with 10px margin)
+      const minX = 0;
       const maxX = window.innerWidth - 56;
+      const minY = 0;
       const maxY = window.innerHeight - 56;
       
-      newX = Math.max(0, Math.min(newX, maxX));
-      newY = Math.max(0, Math.min(newY, maxY));
+      newX = Math.max(minX, Math.min(newX, maxX));
+      newY = Math.max(minY, Math.min(newY, maxY));
 
       setPosition({ x: newX, y: newY });
     };
 
     const handleMouseUp = () => {
-      if (dragStateRef.current.isDragging) {
-        dragStateRef.current.isDragging = false;
-        localStorage.setItem('rewardsButtonPosition', JSON.stringify(position));
-      }
+      dragStateRef.current.isDragging = false;
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    if (dragStateRef.current.isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
   }, [position]);
 
   return (
