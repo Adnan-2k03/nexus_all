@@ -113,7 +113,7 @@ export function RewardsOverlay() {
   if (!mounted || shouldHideOverlay) return null;
 
   const overlayContent = (
-    <>
+    <div className="fixed inset-0 pointer-events-none z-[2147483647]">
       {/* Floating Toggle Button - Draggable */}
       <Button
         onMouseDown={handleMouseDown}
@@ -122,10 +122,11 @@ export function RewardsOverlay() {
             setIsOpen(true);
           }
         }}
-        className="fixed z-[2147483647] rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
+        className="fixed pointer-events-auto rounded-full w-14 h-14 shadow-lg hover-elevate active-elevate-2 cursor-grab active:cursor-grabbing"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
+          zIndex: 2147483647
         }}
         size="icon"
         data-testid="button-rewards-overlay-toggle"
@@ -145,7 +146,7 @@ export function RewardsOverlay() {
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[2147483647] flex items-end justify-center p-4 sm:items-center bg-background/80 backdrop-blur-sm">
+          <div className="fixed inset-0 pointer-events-auto flex items-end justify-center p-4 sm:items-center bg-background/80 backdrop-blur-sm" style={{ zIndex: 2147483647 }}>
             <motion.div
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
@@ -238,7 +239,7 @@ export function RewardsOverlay() {
           </div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 
   return createPortal(overlayContent, document.body);
