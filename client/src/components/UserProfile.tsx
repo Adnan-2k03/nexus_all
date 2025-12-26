@@ -13,8 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { MapPin, Calendar, User, Gamepad2, Edit, MessageCircle, Trophy, Clock, Star, Award, Play, Plus, Camera, Loader2 } from "lucide-react";
-import type { GameProfile } from "@shared/schema";
+import { MapPin, Calendar, User, Gamepad2, Edit, MessageCircle, Trophy, Clock, Star, Award, Play, Plus, Camera, Loader2, Gift } from "lucide-react";
+import type { User as UserType } from "@shared/schema";
 import { GameProfileForm } from "./GameProfileForm";
 import { CustomPortfolio } from "./CustomPortfolio";
 import { Mutuals } from "./Mutuals";
@@ -23,6 +23,8 @@ import { getApiUrl } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useLocation } from "wouter";
+
+import { DailyRewards } from "./DailyRewards";
 
 interface UserProfileProps {
   id: string;
@@ -68,7 +70,7 @@ export function UserProfile({
 
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
   const [gameProfileFormOpen, setGameProfileFormOpen] = useState(false);
-  const [editingProfile, setEditingProfile] = useState<GameProfile | undefined>(undefined);
+  const [editingProfile, setEditingProfile] = useState<any | undefined>(undefined);
   const [showCustomSections, setShowCustomSections] = useState<{[key: string]: boolean}>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -88,7 +90,7 @@ export function UserProfile({
      (req.receiverId === currentUserId && req.senderId === id))
   );
 
-  const { data: gameProfiles = [], isLoading: isLoadingProfiles, refetch } = useQuery<GameProfile[]>({
+  const { data: gameProfiles = [], isLoading: isLoadingProfiles, refetch } = useQuery<any[]>({
     queryKey: ['/api/users', id, 'game-profiles'],
     enabled: !!id,
   });
@@ -157,7 +159,7 @@ export function UserProfile({
     setGameProfileFormOpen(true);
   };
 
-  const handleEditProfile = (profile: GameProfile) => {
+  const handleEditProfile = (profile: any) => {
     setEditingProfile(profile);
     setGameProfileFormOpen(true);
   };
@@ -278,6 +280,20 @@ export function UserProfile({
       </Card>
 
       <Mutuals userId={id} isOwn={isOwn} />
+
+      {isOwn && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Rewards & Progress
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <DailyRewards userId={id} />
+          </CardContent>
+        </Card>
+      )}
 
       {isLoadingProfiles ? (
         <Card>

@@ -68,7 +68,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
     },
   });
 
-  const { data: user = { id: "", gamertag: "", coins: 0, gameProfiles: {} } } = useQuery<any>({
+  const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/user"],
   });
 
@@ -306,7 +306,7 @@ export function Tournaments({ currentUserId, isAdmin }: TournamentsProps) {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <DailyRewards userId={currentUserId} />
+      {user && user.rewardsOverlayEnabled && <DailyRewards userId={currentUserId} />}
       
       <div className="flex items-center justify-between gap-4">
         <div>

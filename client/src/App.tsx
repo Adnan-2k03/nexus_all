@@ -1,6 +1,6 @@
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -47,6 +47,7 @@ import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { registerServiceWorker } from "@/registerSW";
 import { initializeAdMob } from "@/lib/admob";
 import { FloatingVoiceOverlay } from "@/components/FloatingVoiceOverlay";
+import { RewardsOverlay } from "@/components/RewardsOverlay";
 import { subscribeToOverlayState } from "@/lib/voice-overlay-plugin";
 
 // Types
@@ -73,6 +74,10 @@ const mapUserForComponents = (user: User | null) => {
 function Router() {
   // Real authentication using useAuth hook
   const { user, isLoading, isFetching, isAuthenticated } = useAuth();
+  const { data: serverUser } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    enabled: isAuthenticated
+  });
   const { getContainerClass } = useLayout();
   const { isFeatureVisible, isFeatureLocked } = useFeatureFlags();
   const [location, setLocation] = useLocation();
@@ -373,6 +378,8 @@ function Router() {
               {user && user.gamertag && (
                 <UserProfile
                   {...mapUserForComponents(user as User | null)}
+                  id={user.id}
+                  gamertag={user.gamertag}
                   isOwn={true}
                   onEdit={() => handleNavigation("profile-setup")}
                 />

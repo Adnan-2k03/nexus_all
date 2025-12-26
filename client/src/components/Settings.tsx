@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PrivacySettings } from "./PrivacySettings";
+import { RewardsOverlayToggle } from "@/components/RewardsOverlayToggle";
 import { PushNotificationToggle } from "./PushNotificationPrompt";
 import { VoiceOverlayToggle } from "./VoiceOverlayToggle";
 import { Check, Sparkles, Zap, Square, Palette, Trash2 } from "lucide-react";
@@ -155,6 +156,17 @@ export function Settings({ user }: SettingsProps) {
           </CardHeader>
           <CardContent>
             <PushNotificationToggle />
+          </CardContent>
+        </Card>
+
+        {/* Rewards Overlay */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Rewards Overlay</CardTitle>
+            <CardDescription>Control the visibility of the floating rewards button</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RewardsOverlayToggle userId={user?.id} />
           </CardContent>
         </Card>
 
