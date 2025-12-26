@@ -92,12 +92,16 @@ export function RewardsOverlay() {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const button = document.querySelector('[data-testid="button-rewards-overlay-toggle"]') as HTMLElement;
-      if (!button) return;
+      // For fixed positioning, calculate relative to viewport
+      let newX = e.clientX - dragOffset.x;
+      let newY = e.clientY - dragOffset.y;
 
-      const parentRect = button.parentElement?.getBoundingClientRect() || { left: 0, top: 0 };
-      const newX = e.clientX - parentRect.left - dragOffset.x;
-      const newY = e.clientY - parentRect.top - dragOffset.y;
+      // Keep button within viewport bounds
+      const maxX = window.innerWidth - 56; // Button width is 56px (w-14)
+      const maxY = window.innerHeight - 56; // Button height is 56px (h-14)
+      
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
 
       setPosition({ x: newX, y: newY });
     };
