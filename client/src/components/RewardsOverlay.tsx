@@ -67,43 +67,42 @@ export function RewardsOverlay() {
 
   // Handle mouse down for dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Start tracking potential drag
-    dragStateRef.current = {
-      isDragging: false, // Set to false until movement threshold is reached
-      startX: e.clientX,
-      startY: e.clientY,
-      startPosX: position.x,
-      startPosY: position.y,
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPosX = position.x;
+    const startPosY = position.y;
+    let hasMoved = false;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      
+      // Only treat as actual drag if moved more than 5px
+      if (!hasMoved && Math.abs(deltaX) <= 5 && Math.abs(deltaY) <= 5) {
+        return;
+      }
+      hasMoved = true;
+
+      let newX = startPosX + deltaX;
+      let newY = startPosY + deltaY;
+
+      // Keep button within viewport bounds
+      const maxX = window.innerWidth - 56;
+      const maxY = window.innerHeight - 56;
+      
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      setPosition({ x: newX, y: newY });
     };
 
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const deltaX = moveEvent.clientX - dragStateRef.current.startX;
-        const deltaY = moveEvent.clientY - dragStateRef.current.startY;
-        
-        // Only treat as actual drag if moved more than 5px
-        const isActualDrag = Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5;
-        if (!isActualDrag) return;
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
 
-        dragStateRef.current.isDragging = true;
-
-        let newX = dragStateRef.current.startPosX + deltaX;
-        let newY = dragStateRef.current.startPosY + deltaY;
-
-        // Keep button within viewport bounds (allow full range)
-        newX = Math.max(0, Math.min(newX, window.innerWidth - 56));
-        newY = Math.max(0, Math.min(newY, window.innerHeight - 56));
-
-        setPosition({ x: newX, y: newY });
-      };
-
-      const handleMouseUp = () => {
-        dragStateRef.current.isDragging = false;
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   return (
