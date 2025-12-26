@@ -84,13 +84,9 @@ export function RewardsOverlay() {
       }
       hasMoved = true;
 
-      let newX = startPosX + deltaX;
-      let newY = startPosY + deltaY;
-
-      // Keep fully on-screen with simple bounds
-      const BUTTON_SIZE = 56;
-      newX = Math.max(0, Math.min(newX, window.innerWidth - BUTTON_SIZE));
-      newY = Math.max(0, Math.min(newY, window.innerHeight - BUTTON_SIZE));
+      // No constraints - let it move freely
+      const newX = startPosX + deltaX;
+      const newY = startPosY + deltaY;
 
       setPosition({ x: newX, y: newY });
     };
