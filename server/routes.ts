@@ -68,17 +68,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`[Admin Login] Attempt with password: ${password}`);
     console.log(`[Admin Login] Expected password: ${process.env.ADMIN_PASSWORD}`);
     if (password === process.env.ADMIN_PASSWORD) {
-      const adminToken = "admin-token-" + Date.now();
-      (req.session as any).adminToken = adminToken;
-      (req.session as any).isAdmin = true;
-      req.session.save((err) => {
-        if (err) {
-          console.error("[Admin Login] Session save error:", err);
-          return res.status(500).json({ message: "Session save failed" });
-        }
-        console.log("[Admin Login] Success, token generated");
-        res.json({ token: adminToken });
-      });
+      try {
+        // Load admin user's stored preferences
+        const adminUser = await storage.getUser("admin-user");
+        
+        const adminToken = "admin-token-" + Date.now();
+        (req.session as any).adminToken = adminToken;
+        (req.session as any).isAdmin = true;
+        // Load rewardsOverlayEnabled from stored user data
+        (req.session as any).rewardsOverlayEnabled = adminUser?.rewardsOverlayEnabled;
+        
+        req.session.save((err) => {
+          if (err) {
+            console.error("[Admin Login] Session save error:", err);
+            return res.status(500).json({ message: "Session save failed" });
+          }
+          console.log("[Admin Login] Success, token generated");
+          res.json({ token: adminToken });
+        });
+      } catch (error) {
+        console.error("[Admin Login] Error loading admin user:", error);
+        res.status(500).json({ message: "Failed to load admin preferences" });
+      }
     } else {
       console.warn("[Admin Login] Invalid password attempt");
       res.status(401).json({ message: "Invalid admin password" });

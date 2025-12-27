@@ -37,7 +37,7 @@ export function RewardsOverlayToggle({ userId }: { userId?: string }) {
       </Label>
       <Switch
         id="rewards-overlay"
-        checked={user?.rewardsOverlayEnabled !== false}
+        checked={user?.rewardsOverlayEnabled === true}
         onCheckedChange={(checked) => mutation.mutate(checked)}
         disabled={mutation.isPending}
       />
