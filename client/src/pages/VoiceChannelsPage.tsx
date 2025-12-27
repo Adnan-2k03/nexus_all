@@ -351,7 +351,9 @@ export function VoiceChannelsPage({ currentUserId }: VoiceChannelsPageProps) {
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    queryClient.invalidateQueries({ queryKey: ['/api/group-voice/channels'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/group-voice/invites'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/connection-requests'] });
   };
 
   const handlePasteInviteLink = () => {
