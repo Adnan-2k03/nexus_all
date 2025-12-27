@@ -7,10 +7,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useLayout } from "@/contexts/LayoutContext";
 import { RewardedAdsPage } from "./RewardedAdsPage";
 
 export function EarnPage({ currentUserId }: { currentUserId?: string }) {
   const { toast } = useToast();
+  const { getContainerClass } = useLayout();
   
   const { data: user } = useQuery<any>({ 
     queryKey: ["/api/auth/user"],
@@ -61,7 +63,7 @@ export function EarnPage({ currentUserId }: { currentUserId?: string }) {
   const completedTasks = tasks.filter((t: any) => t.status === 'completed');
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className={`${getContainerClass()} mx-auto space-y-6`}>
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
