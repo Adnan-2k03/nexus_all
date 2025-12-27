@@ -120,6 +120,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Ad Rewards & Credits ---
+  app.post("/api/credits/reward-ad", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const result = await storage.rewardAdCredit(userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error rewarding ad credit:", error);
+      res.status(500).json({ message: "Failed to reward credits" });
+    }
+  });
+
+  app.get("/api/user/credits", authMiddleware, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.json({ balance: user.coins || 0 });
+    } catch (error) {
+      console.error("Error fetching credits:", error);
+      res.status(500).json({ message: "Failed to fetch credits" });
+    }
+  });
+
+  app.post("/api/credits/deduct", authMiddleware, async (req: any, res) => {
+    try {
+      const { amount, type } = req.body;
+      if (!amount || amount <= 0) return res.status(400).json({ message: "Invalid amount" });
+      
+      const result = await storage.deductCredits(req.user.id, amount, type || "unknown");
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error deducting credits:", error);
+      res.status(error.message?.includes("Insufficient") ? 400 : 500).json({ message: error.message || "Failed to deduct credits" });
+    }
+  });
+
   // --- Tournaments ---
   // --- Tournaments ---
   app.get("/api/tournaments", async (req, res) => {

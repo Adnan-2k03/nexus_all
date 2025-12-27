@@ -26,8 +26,10 @@ export interface IStorage {
   getTasks(type?: string): Promise<Task[]>;
   getUserTasks(userId: string): Promise<any[]>;
   completeTask(userId: string, taskId: string): Promise<{ success: boolean; message: string }>;
+  rewardAdCredit(userId: string): Promise<{ success: boolean; balance: number; message: string }>;
+  deductCredits(userId: string, amount: number, transactionType: string): Promise<{ success: boolean; balance: number }>;
 }
-import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts, tasks, userTasks, Task } from "@shared/schema";
+import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts, tasks, userTasks, Task, creditTransactions } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
@@ -373,6 +375,51 @@ export class DatabaseStorage implements IStorage {
         .where(eq(users.id, userId));
 
       return { success: true, message: `Task completed! Gained ${task.rewardCoins} coins and ${task.rewardXp} XP!` };
+    });
+  }
+
+  async rewardAdCredit(userId: string): Promise<{ success: boolean; balance: number; message: string }> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    return db.transaction(async (tx) => {
+      const newBalance = (user.coins || 0) + 5;
+      
+      await tx.insert(creditTransactions).values({
+        userId,
+        amount: 5,
+        type: "rewarded_ad"
+      });
+
+      const [updated] = await tx.update(users)
+        .set({ coins: newBalance })
+        .where(eq(users.id, userId))
+        .returning();
+
+      return { success: true, balance: newBalance, message: "Earned 5 credits!" };
+    });
+  }
+
+  async deductCredits(userId: string, amount: number, transactionType: string): Promise<{ success: boolean; balance: number }> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    if ((user.coins || 0) < amount) throw new Error("Insufficient credits");
+
+    return db.transaction(async (tx) => {
+      const newBalance = (user.coins || 0) - amount;
+      
+      await tx.insert(creditTransactions).values({
+        userId,
+        amount: -amount,
+        type: transactionType as any
+      });
+
+      const [updated] = await tx.update(users)
+        .set({ coins: newBalance })
+        .where(eq(users.id, userId))
+        .returning();
+
+      return { success: true, balance: newBalance };
     });
   }
 }
