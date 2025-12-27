@@ -611,7 +611,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- User Profile Update ---
   app.patch("/api/user/profile", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user?.id || (req.session as any).userId || ((req.session as any).isAdmin ? "admin-user" : null);
+      // Check if user is admin FIRST, otherwise use authenticated user
+      const isAdmin = (req.session as any).isAdmin && (req.session as any).adminToken;
+      const userId = isAdmin ? "admin-user" : (req.user?.id || (req.session as any).userId);
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       const { rewardsOverlayEnabled } = req.body;
@@ -621,7 +623,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If we're updating the admin user, we need to handle the session as well
       if (userId === "admin-user") {
         (req.session as any).rewardsOverlayEnabled = rewardsOverlayEnabled;
-        req.session.save();
+        req.session.save((err: any) => {
+          if (err) {
+            console.error("[Admin Profile] Session save error:", err);
+          }
+        });
       }
       
       res.json(result);
