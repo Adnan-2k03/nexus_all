@@ -207,9 +207,6 @@ export function Messages({ currentUserId, onNavigateToVoiceChannels }: MessagesP
           <p className="text-muted-foreground">Chat with your connections and teammates</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-sm">
-            {filteredConnections.length} conversation{filteredConnections.length !== 1 ? 's' : ''}
-          </Badge>
           {onNavigateToVoiceChannels && (
             <Button
               variant="default"
