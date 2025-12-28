@@ -63,7 +63,7 @@ export const users = pgTable("users", {
   dailyRewardLastClaimed: timestamp("daily_reward_last_claimed"),
   gameProfiles: jsonb("game_profiles").default({}),
   isAdmin: boolean("is_admin").default(false),
-  rewardsOverlayEnabled: boolean("rewards_overlay_enabled").default(true),
+  rewardsOverlayEnabled: boolean("rewards_overlay_enabled").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -156,7 +156,7 @@ export class DatabaseStorage implements IStorage {
         coins: 1000,
         xp: 0,
         level: 1,
-        rewardsOverlayEnabled: data.rewardsOverlayEnabled ?? true,
+        rewardsOverlayEnabled: data.rewardsOverlayEnabled ?? false,
         voiceOverlayEnabled: true,
         ...data
       } as User;
