@@ -338,8 +338,8 @@ function Router() {
 
       console.log("Match request deleted successfully");
 
-      // Refresh match feed to remove the deleted request
-      queryClient.invalidateQueries({ queryKey: ["/api/match-requests"] });
+      // Invalidate all match-related queries to force a refetch
+      await queryClient.refetchQueries({ queryKey: ["/api/match-requests"] });
     } catch (error) {
       console.error("Error deleting match request:", error);
       // TODO: Show error message to user
