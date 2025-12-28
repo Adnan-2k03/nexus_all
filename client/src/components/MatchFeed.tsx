@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +9,7 @@ import { MatchRequestCard } from "./MatchRequestCard";
 import { AdUnit } from "./AdUnit";
 import { AdBanner } from "./AdBanner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User, MatchRequest } from "@shared/schema";
+import type { User, matchRequests } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { GameFilters } from "./GameFilters";
 import { RefreshCw, Plus, Wifi, WifiOff, EyeOff, Eye, Users, Target, Clock, Zap, Crown } from "lucide-react";
@@ -16,7 +17,7 @@ import { useLayout } from "@/contexts/LayoutContext";
 import { getApiUrl } from "@/lib/api";
 
 // Define local types to fix LSP errors
-type MatchRequestWithUser = MatchRequest & {
+type MatchRequestWithUser = typeof matchRequests.$inferSelect & {
   gamertag: string | null;
   profileImageUrl: string | null;
   region: string | null;
@@ -74,6 +75,7 @@ export function MatchFeed({
   currentUserId = "user1"
 }: MatchFeedProps) {
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const { isConnected, lastMessage } = useWebSocket();
   const { getContainerClass } = useLayout();
   const [filters, setFilters] = useState<{ search?: string; game?: string; mode?: string; region?: string; gender?: string; language?: string; distance?: string }>({});
@@ -223,21 +225,27 @@ export function MatchFeed({
       
       case 'match_request_updated':
         // Update specific match request in the cache
-        queryClient.setQueryData(['/api/match-requests', filters, userLocation], (oldData: MatchRequestWithUser[] | undefined) => {
+        queryClient.setQueryData(['/api/match-requests', filters, userLocation, currentPage], (oldData: any) => {
           if (!oldData || !data) return oldData;
           
-          return oldData.map(match => 
-            match.id === data.id ? { ...match, ...data } : match
-          );
+          return {
+            ...oldData,
+            matchRequests: oldData.matchRequests.map((match: any) => 
+              match.id === data.id ? { ...match, ...data } : match
+            )
+          };
         });
         break;
       
       case 'match_request_deleted':
         // Remove the deleted match request from cache
-        queryClient.setQueryData(['/api/match-requests', filters, userLocation], (oldData: MatchRequestWithUser[] | undefined) => {
+        queryClient.setQueryData(['/api/match-requests', filters, userLocation, currentPage], (oldData: any) => {
           if (!oldData || !data?.id) return oldData;
           
-          return oldData.filter(match => match.id !== data.id);
+          return {
+            ...oldData,
+            matchRequests: oldData.matchRequests.filter((match: any) => match.id !== data.id)
+          };
         });
         break;
       
@@ -267,7 +275,7 @@ export function MatchFeed({
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       if (!match.gameName.toLowerCase().includes(searchLower) &&
-          !match.description.toLowerCase().includes(searchLower) &&
+          !(match.description || "").toLowerCase().includes(searchLower) &&
           !match.gamertag.toLowerCase().includes(searchLower)) {
         return false;
       }
@@ -501,13 +509,13 @@ export function MatchFeed({
                         id={match.id}
                         userId={match.userId}
                         gamertag={match.gamertag}
-                        profileImageUrl={match.profileImageUrl}
+                        profileImageUrl={match.profileImageUrl ?? undefined}
                         gameName={match.gameName}
                         gameMode={match.gameMode}
-                        description={match.description}
-                        region={match.region}
-                        tournamentName={match.tournamentName}
-                        status={match.status}
+                        description={match.description ?? undefined}
+                        region={match.region ?? undefined}
+                        tournamentName={match.tournamentName ?? undefined}
+                        status={match.status as "waiting" | "connected" | "declined"}
                         timeAgo={match.timeAgo}
                         isOwn={true}
                         currentUserId={currentUserId}
@@ -534,19 +542,19 @@ export function MatchFeed({
                           id={match.id}
                           userId={match.userId}
                           gamertag={match.gamertag}
-                          profileImageUrl={match.profileImageUrl}
+                          profileImageUrl={match.profileImageUrl ?? undefined}
                           gameName={match.gameName}
                           gameMode={match.gameMode}
-                          description={match.description}
-                          region={match.region}
-                          tournamentName={match.tournamentName}
-                          status={match.status}
+                          description={match.description ?? undefined}
+                          region={match.region ?? undefined}
+                          tournamentName={match.tournamentName ?? undefined}
                           timeAgo={match.timeAgo}
                           isOwn={false}
                           currentUserId={currentUserId}
                           onAccept={() => onAcceptMatch(match.id, match.userId)}
                           onDecline={() => onDeclineMatch(match.id)}
                           onDelete={() => onDeleteMatch(match.id)}
+                          status={match.status as "waiting" | "connected" | "declined"}
                         />
                         {index === 2 && lfgOtherPosts.length > 3 && (
                           <div className="my-4">
@@ -599,19 +607,19 @@ export function MatchFeed({
                         id={match.id}
                         userId={match.userId}
                         gamertag={match.gamertag}
-                        profileImageUrl={match.profileImageUrl}
+                        profileImageUrl={match.profileImageUrl ?? undefined}
                         gameName={match.gameName}
                         gameMode={match.gameMode}
-                        description={match.description}
-                        region={match.region}
-                        tournamentName={match.tournamentName}
-                        status={match.status}
+                        description={match.description ?? undefined}
+                        region={match.region ?? undefined}
+                        tournamentName={match.tournamentName ?? undefined}
                         timeAgo={match.timeAgo}
                         isOwn={true}
                         currentUserId={currentUserId}
                         onAccept={() => onAcceptMatch(match.id, match.userId)}
                         onDecline={() => onDeclineMatch(match.id)}
                         onDelete={() => onDeleteMatch(match.id)}
+                        status={match.status as "waiting" | "connected" | "declined"}
                       />
                     ))}
                   </div>
@@ -632,19 +640,19 @@ export function MatchFeed({
                         id={match.id}
                         userId={match.userId}
                         gamertag={match.gamertag}
-                        profileImageUrl={match.profileImageUrl}
+                        profileImageUrl={match.profileImageUrl ?? undefined}
                         gameName={match.gameName}
                         gameMode={match.gameMode}
-                        description={match.description}
-                        region={match.region}
-                        tournamentName={match.tournamentName}
-                        status={match.status}
+                        description={match.description ?? undefined}
+                        region={match.region ?? undefined}
+                        tournamentName={match.tournamentName ?? undefined}
                         timeAgo={match.timeAgo}
                         isOwn={false}
                         currentUserId={currentUserId}
                         onAccept={() => onAcceptMatch(match.id, match.userId)}
                         onDecline={() => onDeclineMatch(match.id)}
                         onDelete={() => onDeleteMatch(match.id)}
+                        status={match.status as "waiting" | "connected" | "declined"}
                       />
                     ))}
                   </div>

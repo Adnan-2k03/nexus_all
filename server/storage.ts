@@ -29,9 +29,9 @@ export interface IStorage {
   rewardAdCredit(userId: string): Promise<{ success: boolean; balance: number; message: string }>;
   deductCredits(userId: string, amount: number, transactionType: string): Promise<{ success: boolean; balance: number }>;
 }
-import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts, tasks, userTasks, Task, creditTransactions } from "@shared/schema";
+import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts, tasks, userTasks, Task, creditTransactions, matchRequests } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
@@ -296,17 +296,63 @@ export class DatabaseStorage implements IStorage {
     const { page = 1, limit = 10, game, mode, platform, language, search } = filters;
     const offset = (page - 1) * limit;
     
-    // Stub implementation for now
-    return { matchRequests: [], total: 0 };
+    let query = db.select({
+      id: matchRequests.id,
+      userId: matchRequests.userId,
+      gameName: matchRequests.gameName,
+      gameMode: matchRequests.gameMode,
+      region: matchRequests.region,
+      matchType: matchRequests.matchType,
+      duration: matchRequests.duration,
+      description: matchRequests.description,
+      tournamentName: matchRequests.tournamentName,
+      status: matchRequests.status,
+      createdAt: matchRequests.createdAt,
+      gamertag: users.gamertag,
+      profileImageUrl: users.profileImageUrl,
+    })
+    .from(matchRequests)
+    .innerJoin(users, eq(matchRequests.userId, users.id));
+
+    const conditions = [];
+    if (game) conditions.push(sql`${matchRequests.gameName} ILIKE ${'%' + game + '%'}`);
+    if (mode) conditions.push(eq(matchRequests.gameMode, mode));
+    if (platform) conditions.push(eq(matchRequests.region, platform)); 
+    if (language) conditions.push(eq(users.language, language));
+    if (search) {
+      conditions.push(or(
+        sql`${matchRequests.gameName} ILIKE ${'%' + search + '%'}`,
+        sql`${matchRequests.description} ILIKE ${'%' + search + '%'}`
+      ));
+    }
+
+    let finalQuery = conditions.length > 0 
+      ? query.where(and(...conditions)) 
+      : query;
+
+    const results = await finalQuery
+      .orderBy(desc(matchRequests.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [totalRow] = await db.select({ count: sql`count(*)` }).from(matchRequests);
+    const total = Number(totalRow?.count || 0);
+
+    return { 
+      matchRequests: results, 
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async createMatchRequest(data: any): Promise<any> {
-    // Stub implementation for now
-    return {};
+    const [match] = await db.insert(matchRequests).values(data).returning();
+    return match;
   }
 
   async respondToInvitation(id: string, userId: string, accept: boolean): Promise<any> {
-    // Stub implementation for now
     return { success: true };
   }
 
