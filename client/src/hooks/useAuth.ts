@@ -38,74 +38,59 @@ export function useAuth() {
     if (!isNative) return;
 
     let isMounted = true;
+    let listener: any = null;
 
-    const setupListener = async () => {
+    const syncToken = async (token: string) => {
+      if (!isMounted) return;
       try {
-        // Set up listener immediately
-        const listener = await FirebaseAuthentication.addListener('idTokenChange', async (change) => {
-          if (!isMounted) return;
-          
-          try {
-            console.log("🔐 [Auth] idTokenChange event fired, change:", change);
-            
-            if (change.token) {
-              console.log("🔐 [Auth] ID Token changed, syncing with backend...");
-              const idToken = change.token;
-
-              console.log("✅ [Auth] Got token, sending to backend...");
-              const url = getApiUrl("/api/auth/native-login");
-              
-              // Send token to backend for verification
-              const res = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ token: idToken })
-              });
-
-              if (res.ok && isMounted) {
-                console.log("✅ [Auth] Server accepted token, refetching user...");
-                await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-              } else if (!res.ok) {
-                const errorData = await res.text();
-                console.error("❌ [Auth] Server rejected request:", res.status, errorData);
-              }
-            } else {
-              console.log("🔐 [Auth] Token cleared, user signed out");
-              await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-            }
-          } catch (err: any) {
-            console.error("❌ [Auth] Listener error:", err.message || err);
-          }
+        console.log("🔐 [Auth] Syncing token with backend...");
+        const url = getApiUrl("/api/auth/native-login");
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token })
         });
 
-        // Trigger an initial check to catch any missed state changes
-        const currentToken = await FirebaseAuthentication.getIdToken();
-        if (currentToken.token && isMounted) {
-          console.log("🔐 [Auth] Initial token check found active session");
-          const url = getApiUrl("/api/auth/native-login");
-          await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ token: currentToken.token })
-          });
+        if (res.ok && isMounted) {
+          console.log("✅ [Auth] Server accepted token, refetching user...");
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         }
-
-        return listener;
       } catch (err) {
-        console.error("❌ [Auth] Failed to setup listener:", err);
+        console.error("❌ [Auth] Sync error:", err);
       }
     };
 
-    const listenerPromise = setupListener();
+    const setupListener = async () => {
+      try {
+        // Register listener
+        listener = await FirebaseAuthentication.addListener('idTokenChange', (change) => {
+          console.log("🔐 [Auth] idTokenChange event fired:", !!change.token);
+          if (change.token) {
+            syncToken(change.token);
+          } else {
+            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          }
+        });
+
+        // Immediate check to catch early events
+        const currentToken = await FirebaseAuthentication.getIdToken();
+        if (currentToken.token && isMounted) {
+          console.log("🔐 [Auth] Initial check found active session");
+          syncToken(currentToken.token);
+        }
+      } catch (err) {
+        console.error("❌ [Auth] Listener setup failed:", err);
+      }
+    };
+
+    setupListener();
 
     return () => {
       isMounted = false;
-      listenerPromise.then(listener => {
-        if (listener) listener.remove();
-      }).catch(() => {});
+      if (listener) {
+        listener.remove().catch(() => {});
+      }
     };
   }, [queryClient, isNative]);
 
