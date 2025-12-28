@@ -225,6 +225,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/match-requests/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const result = await storage.deleteMatchRequest(req.params.id, req.user.id);
+      res.json(result);
+    } catch (error: any) {
+      if (error.message.includes("Unauthorized")) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(404).json({ message: error.message });
+    }
+  });
+
   app.post("/api/users/apply-filters", authMiddleware, async (req: any, res) => {
     try {
       const cost = 5;

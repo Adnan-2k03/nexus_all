@@ -22,6 +22,7 @@ export interface IStorage {
   createUser(data: any): Promise<User>;
   getMatchRequests(filters: any): Promise<any>;
   createMatchRequest(data: any): Promise<any>;
+  deleteMatchRequest(id: string, userId: string): Promise<any>;
   respondToInvitation(id: string, userId: string, accept: boolean): Promise<any>;
   getTasks(type?: string): Promise<Task[]>;
   getUserTasks(userId: string): Promise<any[]>;
@@ -350,6 +351,14 @@ export class DatabaseStorage implements IStorage {
   async createMatchRequest(data: any): Promise<any> {
     const [match] = await db.insert(matchRequests).values(data).returning();
     return match;
+  }
+
+  async deleteMatchRequest(id: string, userId: string): Promise<any> {
+    const [match] = await db.select().from(matchRequests).where(eq(matchRequests.id, id));
+    if (!match) throw new Error("Match request not found");
+    if (match.userId !== userId) throw new Error("Unauthorized");
+    await db.delete(matchRequests).where(eq(matchRequests.id, id));
+    return { success: true, message: "Match request deleted" };
   }
 
   async respondToInvitation(id: string, userId: string, accept: boolean): Promise<any> {
