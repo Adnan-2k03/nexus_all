@@ -1,4 +1,4 @@
-import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, AppOpenAdOptions, AppOpenAdPluginEvents } from '@capacitor-community/admob';
+import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, AppOpenAdOptions } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.isNativePlatform();
@@ -137,16 +137,6 @@ export const showAppOpenAd = async (): Promise<void> => {
   };
 
   try {
-    const dismissListener = await AdMob.addListener(AppOpenAdPluginEvents.Dismissed, () => {
-      console.log('App Open ad dismissed');
-      dismissListener.remove();
-    });
-
-    const failureListener = await AdMob.addListener(AppOpenAdPluginEvents.FailedToLoad, (error: any) => {
-      console.log('App Open ad failed to load:', error);
-      failureListener.remove();
-    });
-
     await AdMob.prepareAppOpenAd(options);
     await AdMob.showAppOpenAd();
     console.log('App Open ad shown');
