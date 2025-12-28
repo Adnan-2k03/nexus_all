@@ -41,19 +41,12 @@ export function useAuth() {
       try {
         await FirebaseAuthentication.removeAllListeners();
 
-        await FirebaseAuthentication.addListener('authStateChange', async (change) => {
-          if (change.user) {
-            try {
-              console.log("🔐 [Auth] Sign-in detected, user:", change.user.email);
-              
-              // Get fresh ID token from Firebase
-              const tokenResult = await FirebaseAuthentication.getIdToken();
-              const idToken = tokenResult.token;
-
-              if (!idToken) {
-                console.error("❌ [Auth] Failed to get ID token");
-                return;
-              }
+        // Listen for idTokenChange event - this fires when token is ready
+        await FirebaseAuthentication.addListener('idTokenChange', async (change) => {
+          try {
+            if (change.token) {
+              console.log("🔐 [Auth] ID Token changed, syncing with backend...");
+              const idToken = change.token;
 
               console.log("✅ [Auth] Got token, sending to backend...");
               const url = getApiUrl("/api/auth/native-login");
@@ -81,11 +74,15 @@ export function useAuth() {
                 const errorData = await res.text();
                 console.error("❌ [Auth] Server rejected request:", res.status, errorData);
               }
-            } catch (err: any) {
-              console.error("❌ [Auth] Network/fetch error:", err.message || err);
-              console.error("    Type:", err.constructor.name);
-              if (err.stack) console.error("    Stack:", err.stack);
+            } else {
+              // Token cleared = user signed out
+              console.log("🔐 [Auth] Token cleared, user signed out");
+              await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
             }
+          } catch (err: any) {
+            console.error("❌ [Auth] Network/fetch error:", err.message || err);
+            console.error("    Type:", err.constructor.name);
+            if (err.stack) console.error("    Stack:", err.stack);
           }
         });
       } catch (err) {

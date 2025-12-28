@@ -1,0 +1,20 @@
+-29 02:35:56.489  5936-5936  Capacitor/Console       com.nexusmatch.app                   I  File:  - Line 333 - Msg: undefined
+2025-12-29 02:35:57.339  5936-6018  GFXSTREAM               com.nexusmatch.app                   E  [GLClientState.cpp(298)] set vao to self, no-op (1)
+2025-12-29 02:35:57.853  5936-5943  .nexusmatch.app         com.nexusmatch.app                   W  userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+2025-12-29 02:35:57.886  5936-5943  .nexusmatch.app         com.nexusmatch.app                   I  Background concurrent mark compact GC freed 13MB AllocSpace bytes, 84(3204KB) LOS objects, 49% free, 8023KB/15MB, paused 13.437ms,3.694ms total 255.465ms
+2025-12-29 02:35:57.891  5936-5944  libbinder.BpBinder      com.nexusmatch.app                   I  onLastStrongRef automatically unlinking death recipients for descriptor: '(not cached)'
+2025-12-29 02:35:59.575  5936-5936  Capacitor/Plugin        com.nexusmatch.app                   V  To native (Capacitor plugin): callbackId: 31138538, pluginId: FirebaseAuthentication, methodName: signInWithGoogle
+2025-12-29 02:35:59.576  5936-5936  Capacitor               com.nexusmatch.app                   V  callback: 31138538, pluginId: FirebaseAuthentication, methodName: signInWithGoogle, methodData: {}
+2025-12-29 02:36:01.562  5936-5936  Capacitor               com.nexusmatch.app                   D  App paused
+2025-12-29 02:36:03.669  5936-5962  FA                      com.nexusmatch.app                   I  Application backgrounded at: timestamp_millis: 1766955961666
+2025-12-29 02:36:11.837  5936-6245  CredManProvService      com.nexusmatch.app                   I  GetCredentialResponse returned from framework
+2025-12-29 02:36:11.915  5936-5936  Capacitor               com.nexusmatch.app                   D  App resumed
+2025-12-29 02:36:11.971  5936-5968  System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-29 02:36:12.031  5936-5968  CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyAssertion?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-29 02:36:12.032  5936-5936  InsetsController        com.nexusmatch.app                   D  hide(ime())
+2025-12-29 02:36:12.032  5936-5936  ImeTracker              com.nexusmatch.app                   I  com.nexusmatch.app:2e326b1e: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+2025-12-29 02:36:12.748  5936-5968  System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-29 02:36:12.808  5936-5968  CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-29 02:36:13.458  5936-5968  FirebaseAuth            com.nexusmatch.app                   D  Notifying id token listeners about user ( kKAqFrq3YUfSigAdFThaeRmDfkD2 ).
+2025-12-29 02:36:13.463  5936-5936  Capacitor/...tionPlugin com.nexusmatch.app                   V  Notifying listeners for event idTokenChange
+2025-12-29 02:36:13.464  5936-5936  Capacitor/...tionPlugin com.nexusmatch.app                   D  No listeners found for event idTokenChange
