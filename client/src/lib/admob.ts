@@ -8,8 +8,8 @@ const isNative = Capacitor.isNativePlatform();
 // Switch to production IDs after testing
 const ADMOB_CONFIG = {
   // Enable test mode for development (shows test ads)
-  // Set to false and use production IDs when ready for Play Store
-  testMode: true,
+  // Set to false when using production ad unit IDs for Play Store
+  testMode: false,
   
   // Your AdMob App ID (from AdMob console)
   appId: 'ca-app-pub-4278995521540923~8773515735',
@@ -23,10 +23,10 @@ const ADMOB_CONFIG = {
   // Test: 'ca-app-pub-3940256099942544/6300978111'
   bannerId: 'ca-app-pub-3940256099942544/6300978111',
   
-  // Rewarded Ad Unit ID - Using Google's test ad unit for development
+  // Rewarded Ad Unit ID - NexusMatch_Boost_Rewarded
   // Production: 'ca-app-pub-4278995521540923/8211109962'
   // Test: 'ca-app-pub-3940256099942544/5224354917'
-  rewardedId: 'ca-app-pub-3940256099942544/5224354917',
+  rewardedId: 'ca-app-pub-4278995521540923/8211109962',
   
   // Interstitial Ad Unit ID (full screen ads between pages)
   interstitialId: 'ca-app-pub-3940256099942544/1033173712',
