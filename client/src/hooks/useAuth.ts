@@ -66,8 +66,7 @@ export function useAuth() {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({ 
-                  idToken,
-                  user: change.user 
+                  token: idToken
                 })
               });
 
