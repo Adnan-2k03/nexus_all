@@ -33,6 +33,11 @@ const ADMOB_CONFIG = {
   // Production: 'ca-app-pub-4278995521540923/4127183271'
   // Test: 'ca-app-pub-3940256099942544/5354046152'
   rewardedInterstitialId: 'ca-app-pub-4278995521540923/4127183271',
+  
+  // App Open Ad Unit ID (shown when app is opened)
+  // Production: 'ca-app-pub-4278995521540923/7234567890'
+  // Test: 'ca-app-pub-3940256099942544/5677046153'
+  appOpenAdId: 'ca-app-pub-3940256099942544/5677046153',
 };
 
 export const initializeAdMob = async () => {
@@ -187,6 +192,31 @@ export const showRewardedInterstitialAd = async (): Promise<boolean> => {
       reject(error);
     }
   });
+};
+
+export const showAppOpenAd = async (): Promise<void> => {
+  if (!isNative) {
+    console.log('App open ads are only available on native platforms');
+    return;
+  }
+
+  const options: RewardInterstitialAdOptions = {
+    adId: ADMOB_CONFIG.appOpenAdId,
+    isTesting: ADMOB_CONFIG.testMode,
+  };
+
+  try {
+    const dismissedListener = await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+      console.log('App open ad dismissed');
+      dismissedListener.remove();
+    });
+
+    await AdMob.prepareInterstitial(options);
+    await AdMob.showInterstitial();
+    console.log('App open ad shown');
+  } catch (error) {
+    console.error('Failed to show app open ad:', error);
+  }
 };
 
 export const isAdMobAvailable = (): boolean => {

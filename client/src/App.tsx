@@ -46,7 +46,7 @@ import { StarBackground } from "@/components/StarBackground";
 import { WebGLStarBackground } from "@/components/WebGLStarBackground";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { registerServiceWorker } from "@/registerSW";
-import { initializeAdMob } from "@/lib/admob";
+import { initializeAdMob, showAppOpenAd } from "@/lib/admob";
 import { FloatingVoiceOverlay } from "@/components/FloatingVoiceOverlay";
 import { RewardsOverlay } from "@/components/RewardsOverlay";
 import { subscribeToOverlayState } from "@/lib/voice-overlay-plugin";
@@ -892,6 +892,8 @@ function App() {
   useEffect(() => {
     registerServiceWorker();
     initializeAdMob();
+    // Show app open ad when app initializes (native platforms only)
+    showAppOpenAd();
   }, []);
 
   // Subscribe to overlay state changes
