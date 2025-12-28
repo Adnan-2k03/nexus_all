@@ -152,11 +152,13 @@ export const tournamentMessages = pgTable("tournament_messages", {
 export const matchRequests = pgTable("match_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  game: varchar("game").notNull(),
-  mode: varchar("mode").notNull(),
-  platform: varchar("platform").notNull(),
-  language: varchar("language").notNull(),
+  gameName: varchar("game_name").notNull(),
+  gameMode: varchar("game_mode").notNull(),
+  region: varchar("region").notNull(),
+  matchType: varchar("match_type").notNull(),
+  duration: varchar("duration").notNull(),
   description: text("description"),
+  tournamentName: varchar("tournament_name"),
   status: varchar("status").notNull().default("open"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -217,7 +219,7 @@ export const insertTournamentSchema = createInsertSchema(tournaments)
     maxParticipants: z.number().int().min(2),
     roadmapImageUrl: z.string().optional()
   });
-export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true });
+export const insertMatchRequestSchema = createInsertSchema(matchRequests).omit({ id: true, userId: true, createdAt: true, status: true });
 
 export const sendPhoneCodeSchema = z.object({
   phoneNumber: z.string().min(10)
