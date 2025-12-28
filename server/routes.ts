@@ -212,12 +212,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return res.status(404).json({ message: "User not found" });
       const cost = 10;
       if ((user.coins || 0) < cost) return res.status(400).json({ message: "Insufficient credits (10 required)" });
-      const limits: any = { free: 3, pro: 15, gold: 30 };
-      const limit = limits[user.subscriptionTier || "free"];
-      if ((user.connectionRequestsUsedToday || 0) >= limit) return res.status(429).json({ message: "Daily limit reached" });
       const data = insertMatchRequestSchema.parse(req.body);
       const deduct = await storage.deductCredits(userId, cost, "match_posting");
-      await db.update(users).set({ connectionRequestsUsedToday: (user.connectionRequestsUsedToday || 0) + 1 }).where(eq(users.id, userId));
       const match = await storage.createMatchRequest({ ...data, userId });
       res.status(201).json({ ...match, newBalance: deduct.balance });
     } catch (error: any) {
