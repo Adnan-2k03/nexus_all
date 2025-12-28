@@ -63,20 +63,32 @@ export function useAuth() {
 
     const setupListener = async () => {
       try {
+        console.log("🔐 [Auth] Setting up idTokenChange listener...");
         // Register listener
         listener = await FirebaseAuthentication.addListener('idTokenChange', (change) => {
-          console.log("🔐 [Auth] idTokenChange event fired:", !!change.token);
+          console.log("🔐 [Auth] idTokenChange event received!", {
+            hasToken: !!change.token,
+            tokenPrefix: change.token ? change.token.substring(0, 10) : 'none'
+          });
           if (change.token) {
             syncToken(change.token);
           } else {
+            console.log("🔐 [Auth] Token is null, user signed out");
             queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           }
         });
+        console.log("✅ [Auth] Listener registered successfully");
 
         // Immediate check to catch early events
+        console.log("🔐 [Auth] Performing initial token check...");
         const currentToken = await FirebaseAuthentication.getIdToken();
+        console.log("🔐 [Auth] Initial token result:", {
+          hasToken: !!currentToken.token,
+          tokenPrefix: currentToken.token ? currentToken.token.substring(0, 10) : 'none'
+        });
+        
         if (currentToken.token && isMounted) {
-          console.log("🔐 [Auth] Initial check found active session");
+          console.log("🔐 [Auth] Initial check found active session, syncing...");
           syncToken(currentToken.token);
         }
       } catch (err) {

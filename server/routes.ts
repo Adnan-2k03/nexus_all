@@ -104,13 +104,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Native Login (Firebase Token) ---
   app.post("/api/auth/native-login", async (req, res) => {
     const { token } = req.body;
-    if (!token) return res.status(400).json({ message: "Firebase token required" });
+    console.log("🔐 [Auth API] Native login attempt received", {
+      hasToken: !!token,
+      tokenLength: token?.length
+    });
+
+    if (!token) {
+      console.warn("⚠️ [Auth API] No token provided in request");
+      return res.status(400).json({ message: "Firebase token required" });
+    }
     try {
+      console.log("🔐 [Auth API] Verifying token...");
       const decodedToken = await verifyFirebaseToken(token);
-      if (!decodedToken) return res.status(401).json({ message: "Invalid Firebase token" });
+      if (!decodedToken) {
+        console.error("❌ [Auth API] Token verification returned null");
+        return res.status(401).json({ message: "Invalid Firebase token" });
+      }
       
+      console.log("✅ [Auth API] Token verified for user:", decodedToken.uid);
       let user = await storage.getUser(decodedToken.uid);
       if (!user) {
+        console.log("👤 [Auth API] Creating new user for UID:", decodedToken.uid);
         const gamertag = decodedToken.email?.split("@")[0] || `user_${decodedToken.uid.slice(0, 8)}`;
         user = await storage.createUser({ 
           gamertag: gamertag.replace(/[^a-zA-Z0-9_]/g, "_"),
@@ -118,15 +132,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      console.log("🔑 [Auth API] Initiating passport login for user ID:", user.id);
       req.login(user, (err) => {
-        if (err) return res.status(500).json({ message: "Login failed" });
+        if (err) {
+          console.error("❌ [Auth API] req.login error:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
         req.session.save((err) => {
-          if (err) return res.status(500).json({ message: "Session save failed" });
+          if (err) {
+            console.error("❌ [Auth API] Session save error:", err);
+            return res.status(500).json({ message: "Session save failed" });
+          }
+          console.log("🏁 [Auth API] Native login successful for:", user?.gamertag);
           res.json(user);
         });
       });
     } catch (error: any) {
-      console.error("[Auth] Firebase token verification failed:", error);
+      console.error("❌ [Auth API] Native login critical failure:", error);
       res.status(401).json({ message: "Authentication failed" });
     }
   });
