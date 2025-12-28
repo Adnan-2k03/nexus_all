@@ -299,8 +299,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications/unread-count", authMiddleware, async (req, res) => res.json({ count: 0 }));
 
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
-  wss.on("connection", (ws) => ws.on("message", () => {}));
+  
+  // Configure WebSocket server for mobile app connections
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: "/ws",
+    perMessageDeflate: false, // Disable compression for mobile
+  });
+
+  // Handle WebSocket connections
+  wss.on("connection", (ws) => {
+    console.log("🔌 WebSocket connected");
+    
+    // Send initial connection message
+    ws.send(JSON.stringify({ type: "connected", message: "WebSocket connected" }));
+    
+    // Heartbeat/ping-pong to keep connection alive
+    const heartbeatInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.ping();
+      }
+    }, 30000); // Ping every 30 seconds
+    
+    ws.on("message", (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        // Handle incoming messages
+        console.log("📨 WebSocket message:", message);
+      } catch (e) {
+        // Ignore parse errors for non-JSON messages
+      }
+    });
+    
+    ws.on("error", (error) => {
+      console.error("❌ WebSocket error:", error);
+    });
+    
+    ws.on("close", () => {
+      clearInterval(heartbeatInterval);
+      console.log("🔌 WebSocket disconnected");
+    });
+  });
 
   return httpServer;
 }
