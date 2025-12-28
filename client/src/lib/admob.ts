@@ -1,4 +1,4 @@
-import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, AppOpenAdOptions, InterstitialAdOptions, InterstitialAdPluginEvents } from '@capacitor-community/admob';
+import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, RewardInterstitialAdOptions, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.isNativePlatform();
@@ -14,10 +14,6 @@ const ADMOB_CONFIG = {
   // Your AdMob App ID (from AdMob console)
   appId: 'ca-app-pub-4278995521540923~8773515735',
   
-  // App Open Ad Unit ID - Shows when app is opened
-  // Production: 'ca-app-pub-4278995521540923/7515763940'
-  appOpenId: 'ca-app-pub-4278995521540923/7515763940',
-  
   // Banner Ad Unit ID - Using Google's test ad unit for development
   // Production: 'ca-app-pub-4278995521540923/9530455718'
   // Test: 'ca-app-pub-3940256099942544/6300978111'
@@ -32,6 +28,11 @@ const ADMOB_CONFIG = {
   // Production: 'ca-app-pub-4278995521540923/4322802007'
   // Test: 'ca-app-pub-3940256099942544/1033173712'
   interstitialId: 'ca-app-pub-4278995521540923/4322802007',
+  
+  // Rewarded Interstitial Ad Unit ID (rewards with interstitial format)
+  // Production: 'ca-app-pub-4278995521540923/4127183271'
+  // Test: 'ca-app-pub-3940256099942544/5354046152'
+  rewardedInterstitialId: 'ca-app-pub-4278995521540923/4127183271',
 };
 
 export const initializeAdMob = async () => {
@@ -127,33 +128,13 @@ export const showRewardedAd = async (): Promise<boolean> => {
   });
 };
 
-export const showAppOpenAd = async (): Promise<void> => {
-  if (!isNative) {
-    console.log('App Open ads are only available on native platforms');
-    return;
-  }
-
-  const options: AppOpenAdOptions = {
-    adId: ADMOB_CONFIG.appOpenId,
-    isTesting: ADMOB_CONFIG.testMode,
-  };
-
-  try {
-    await AdMob.prepareAppOpenAd(options);
-    await AdMob.showAppOpenAd();
-    console.log('App Open ad shown');
-  } catch (error) {
-    console.error('Failed to show App Open ad:', error);
-  }
-};
-
 export const showInterstitialAd = async (): Promise<void> => {
   if (!isNative) {
     console.log('Interstitial ads are only available on native platforms');
     return;
   }
 
-  const options: InterstitialAdOptions = {
+  const options: RewardInterstitialAdOptions = {
     adId: ADMOB_CONFIG.interstitialId,
     isTesting: ADMOB_CONFIG.testMode,
   };
@@ -164,12 +145,48 @@ export const showInterstitialAd = async (): Promise<void> => {
       dismissedListener.remove();
     });
 
-    await AdMob.prepareInterstitialAd(options);
-    await AdMob.showInterstitialAd();
+    await AdMob.prepareInterstitial(options);
+    await AdMob.showInterstitial();
     console.log('Interstitial ad shown');
   } catch (error) {
     console.error('Failed to show interstitial ad:', error);
   }
+};
+
+export const showRewardedInterstitialAd = async (): Promise<boolean> => {
+  if (!isNative) {
+    console.log('Rewarded interstitial ads are only available on native platforms');
+    return false;
+  }
+
+  const options: RewardInterstitialAdOptions = {
+    adId: ADMOB_CONFIG.rewardedInterstitialId,
+    isTesting: ADMOB_CONFIG.testMode,
+  };
+
+  return new Promise(async (resolve, reject) => {
+    let rewarded = false;
+
+    try {
+      const rewardedListener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, (reward: AdMobRewardItem) => {
+        console.log('User earned reward from interstitial:', reward);
+        rewarded = true;
+      });
+
+      const dismissedListener = await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+        console.log('Rewarded interstitial ad dismissed');
+        rewardedListener.remove();
+        dismissedListener.remove();
+        resolve(rewarded);
+      });
+
+      await AdMob.prepareInterstitial(options);
+      await AdMob.showInterstitial();
+    } catch (error) {
+      console.error('Failed to show rewarded interstitial ad:', error);
+      reject(error);
+    }
+  });
 };
 
 export const isAdMobAvailable = (): boolean => {
