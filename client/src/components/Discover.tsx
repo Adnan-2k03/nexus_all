@@ -78,9 +78,25 @@ export function Discover({ currentUserId }: DiscoverProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [creditsBalance, setCreditsBalance] = useState<number>(0);
+  const [applyingFilters, setApplyingFilters] = useState(false);
   const { toast } = useToast();
   const { getContainerClass } = useLayout();
   const { isUserOnline, isUserInVoice } = useOnlineStatus();
+
+  // Fetch user credits balance
+  const { data: userCredits } = useQuery<{ balance: number }>({
+    queryKey: ["/api/user/credits"],
+    queryFn: async () => {
+      const response = await fetch(getApiUrl("/api/user/credits"), {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch credits");
+      const data = await response.json();
+      setCreditsBalance(data.balance);
+      return data;
+    },
+  });
   
   // Reset page when filters change
   useEffect(() => {
