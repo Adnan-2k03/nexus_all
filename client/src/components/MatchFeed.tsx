@@ -191,9 +191,15 @@ export function MatchFeed({
   );
 
   // Transform backend data to display format (memoized to prevent infinite re-renders)
-  const transformedMatches: MatchRequestDisplay[] = useMemo(() => 
-    fetchedMatches
-      .filter(match => match.gamertag) // Only show matches with valid gamertags
+  const transformedMatches: MatchRequestDisplay[] = useMemo(() => {
+    const seen = new Set<string>();
+    return fetchedMatches
+      .filter(match => {
+        if (!match.gamertag) return false;
+        if (seen.has(match.id)) return false; // Deduplicate by ID
+        seen.add(match.id);
+        return true;
+      })
       .map(match => ({
         ...match,
         gamertag: match.gamertag || "Unknown Player",
@@ -201,7 +207,8 @@ export function MatchFeed({
         region: match.region ?? undefined,
         tournamentName: match.tournamentName ?? undefined,
         timeAgo: formatTimeAgo(match.createdAt),
-      })), [fetchedMatches]);
+      }));
+  }, [fetchedMatches]);
 
 
   // Handle real-time WebSocket updates
