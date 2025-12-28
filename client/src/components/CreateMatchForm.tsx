@@ -58,6 +58,7 @@ export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFo
   const regions = ["NA West", "NA East", "NA Central", "EU West", "EU East", "Asia", "Oceania"];
 
   const handleSubmit = async (data: CreateMatchFormData) => {
+    if (isLoading) return;
     try {
       const response = await apiRequest("POST", "/api/match-requests", data);
       const result = await response.json();

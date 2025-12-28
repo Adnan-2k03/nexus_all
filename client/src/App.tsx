@@ -236,28 +236,13 @@ function Router() {
   };
 
   const handleSubmitMatch = async (data: any) => {
+    if (showCreateForm === false) return; // Prevent double trigger if already closed
     try {
-      const response = await fetch(getApiUrl("/api/match-requests"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create match request");
-      }
-
-      const newMatch = await response.json();
-      console.log("Match request created successfully:", newMatch);
+      // CreateMatchForm already handles the API call and credits deduction
+      // We just need to close the form here
       setShowCreateForm(false);
-
-      // Optionally show success message to user
     } catch (error) {
-      console.error("Error creating match request:", error);
-      // TODO: Show error message to user
+      console.error("Error updating UI after match creation:", error);
     }
   };
 
