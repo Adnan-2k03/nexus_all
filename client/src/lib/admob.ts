@@ -1,4 +1,4 @@
-import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents } from '@capacitor-community/admob';
+import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, AppOpenAdOptions, AppOpenAdPluginEvents } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.isNativePlatform();
@@ -12,7 +12,11 @@ const ADMOB_CONFIG = {
   testMode: true,
   
   // Your AdMob App ID (from AdMob console)
-  appId: 'ca-app-pub-4278995521540923',
+  appId: 'ca-app-pub-4278995521540923~8773515735',
+  
+  // App Open Ad Unit ID - Shows when app is opened
+  // Production: 'ca-app-pub-4278995521540923/7515763940'
+  appOpenId: 'ca-app-pub-4278995521540923/7515763940',
   
   // Banner Ad Unit ID - Using Google's test ad unit for development
   // Production: 'ca-app-pub-4278995521540923/9530455718'
@@ -119,6 +123,36 @@ export const showRewardedAd = async (): Promise<boolean> => {
       reject(error);
     }
   });
+};
+
+export const showAppOpenAd = async (): Promise<void> => {
+  if (!isNative) {
+    console.log('App Open ads are only available on native platforms');
+    return;
+  }
+
+  const options: AppOpenAdOptions = {
+    adId: ADMOB_CONFIG.appOpenId,
+    isTesting: ADMOB_CONFIG.testMode,
+  };
+
+  try {
+    const dismissListener = await AdMob.addListener(AppOpenAdPluginEvents.Dismissed, () => {
+      console.log('App Open ad dismissed');
+      dismissListener.remove();
+    });
+
+    const failureListener = await AdMob.addListener(AppOpenAdPluginEvents.FailedToLoad, (error: any) => {
+      console.log('App Open ad failed to load:', error);
+      failureListener.remove();
+    });
+
+    await AdMob.prepareAppOpenAd(options);
+    await AdMob.showAppOpenAd();
+    console.log('App Open ad shown');
+  } catch (error) {
+    console.error('Failed to show App Open ad:', error);
+  }
 };
 
 export const isAdMobAvailable = (): boolean => {
