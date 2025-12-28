@@ -1,4 +1,4 @@
-import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, AppOpenAdOptions } from '@capacitor-community/admob';
+import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, AppOpenAdOptions, InterstitialAdOptions, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.isNativePlatform();
@@ -28,8 +28,10 @@ const ADMOB_CONFIG = {
   // Test: 'ca-app-pub-3940256099942544/5224354917'
   rewardedId: 'ca-app-pub-4278995521540923/8211109962',
   
-  // Interstitial Ad Unit ID (full screen ads between pages)
-  interstitialId: 'ca-app-pub-3940256099942544/1033173712',
+  // Interstitial Ad Unit ID (full screen ads between pages/tournaments)
+  // Production: 'ca-app-pub-4278995521540923/4322802007'
+  // Test: 'ca-app-pub-3940256099942544/1033173712'
+  interstitialId: 'ca-app-pub-4278995521540923/4322802007',
 };
 
 export const initializeAdMob = async () => {
@@ -142,6 +144,31 @@ export const showAppOpenAd = async (): Promise<void> => {
     console.log('App Open ad shown');
   } catch (error) {
     console.error('Failed to show App Open ad:', error);
+  }
+};
+
+export const showInterstitialAd = async (): Promise<void> => {
+  if (!isNative) {
+    console.log('Interstitial ads are only available on native platforms');
+    return;
+  }
+
+  const options: InterstitialAdOptions = {
+    adId: ADMOB_CONFIG.interstitialId,
+    isTesting: ADMOB_CONFIG.testMode,
+  };
+
+  try {
+    const dismissedListener = await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+      console.log('Interstitial ad dismissed');
+      dismissedListener.remove();
+    });
+
+    await AdMob.prepareInterstitialAd(options);
+    await AdMob.showInterstitialAd();
+    console.log('Interstitial ad shown');
+  } catch (error) {
+    console.error('Failed to show interstitial ad:', error);
   }
 };
 
