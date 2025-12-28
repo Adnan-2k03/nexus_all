@@ -636,6 +636,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return res.status(404).json({ message: "User not found" });
 
       const now = new Date();
+      const postingCost = 10; // Cost to post a match request
+      
+      // Check credits first
+      if ((user.coins || 0) < postingCost) {
+        return res.status(400).json({ 
+          message: `You need ${postingCost} credits to post a match request. You have ${user.coins || 0}.`,
+          creditsNeeded: postingCost,
+          creditsAvailable: user.coins || 0
+        });
+      }
       
       // Check if subscription has expired
       let currentTier = user.subscriptionTier || "free";
@@ -695,6 +705,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(users.id, userId));
       }
 
+      // Deduct credits for posting
+      const newBalance = (user.coins || 0) - postingCost;
+      await db.update(users)
+        .set({ coins: newBalance })
+        .where(eq(users.id, userId));
+
       // Create the match request
       const data = insertMatchRequestSchema.parse(req.body);
       const matchRequest = await storage.createMatchRequest({
@@ -702,11 +718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: userId,
       });
 
-      // Log transaction for connection request
+      // Log transaction for match posting
       await db.insert(creditTransactions).values({
         userId,
-        amount: 0, // Connection requests are free with subscription - no deduction
-        type: "connection_request",
+        amount: -postingCost,
+        type: "match_posting",
       });
 
       res.status(201).json({
@@ -714,6 +730,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestsRemaining: Math.max(0, dailyLimit - newRequestCount),
         dailyLimit,
         currentTier,
+        creditsDeducted: postingCost,
+        newBalance: newBalance,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -722,6 +740,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("[Match Request] Error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
+    }
+  });
+
+  // Apply filters - deduct credits for using filters
+  app.post("/api/users/apply-filters", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const { filtersUsed = 0 } = req.body;
+      const filterCost = 5; // 5 credits per filter
+      const totalCost = filtersUsed * filterCost;
+
+      if (totalCost > 0) {
+        if ((user.coins || 0) < totalCost) {
+          return res.status(400).json({ 
+            message: `You need ${totalCost} credits to use ${filtersUsed} filter(s). You have ${user.coins || 0}.`,
+            creditsNeeded: totalCost,
+            filtersUsed,
+            creditPerFilter: filterCost
+          });
+        }
+
+        // Deduct credits
+        const newBalance = (user.coins || 0) - totalCost;
+        await db.update(users)
+          .set({ coins: newBalance })
+          .where(eq(users.id, userId));
+
+        // Log transaction
+        await db.insert(creditTransactions).values({
+          userId,
+          amount: -totalCost,
+          type: "connection_request", // Using connection_request as filter is part of discovery
+        });
+
+        res.json({
+          success: true,
+          creditsDeducted: totalCost,
+          newBalance: newBalance,
+          filtersApplied: filtersUsed,
+          costPerFilter: filterCost,
+        });
+      } else {
+        res.json({
+          success: true,
+          creditsDeducted: 0,
+          newBalance: user.coins || 0,
+          message: "No filters applied",
+        });
+      }
+    } catch (error: any) {
+      console.error("[Apply Filters] Error:", error);
+      res.status(500).json({ message: "Failed to apply filters" });
     }
   });
 
