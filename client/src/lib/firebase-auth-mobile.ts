@@ -32,17 +32,19 @@ export async function signInWithGoogleMobile() {
 
     // Get ID token to sync with backend
     const idToken = await userCredential.user.getIdToken();
+    console.log('[Mobile Sign-In] Syncing Firebase token with backend');
     
     // Call your backend to create session
-    const response = await fetch(getApiUrl('/api/auth/firebase-login'), {
+    const response = await fetch(getApiUrl('/api/auth/native-login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
+      body: JSON.stringify({ token: idToken }),
       credentials: 'include',
     });
 
     if (!response.ok) {
-      throw new Error('Failed to sync authentication with backend');
+      const errorData = await response.json();
+      throw new Error(`Failed to sync authentication with backend: ${errorData.message}`);
     }
 
     return userCredential.user;

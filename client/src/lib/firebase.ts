@@ -33,14 +33,16 @@ if (auth) {
       if (user) {
         // User signed in - sync token with backend
         const idToken = await user.getIdToken();
-        await fetch(getApiUrl('/api/auth/firebase-login'), {
+        console.log('[Firebase Listener] User signed in, syncing token with backend');
+        await fetch(getApiUrl('/api/auth/native-login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
+          body: JSON.stringify({ token: idToken }),
           credentials: 'include',
         }).catch(err => console.error('Failed to sync token with backend:', err));
       } else {
         // User signed out
+        console.log('[Firebase Listener] User signed out');
         await fetch(getApiUrl('/api/auth/logout'), {
           method: 'POST',
           credentials: 'include',
