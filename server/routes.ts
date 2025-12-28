@@ -101,6 +101,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Native Login (Firebase Token) ---
+  app.post("/api/auth/native-login", async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "Firebase token required" });
+    try {
+      const decodedToken = await verifyFirebaseToken(token);
+      if (!decodedToken) return res.status(401).json({ message: "Invalid Firebase token" });
+      
+      let user = await storage.getUser(decodedToken.uid);
+      if (!user) {
+        const gamertag = decodedToken.email?.split("@")[0] || `user_${decodedToken.uid.slice(0, 8)}`;
+        user = await storage.createUser({ 
+          gamertag: gamertag.replace(/[^a-zA-Z0-9_]/g, "_"),
+          coins: 100 
+        });
+      }
+      
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed" });
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ message: "Session save failed" });
+          res.json(user);
+        });
+      });
+    } catch (error: any) {
+      console.error("[Auth] Firebase token verification failed:", error);
+      res.status(401).json({ message: "Authentication failed" });
+    }
+  });
+
   // --- Daily Rewards ---
   app.post("/api/user/claim-reward", authMiddleware, async (req: any, res) => {
     try {
