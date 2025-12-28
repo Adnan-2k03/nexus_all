@@ -35,66 +35,59 @@ export function useAuth() {
 
   // --- AUTH STATE LISTENER ---
   useEffect(() => {
-    const setupListener = async () => {
-      if (!isNative) return;
+    if (!isNative) return;
 
+    // Set up listener immediately without async delay to catch events faster
+    FirebaseAuthentication.addListener('idTokenChange', async (change) => {
       try {
-        await FirebaseAuthentication.removeAllListeners();
+        console.log("🔐 [Auth] idTokenChange event fired, change:", change);
+        
+        if (change.token) {
+          console.log("🔐 [Auth] ID Token changed, syncing with backend...");
+          const idToken = change.token;
 
-        // Listen for idTokenChange event - this fires when token is ready
-        await FirebaseAuthentication.addListener('idTokenChange', async (change) => {
-          try {
-            if (change.token) {
-              console.log("🔐 [Auth] ID Token changed, syncing with backend...");
-              const idToken = change.token;
+          console.log("✅ [Auth] Got token, sending to backend...");
+          const url = getApiUrl("/api/auth/native-login");
+          console.log("📍 [Auth] Backend URL:", url);
+          console.log("📦 [Auth] Token length:", idToken.length);
 
-              console.log("✅ [Auth] Got token, sending to backend...");
-              const url = getApiUrl("/api/auth/native-login");
-              console.log("📍 [Auth] Backend URL:", url);
-              console.log("📦 [Auth] Token length:", idToken.length);
+          // Send token to backend for verification
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ 
+              token: idToken
+            })
+          });
 
-              // Send token to backend for verification
-              const res = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ 
-                  token: idToken
-                })
-              });
+          console.log("📬 [Auth] Backend response status:", res.status);
 
-              console.log("📬 [Auth] Backend response status:", res.status);
-
-              if (res.ok) {
-                console.log("✅ [Auth] Server accepted token, refetching user...");
-                // Refetch user data
-                await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-              } else {
-                const errorData = await res.text();
-                console.error("❌ [Auth] Server rejected request:", res.status, errorData);
-              }
-            } else {
-              // Token cleared = user signed out
-              console.log("🔐 [Auth] Token cleared, user signed out");
-              await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-            }
-          } catch (err: any) {
-            console.error("❌ [Auth] Network/fetch error:", err.message || err);
-            console.error("    Type:", err.constructor.name);
-            if (err.stack) console.error("    Stack:", err.stack);
+          if (res.ok) {
+            console.log("✅ [Auth] Server accepted token, refetching user...");
+            // Refetch user data
+            await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+            await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+          } else {
+            const errorData = await res.text();
+            console.error("❌ [Auth] Server rejected request:", res.status, errorData);
           }
-        });
-      } catch (err) {
-        console.error("Auth listener setup failed:", err);
+        } else {
+          // Token cleared = user signed out
+          console.log("🔐 [Auth] Token cleared, user signed out");
+          await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        }
+      } catch (err: any) {
+        console.error("❌ [Auth] Network/fetch error:", err.message || err);
+        console.error("    Type:", err.constructor.name);
+        if (err.stack) console.error("    Stack:", err.stack);
       }
-    };
+    }).catch(err => {
+      console.error("❌ [Auth] Failed to add idTokenChange listener:", err);
+    });
 
-    setupListener();
     return () => { 
-      if (isNative) {
-        FirebaseAuthentication.removeAllListeners().catch(() => {});
-      }
+      FirebaseAuthentication.removeAllListeners().catch(() => {});
     };
   }, [queryClient, isNative]);
 
