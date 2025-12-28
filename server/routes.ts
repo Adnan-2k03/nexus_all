@@ -204,6 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionTier: tier as any,
           subscriptionEndDate: expiryDate,
           connectionRequestsUsedToday: 0,
+          lastConnectionRequestReset: new Date(),
         })
         .where(eq(users.id, userId))
         .returning();
@@ -630,12 +631,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/match-requests", authMiddleware, async (req: any, res) => {
     try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const now = new Date();
+      
+      // Check if subscription has expired
+      let currentTier = user.subscriptionTier || "free";
+      let subscriptionActive = false;
+      
+      if (user.subscriptionEndDate) {
+        subscriptionActive = new Date(user.subscriptionEndDate) > now;
+      }
+      
+      // Reset to free tier if subscription expired
+      if (!subscriptionActive && currentTier !== "free") {
+        currentTier = "free";
+        await db.update(users)
+          .set({ subscriptionTier: "free" })
+          .where(eq(users.id, userId));
+      }
+
+      // Define request limits per tier
+      const requestLimits: { [key: string]: number } = {
+        free: 3,
+        pro: 15,
+        gold: 30,
+      };
+
+      const dailyLimit = requestLimits[currentTier] || 3;
+      const requestsUsedToday = user.connectionRequestsUsedToday || 0;
+
+      // Check if daily limit exceeded
+      if (requestsUsedToday >= dailyLimit) {
+        return res.status(429).json({ 
+          message: `You've reached your daily limit of ${dailyLimit} connection requests. Upgrade to Pro (15/day) or Gold (30/day) for more requests!`,
+          requestsRemaining: 0,
+          dailyLimit,
+          currentTier
+        });
+      }
+
+      // Reset daily counter if 24 hours have passed
+      const lastReset = user.lastConnectionRequestReset ? new Date(user.lastConnectionRequestReset) : new Date();
+      const now24hAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      let newRequestCount = requestsUsedToday + 1;
+
+      if (lastReset < now24hAgo) {
+        newRequestCount = 1;
+        await db.update(users)
+          .set({
+            connectionRequestsUsedToday: 1,
+            lastConnectionRequestReset: now,
+          })
+          .where(eq(users.id, userId));
+      } else {
+        // Increment counter
+        await db.update(users)
+          .set({
+            connectionRequestsUsedToday: newRequestCount,
+          })
+          .where(eq(users.id, userId));
+      }
+
+      // Create the match request
       const data = insertMatchRequestSchema.parse(req.body);
       const matchRequest = await storage.createMatchRequest({
         ...data,
-        userId: req.user.id,
+        userId: userId,
       });
-      res.status(201).json(matchRequest);
+
+      // Log transaction for connection request
+      await db.insert(creditTransactions).values({
+        userId,
+        amount: 0, // Connection requests are free with subscription - no deduction
+        type: "connection_request",
+      });
+
+      res.status(201).json({
+        ...matchRequest,
+        requestsRemaining: Math.max(0, dailyLimit - newRequestCount),
+        dailyLimit,
+        currentTier,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid match request data" });
