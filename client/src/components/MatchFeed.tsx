@@ -8,12 +8,30 @@ import { MatchRequestCard } from "./MatchRequestCard";
 import { AdUnit } from "./AdUnit";
 import { AdBanner } from "./AdBanner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { MatchRequestWithUser, MatchConnection } from "@shared/schema";
+import type { User, MatchRequest } from "@shared/schema";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { GameFilters } from "./GameFilters";
-import { RefreshCw, Plus, Wifi, WifiOff, EyeOff, Eye, Users, Target, Clock } from "lucide-react";
+import { RefreshCw, Plus, Wifi, WifiOff, EyeOff, Eye, Users, Target, Clock, Zap, Crown } from "lucide-react";
 import { useLayout } from "@/contexts/LayoutContext";
 import { getApiUrl } from "@/lib/api";
+
+// Define local types to fix LSP errors
+type MatchRequestWithUser = MatchRequest & {
+  gamertag: string | null;
+  profileImageUrl: string | null;
+  region: string | null;
+  tournamentName: string | null;
+  gameName: string;
+  gameMode: string;
+  matchType: string;
+  duration: string;
+};
+
+type MatchConnection = {
+  id: string;
+  requestId: string;
+  status: string;
+};
 
 // Utility function to format time ago
 function formatTimeAgo(date: string | Date | null): string {
@@ -182,6 +200,14 @@ export function MatchFeed({
         tournamentName: match.tournamentName ?? undefined,
         timeAgo: formatTimeAgo(match.createdAt),
       })), [fetchedMatches]);
+
+  const { data: subStatus } = useQuery<{ tier: string; dailyLimit: number; requestsUsedToday: number }>({
+    queryKey: ['/api/subscription/status'],
+    queryFn: async () => {
+      const response = await fetch(getApiUrl('/api/subscription/status'), { credentials: 'include' });
+      return response.json();
+    }
+  });
 
   // Handle real-time WebSocket updates
   useEffect(() => {
@@ -387,6 +413,34 @@ export function MatchFeed({
           <p className="text-sm text-yellow-600 dark:text-yellow-400">{locationError}</p>
         </div>
       )}
+
+      {/* Subscription Status Bar */}
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Daily Connection Limits</p>
+                <p className="text-xs text-muted-foreground">Used today: {subStatus?.requestsUsedToday || 0} / {subStatus?.dailyLimit || 3}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant={subStatus?.tier === 'free' ? 'outline' : 'default'} className="gap-1 px-3 py-1">
+                <Crown className="h-3 w-3" />
+                {subStatus?.tier?.toUpperCase() || 'FREE'}
+              </Badge>
+              {subStatus?.tier === 'free' && (
+                <Button variant="outline" size="sm" onClick={() => setLocation('/earn')} className="h-8">
+                  Upgrade Tier
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Banner Ad - Positioned above search bar for mobile */}
       <AdBanner visible={true} />

@@ -34,7 +34,8 @@ export function CreditsDisplay({ showButton = false, compact = false, onWatchAdC
     mutationFn: async () => {
       return apiRequest("POST", "/api/credits/reward-ad", {});
     },
-    onSuccess: (data) => {
+    onSuccess: async (response) => {
+      const data = await response.json();
       toast({
         title: "Success!",
         description: `You earned 5 credits! Total: ${data.balance}`,

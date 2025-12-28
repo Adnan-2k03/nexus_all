@@ -6,6 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Filter, X } from "lucide-react";
 import { useState } from "react";
 
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
 interface GameFiltersProps {
   onFilterChange: (filters: { search?: string; game?: string; mode?: string; region?: string; gender?: string; language?: string; distance?: string; rank?: string }) => void;
   activeFilters?: { search?: string; game?: string; mode?: string; region?: string; gender?: string; language?: string; distance?: string; rank?: string };
@@ -47,8 +50,29 @@ export function GameFilters({ onFilterChange, activeFilters = {} }: GameFiltersP
     onFilterChange({ ...activeFilters, search: value });
   };
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = async (key: string, value: string) => {
     const newFilters = { ...activeFilters, [key]: value === "all" ? undefined : value };
+    
+    // Only charge if actually applying a new filter
+    if (value !== "all" && activeFilters[key as keyof typeof activeFilters] !== value) {
+      try {
+        const response = await apiRequest("POST", "/api/users/apply-filters", { filtersUsed: 1 });
+        const data = await response.json();
+        toast({
+          title: "Filter Applied",
+          description: `Deducted 5 credits. New balance: ${data.balance}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Insufficient credits to apply filter",
+          variant: "destructive",
+        });
+        return; // Don't apply filter if charge fails
+      }
+    }
+    
     onFilterChange(newFilters);
   };
 
@@ -94,7 +118,7 @@ export function GameFilters({ onFilterChange, activeFilters = {} }: GameFiltersP
               data-testid="button-toggle-filters"
             >
               <Filter className="h-4 w-4" />
-              Filters
+              Filters (5 Credits/ea)
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs">
                   {Object.keys(activeFilters).filter(key => activeFilters[key as keyof typeof activeFilters]).length}

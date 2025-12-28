@@ -11,6 +11,9 @@ import { z } from "zod";
 import { Gamepad2, Plus, Users, Target, Clock, Zap } from "lucide-react";
 import { useLayout } from "@/contexts/LayoutContext";
 
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
 const createMatchSchema = z.object({
   gameName: z.string().min(1, "Game name is required"),
   gameMode: z.string().min(1, "Game mode is required"),
@@ -31,6 +34,7 @@ interface CreateMatchFormProps {
 
 export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFormProps) {
   const { getContainerClass } = useLayout();
+  const { toast } = useToast();
   
   const form = useForm<CreateMatchFormData>({
     resolver: zodResolver(createMatchSchema),
@@ -53,9 +57,29 @@ export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFo
   const gameModes = ["1v1", "2v2", "3v3", "5v5", "Team"];
   const regions = ["NA West", "NA East", "NA Central", "EU West", "EU East", "Asia", "Oceania"];
 
-  const handleSubmit = (data: CreateMatchFormData) => {
-    onSubmit(data);
-    form.reset();
+  const handleSubmit = async (data: CreateMatchFormData) => {
+    try {
+      const response = await apiRequest("POST", "/api/match-requests", data);
+      const result = await response.json();
+      
+      toast({
+        title: "Match Posted!",
+        description: `Deducted 10 credits. New balance: ${result.newBalance}`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/match-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/status"] });
+      
+      onSubmit(data);
+      form.reset();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Insufficient credits to post match",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -243,7 +267,7 @@ export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFo
                 data-testid="button-create-match"
               >
                 <Plus className="h-4 w-4" />
-                {isLoading ? "Creating..." : "Create Match Request"}
+                {isLoading ? "Creating..." : "Create Match Request (10 Credits)"}
               </Button>
               {onCancel && (
                 <Button
