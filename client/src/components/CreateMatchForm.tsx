@@ -19,7 +19,7 @@ const createMatchSchema = z.object({
   gameMode: z.string().min(1, "Game mode is required"),
   matchType: z.enum(["lfg", "lfo"], { required_error: "Match type is required" }),
   duration: z.enum(["short-term", "long-term"], { required_error: "Duration is required" }),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().optional(),
   tournamentName: z.string().optional(),
   region: z.string().min(1, "Region is required"),
 });
@@ -150,20 +150,19 @@ export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Game</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-game-name">
-                          <SelectValue placeholder="Select a game" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {popularGames.map((game) => (
-                          <SelectItem key={game} value={game}>
-                            {game}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Valorant, League of Legends"
+                        list="popular-games"
+                        {...field}
+                        data-testid="input-game-name"
+                      />
+                    </FormControl>
+                    <datalist id="popular-games">
+                      {popularGames.map((game) => (
+                        <option key={game} value={game} />
+                      ))}
+                    </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -175,20 +174,19 @@ export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Game Mode</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-game-mode">
-                          <SelectValue placeholder="Select mode" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {gameModes.map((mode) => (
-                          <SelectItem key={mode} value={mode}>
-                            {mode}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., 1v1, 5v5, Team"
+                        list="game-modes-list"
+                        {...field}
+                        data-testid="input-game-mode"
+                      />
+                    </FormControl>
+                    <datalist id="game-modes-list">
+                      {gameModes.map((mode) => (
+                        <option key={mode} value={mode} />
+                      ))}
+                    </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -202,20 +200,19 @@ export function CreateMatchForm({ onSubmit, onCancel, isLoading }: CreateMatchFo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Region</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-region">
-                          <SelectValue placeholder="Select region" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {regions.map((region) => (
-                          <SelectItem key={region} value={region}>
-                            {region}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., NA West, EU East"
+                        list="regions-list"
+                        {...field}
+                        data-testid="input-region"
+                      />
+                    </FormControl>
+                    <datalist id="regions-list">
+                      {regions.map((region) => (
+                        <option key={region} value={region} />
+                      ))}
+                    </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
