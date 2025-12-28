@@ -24,6 +24,7 @@ export function RewardedAdsPage() {
   });
   const [canWatchAd, setCanWatchAd] = useState(true);
   const [cooldownTime, setCooldownTime] = useState(0);
+  const [purchasingTier, setPurchasingTier] = useState<string | null>(null);
 
   // Fetch user credits
   const { data: credits, isLoading } = useQuery<{ balance: number }>({
@@ -92,6 +93,40 @@ export function RewardedAdsPage() {
   const handleWatchAd = () => {
     setIsWatchingAd(true);
     watchAdMutation.mutate();
+  };
+
+  const purchaseSubscription = async (tier: string) => {
+    setPurchasingTier(tier);
+    try {
+      const response = await fetch(getApiUrl(`/api/subscription/purchase/${tier}`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to purchase subscription");
+      }
+
+      const data = await response.json();
+      toast({
+        title: "Success!",
+        description: data.message,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/status"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to purchase subscription",
+        variant: "destructive",
+      });
+    } finally {
+      setPurchasingTier(null);
+    }
   };
 
   const totalEarned = adSessions.reduce((sum, session) => sum + session.earned, 0);
@@ -209,6 +244,88 @@ export function RewardedAdsPage() {
         </CardContent>
       </Card>
 
+      {/* Subscription Tiers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Pro Subscription */}
+        <Card className="border-blue-500/30 bg-blue-50 dark:bg-blue-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-blue-500" />
+              Pro Subscription
+            </CardTitle>
+            <CardDescription>2 days • Valid for 48 hours</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-3 rounded border">
+              <p className="font-bold text-2xl text-blue-600 dark:text-blue-400">150 Credits</p>
+            </div>
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Benefits:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ 15 connection requests per day</li>
+                <li>✓ Priority in search results</li>
+                <li>✓ No ads while browsing</li>
+              </ul>
+            </div>
+            <Button 
+              onClick={() => purchaseSubscription('pro')}
+              disabled={purchasingTier === 'pro' || (credits?.balance || 0) < 150}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              data-testid="button-buy-pro-subscription"
+            >
+              {purchasingTier === 'pro' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Purchasing...
+                </>
+              ) : (
+                `Buy Pro - 150 Credits`
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Gold Subscription */}
+        <Card className="border-yellow-500/30 bg-yellow-50 dark:bg-yellow-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-yellow-600" />
+              Gold Subscription
+            </CardTitle>
+            <CardDescription>2 days • Valid for 48 hours</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-3 rounded border">
+              <p className="font-bold text-2xl text-yellow-600 dark:text-yellow-400">300 Credits</p>
+            </div>
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Benefits:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ 30 connection requests per day</li>
+                <li>✓ Top priority in results</li>
+                <li>✓ Premium badge on profile</li>
+                <li>✓ No ads while browsing</li>
+              </ul>
+            </div>
+            <Button 
+              onClick={() => purchaseSubscription('gold')}
+              disabled={purchasingTier === 'gold' || (credits?.balance || 0) < 300}
+              className="w-full bg-yellow-600 hover:bg-yellow-700"
+              data-testid="button-buy-gold-subscription"
+            >
+              {purchasingTier === 'gold' ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Purchasing...
+                </>
+              ) : (
+                `Buy Gold - 300 Credits`
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* How to Use Credits */}
       <Card>
         <CardHeader>
@@ -227,20 +344,6 @@ export function RewardedAdsPage() {
             <div>
               <p className="font-medium">Boost Portfolio</p>
               <p className="text-sm text-muted-foreground">Boost a match to top visibility for 24 hours</p>
-            </div>
-          </div>
-          <div className="flex gap-3 items-start">
-            <Badge className="mt-1">500</Badge>
-            <div>
-              <p className="font-medium">Pro Subscription</p>
-              <p className="text-sm text-muted-foreground">Unlock 10 connection requests per day</p>
-            </div>
-          </div>
-          <div className="flex gap-3 items-start">
-            <Badge className="mt-1">1500</Badge>
-            <div>
-              <p className="font-medium">Gold Subscription</p>
-              <p className="text-sm text-muted-foreground">Unlock 50 connection requests per day</p>
             </div>
           </div>
         </CardContent>

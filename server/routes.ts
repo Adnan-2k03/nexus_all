@@ -167,6 +167,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Subscription Management ---
+  app.post("/api/subscription/purchase/:tier", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const tier = req.params.tier as string;
+      
+      if (!["pro", "gold"].includes(tier)) {
+        return res.status(400).json({ message: "Invalid subscription tier" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      // Define pricing and limits
+      const tiers: { [key: string]: { cost: number; requestLimit: number } } = {
+        pro: { cost: 150, requestLimit: 15 },
+        gold: { cost: 300, requestLimit: 30 },
+      };
+
+      const tierInfo = tiers[tier];
+      const currentCredits = user.coins || 0;
+
+      if (currentCredits < tierInfo.cost) {
+        return res.status(400).json({ message: "Insufficient credits" });
+      }
+
+      // Deduct credits and set subscription
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 2); // 2 days validity
+
+      const [updated] = await db
+        .update(users)
+        .set({
+          coins: currentCredits - tierInfo.cost,
+          subscriptionTier: tier as any,
+          subscriptionEndDate: expiryDate,
+          connectionRequestsUsedToday: 0,
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      // Log transaction
+      await db.insert(creditTransactions).values({
+        userId,
+        amount: -tierInfo.cost,
+        type: "subscription_charge",
+      });
+
+      res.json({
+        success: true,
+        message: `${tier.toUpperCase()} subscription purchased for 2 days!`,
+        user: updated,
+      });
+    } catch (error: any) {
+      console.error("Error purchasing subscription:", error);
+      res.status(500).json({ message: error.message || "Failed to purchase subscription" });
+    }
+  });
+
+  app.get("/api/subscription/status", authMiddleware, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const now = new Date();
+      const isActive = user.subscriptionEndDate && new Date(user.subscriptionEndDate) > now;
+      const daysRemaining = isActive && user.subscriptionEndDate
+        ? Math.ceil((new Date(user.subscriptionEndDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      const requestLimits: { [key: string]: number } = {
+        free: 3,
+        pro: 15,
+        gold: 30,
+      };
+
+      const currentTier: string = isActive ? (user.subscriptionTier || "free") : "free";
+      const dailyLimit = requestLimits[currentTier] || 3;
+
+      // Reset daily counter if needed
+      const lastReset = user.lastConnectionRequestReset ? new Date(user.lastConnectionRequestReset) : new Date();
+      const now24hAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      if (lastReset < now24hAgo) {
+        await db.update(users).set({
+          connectionRequestsUsedToday: 0,
+          lastConnectionRequestReset: new Date(),
+        }).where(eq(users.id, req.user.id));
+      }
+
+      res.json({
+        tier: currentTier,
+        isActive,
+        daysRemaining,
+        dailyLimit,
+        requestsUsedToday: user.connectionRequestsUsedToday || 0,
+        requestsRemaining: Math.max(0, dailyLimit - (user.connectionRequestsUsedToday || 0)),
+      });
+    } catch (error: any) {
+      console.error("Error fetching subscription status:", error);
+      res.status(500).json({ message: "Failed to fetch subscription status" });
+    }
+  });
+
   // --- Tournaments ---
   // --- Tournaments ---
   app.get("/api/tournaments", async (req, res) => {
