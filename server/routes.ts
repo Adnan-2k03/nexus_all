@@ -344,26 +344,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/user", async (req, res) => {
     console.log("🔍 [Auth API] GET /api/auth/user");
-    console.log("🔍 [Auth API] Headers:", JSON.stringify(req.headers));
     
-    // If we have req.user from JWT middleware or session, return it
-    if (req.isAuthenticated() && req.user) {
-      console.log("✅ [Auth API] User authenticated via session/JWT middleware:", req.user.id);
+    // Check for user attached by middleware (JWT or Session)
+    if (req.user) {
+      console.log("✅ [Auth API] User already attached to request:", req.user.id);
       return res.json(req.user);
     }
-    
-    // Final check for JWT in header manually just in case
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      console.log("🔍 [Auth API] Manual JWT check for token:", token.substring(0, 10) + "...");
-      const { verifyToken } = await import("./googleAuth");
-      const decoded = verifyToken(token);
-      if (decoded && decoded.id) {
-        const user = await storage.getUser(decoded.id);
-        if (user) {
-          console.log("✅ [Auth API] User authenticated via manual JWT check:", user.id);
-          return res.json(user);
+
+    // Final check for JWT in header manually
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && typeof authHeader === 'string') {
+      const parts = authHeader.trim().split(/\s+/);
+      if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
+        const token = parts[1];
+        console.log("🔍 [Auth API] Manual JWT check for token snippet:", token.substring(0, 10) + "...");
+        const { verifyToken } = await import("./googleAuth");
+        const decoded = verifyToken(token);
+        if (decoded && decoded.id) {
+          const user = await storage.getUser(decoded.id);
+          if (user) {
+            console.log("✅ [Auth API] User authenticated via manual JWT check:", user.id);
+            return res.json(user);
+          }
+        } else {
+          console.warn("❌ [Auth API] Manual JWT verification failed");
         }
       }
     }

@@ -15,16 +15,22 @@ export function useAuth() {
     queryFn: async () => {
       try {
         const url = getApiUrl("/api/auth/user");
-        const headers: Record<string, string> = {};
+        const token = localStorage.getItem("auth_token");
+        const headers: Record<string, string> = {
+          "Accept": "application/json"
+        };
         
         if (Capacitor.isNativePlatform()) {
-          const token = localStorage.getItem("auth_token");
           if (token) {
+            console.log("🔐 [Auth] Attaching JWT token to request");
             headers["Authorization"] = `Bearer ${token}`;
           } else {
-            // If native but no JWT token, we are effectively logged out
+            console.log("🔐 [Auth] No native token found, user is unauthenticated");
             return null;
           }
+        } else if (token) {
+          // Fallback for web testing if token exists
+          headers["Authorization"] = `Bearer ${token}`;
         }
 
         const response = await fetch(url, {

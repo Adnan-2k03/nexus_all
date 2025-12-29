@@ -29,23 +29,33 @@ export function verifyToken(token: string): any {
 }
 
 export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.split(" ")[1];
-    const decoded = verifyToken(token);
-    if (decoded && decoded.id) {
-      try {
-        const user = await storage.getUser(decoded.id);
-        if (user) {
-          req.user = user;
-          // Mock passport functions for JWT users
-          (req as any).isAuthenticated = () => true;
-          (req as any)._passport = { instance: passport };
-          return next();
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && typeof authHeader === 'string') {
+    const parts = authHeader.trim().split(/\s+/);
+    if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
+      const token = parts[1];
+      console.log("🔍 [JWT Middleware] Verifying token snippet:", token.substring(0, 10) + "...");
+      const decoded = verifyToken(token);
+      if (decoded && decoded.id) {
+        try {
+          const user = await storage.getUser(decoded.id);
+          if (user) {
+            console.log("✅ [JWT Middleware] Authenticated user:", user.id);
+            req.user = user;
+            (req as any).isAuthenticated = () => true;
+            (req as any)._passport = { instance: passport };
+            return next();
+          } else {
+            console.warn("⚠️ [JWT Middleware] User ID in token not found in database:", decoded.id);
+          }
+        } catch (error) {
+          console.error("❌ [JWT Middleware] User lookup failed:", error);
         }
-      } catch (error) {
-        console.error("JWT Auth user lookup failed:", error);
+      } else {
+        console.warn("⚠️ [JWT Middleware] Token verification failed or no ID in payload. Token snippet:", token.substring(0, 10));
       }
+    } else {
+      console.warn("⚠️ [JWT Middleware] Invalid Authorization header format:", authHeader);
     }
   }
   next();

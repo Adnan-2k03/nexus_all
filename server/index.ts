@@ -63,25 +63,23 @@ const corsOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || de
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (mobile apps, curl requests)
-    if (!origin || origin === 'https://localhost') return callback(null, true);
+    // Also explicitly allow Capacitor's local origin and potential Railway internal networking
+    if (!origin || origin === 'https://localhost' || origin.startsWith('capacitor://') || origin.includes('up.railway.app') || origin === 'null') {
+      return callback(null, true);
+    }
     
     if (corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      // In production with CORS_ORIGIN set, always allow
-      if (!isDev && corsOrigins.length > 0) {
-        callback(null, true);
-      } else if (isDev) {
-        callback(null, true); // Allow all in dev
-      } else {
-        callback(new Error('CORS not allowed'));
-      }
+      // In production, log but allow for debugging if no other policy matches
+      console.log(`🔒 [CORS Debug] Request from origin: ${origin}`);
+      callback(null, true);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['set-cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'authorization'],
+  exposedHeaders: ['set-cookie', 'authorization']
 }));
 
 app.use((req, res, next) => {
