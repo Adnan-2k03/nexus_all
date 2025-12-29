@@ -115,6 +115,14 @@ app.use((req, res, next) => {
       await waitForDatabase(15, 2000); // 15 retries, 2 seconds apart = 30 seconds max wait
     }
     
+    // Middleware to ensure req.user is available for all routes if JWT authenticated
+    app.use((req, res, next) => {
+      if (req.user && !req.isAuthenticated()) {
+        (req as any).isAuthenticated = () => true;
+      }
+      next();
+    });
+
     const server = await registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

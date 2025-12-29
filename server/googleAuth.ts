@@ -49,8 +49,9 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
           if (user) {
             console.log("✅ [JWT Middleware] Authenticated user:", user.id);
             req.user = user;
+            // Force Passport-like identification
+            (req as any)._passport = { instance: passport, session: { user: user.id } };
             (req as any).isAuthenticated = () => true;
-            (req as any)._passport = { instance: passport };
             return next();
           } else {
             console.warn("⚠️ [JWT Middleware] User ID in token not found in database:", decoded.id);
