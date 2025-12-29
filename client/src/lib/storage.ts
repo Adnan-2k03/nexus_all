@@ -1,117 +1,132 @@
 /**
- * Unified storage API for auth tokens that works on both web and native platforms.
- * Uses an in-memory cache with localStorage fallback for reliability.
+ * Unified storage API for auth tokens.
+ * Uses multiple fallback strategies for maximum Android reliability:
+ * 1. In-memory JavaScript variable
+ * 2. Window object property
+ * 3. localStorage for page refresh
  */
 
-// In-memory cache
+// In-memory storage - primary source
 let cachedToken: string | null = null;
-let isInitialized = false;
-
 const STORAGE_KEY = 'auth_token';
+const WINDOW_KEY = '__NEXUS_AUTH_TOKEN__';
 
-/**
- * Initialize the cache from localStorage
- */
-async function initializeCache(): Promise<void> {
-  if (isInitialized) return;
-  
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      cachedToken = stored;
-      console.log('💾 [AuthStorage] Initialized cache from localStorage');
-    }
-  } catch (error) {
-    console.error('⚠️ [AuthStorage] Failed to read localStorage during init:', error);
-  }
-  
-  isInitialized = true;
+// Ensure window property exists
+if (typeof window !== 'undefined') {
+  (window as any)[WINDOW_KEY] = null;
 }
 
 export const AuthStorage = {
+  /**
+   * Set token in all available storage layers
+   */
   async setToken(token: string): Promise<void> {
     console.log('💾 [AuthStorage] Setting token (length:', token.length, ')');
     
-    // Always init cache first
-    await initializeCache();
-    
-    // Update in-memory cache immediately
+    // Set in memory
     cachedToken = token;
-    console.log('✅ [AuthStorage] Token cached in memory');
+    console.log('✅ [AuthStorage] Token set in memory cache');
     
-    // Try to persist to localStorage
-    try {
-      localStorage.setItem(STORAGE_KEY, token);
-      console.log('✅ [AuthStorage] Token persisted to localStorage');
-    } catch (error) {
-      console.error('⚠️ [AuthStorage] Failed to persist token to localStorage:', error);
-      // Cache is still set in memory, so subsequent requests will work
+    // CRITICAL: Also set on window object for global accessibility on Android
+    if (typeof window !== 'undefined') {
+      (window as any)[WINDOW_KEY] = token;
+      console.log('✅ [AuthStorage] Token set on window object');
     }
     
-    // Force a sync by reading it back
+    // Try localStorage for persistence across page reloads
     try {
-      const verification = localStorage.getItem(STORAGE_KEY);
-      if (verification === token) {
-        console.log('✅ [AuthStorage] Verification: Token persisted successfully');
-      } else {
-        console.warn('⚠️ [AuthStorage] Verification failed: Token not found in localStorage');
-      }
-    } catch (e) {
-      console.log('⚠️ [AuthStorage] Could not verify localStorage persistence');
+      localStorage.setItem(STORAGE_KEY, token);
+      console.log('✅ [AuthStorage] Token also persisted to localStorage');
+    } catch (error) {
+      console.log('⚠️ [AuthStorage] localStorage not available:', error);
+    }
+    
+    // Log verification
+    const verify = await this.getToken();
+    if (verify === token) {
+      console.log('✅ [AuthStorage] Verification: Token is retrievable');
+    } else {
+      console.warn('⚠️ [AuthStorage] Verification failed - token may not be retrievable');
     }
   },
 
+  /**
+   * Get token from all available sources
+   */
   async getToken(): Promise<string | null> {
-    // Initialize cache if needed
-    await initializeCache();
-    
-    // Return from cache first for speed
+    // Try in-memory cache first
     if (cachedToken) {
-      console.log('✅ [AuthStorage] Token retrieved from memory cache (length:', cachedToken.length, ')');
+      console.log('✅ [AuthStorage] Token from memory (len:', cachedToken.length, ')');
       return cachedToken;
     }
     
-    // Try to read from localStorage as fallback
+    // Try window object (most reliable on Android)
+    if (typeof window !== 'undefined') {
+      const windowToken = (window as any)[WINDOW_KEY];
+      if (windowToken) {
+        cachedToken = windowToken;
+        console.log('✅ [AuthStorage] Token from window object (len:', windowToken.length, ')');
+        return windowToken;
+      }
+    }
+    
+    // Try localStorage as last resort
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         cachedToken = stored;
-        console.log('✅ [AuthStorage] Token retrieved from localStorage (length:', stored.length, ')');
+        if (typeof window !== 'undefined') {
+          (window as any)[WINDOW_KEY] = stored;
+        }
+        console.log('✅ [AuthStorage] Token from localStorage (len:', stored.length, ')');
         return stored;
       }
     } catch (error) {
-      console.error('❌ [AuthStorage] Failed to read from localStorage:', error);
+      console.log('⚠️ [AuthStorage] localStorage error:', error);
     }
     
-    console.log('⚠️ [AuthStorage] No token found in storage');
+    console.log('❌ [AuthStorage] No token found in any storage');
     return null;
   },
 
+  /**
+   * Remove token from all sources
+   */
   async removeToken(): Promise<void> {
     console.log('🗑️ [AuthStorage] Removing token...');
     
-    // Clear memory cache
     cachedToken = null;
     
-    // Clear localStorage
+    if (typeof window !== 'undefined') {
+      (window as any)[WINDOW_KEY] = null;
+    }
+    
     try {
       localStorage.removeItem(STORAGE_KEY);
-      console.log('✅ [AuthStorage] Token removed from storage');
     } catch (error) {
-      console.error('❌ [AuthStorage] Failed to remove from localStorage:', error);
+      console.log('⚠️ [AuthStorage] localStorage error during remove:', error);
     }
+    
+    console.log('✅ [AuthStorage] Token cleared from all storage');
   },
 
-  // Debug helper
+  /**
+   * Debug helper
+   */
   async debugState(): Promise<void> {
-    await initializeCache();
-    console.log('🔍 [AuthStorage Debug]');
-    console.log('   Memory cache:', cachedToken ? `${cachedToken.substring(0, 20)}...` : 'empty');
+    console.log('🔍 [AuthStorage Debug State]');
+    console.log('   Memory cache:', cachedToken ? `${cachedToken.substring(0, 20)}...` : 'null');
+    
+    if (typeof window !== 'undefined') {
+      const windowToken = (window as any)[WINDOW_KEY];
+      console.log('   Window object:', windowToken ? `${windowToken.substring(0, 20)}...` : 'null');
+    }
+    
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      console.log('   LocalStorage:', stored ? `${stored.substring(0, 20)}...` : 'empty');
-    } catch (e) {
-      console.log('   LocalStorage: (error reading)');
+      const localStorageToken = localStorage.getItem(STORAGE_KEY);
+      console.log('   LocalStorage:', localStorageToken ? `${localStorageToken.substring(0, 20)}...` : 'null');
+    } catch (error) {
+      console.log('   LocalStorage: (error)');
     }
   },
 };

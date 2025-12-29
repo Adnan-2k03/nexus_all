@@ -1,0 +1,21 @@
+2025-12-30 02:52:05.618 12510-12510 Capacitor/Plugin        com.nexusmatch.app                   V  To native (Capacitor plugin): callbackId: 65629802, pluginId: FirebaseAuthentication, methodName: signInWithGoogle
+2025-12-30 02:52:05.618 12510-12510 Capacitor               com.nexusmatch.app                   V  callback: 65629802, pluginId: FirebaseAuthentication, methodName: signInWithGoogle, methodData: {}
+2025-12-30 02:52:05.766 12510-12510 chromium                com.nexusmatch.app                   E  [ERROR:components/page_load_metrics/browser/page_load_metrics_update_dispatcher.cc:179] Invalid first_paint 1.761 s for first_image_paint 1.649 s
+2025-12-30 02:52:06.127 12510-12510 Capacitor               com.nexusmatch.app                   D  App paused
+2025-12-30 02:52:08.204 12510-12865 FA                      com.nexusmatch.app                   I  Application backgrounded at: timestamp_millis: 1767043326202
+2025-12-30 02:52:10.500 12510-12880 CredManProvService      com.nexusmatch.app                   I  GetCredentialResponse returned from framework
+2025-12-30 02:52:10.501 12510-12881 System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-30 02:52:10.512 12510-12510 Capacitor               com.nexusmatch.app                   D  App resumed
+2025-12-30 02:52:10.516 12510-12881 CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyAssertion?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-30 02:52:10.551 12510-12510 InsetsController        com.nexusmatch.app                   D  hide(ime(), fromIme=false)
+2025-12-30 02:52:10.551 12510-12510 ImeTracker              com.nexusmatch.app                   I  com.nexusmatch.app:8cef46e1: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+2025-12-30 02:52:10.879 12510-12881 System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-30 02:52:10.883 12510-12881 CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-30 02:52:11.183 12510-12881 FirebaseAuth            com.nexusmatch.app                   D  Notifying id token listeners about user ( Pcn3G6Hi3lhyex876p3AFIiy9t42 ).
+2025-12-30 02:52:11.185 12510-12510 Capacitor/...tionPlugin com.nexusmatch.app                   V  Notifying listeners for event idTokenChange
+2025-12-30 02:52:11.187 12510-12510 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] idTokenChange event triggered [object Object]
+2025-12-30 02:52:11.187 12510-12510 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] Syncing token with backend (length: 1208 )
+2025-12-30 02:52:13.035 12510-12510 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] Fetch response status: 200
+2025-12-30 02:52:13.037 12510-12510 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: ✅ [Auth] Received JWT token, storing locally
+2025-12-30 02:52:13.038 12510-12510 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: ✅ [Auth] Server accepted token, refetching user...
+2025-12-30 02:52:13.145 12510-12510 chromium                com.nexusmatch.app                   E  [ERROR:components/page_load_metrics/browser/page_load_metrics_update_dispatcher.cc:179] Invalid first_paint 1.761 s for first_image_paint 1.649 s
