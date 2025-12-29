@@ -55,12 +55,17 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
   if (tokenToVerify && typeof tokenToVerify === 'string') {
     let token: string | null = null;
     
+    // Log token length for debugging
+    if (path === "/api/auth/user") {
+      console.log(`🔍 [JWT Middleware] Token length: ${tokenToVerify.length}`);
+    }
+
     // Handle Bearer token format
     if (tokenToVerify.toLowerCase().startsWith('bearer ')) {
-      token = tokenToVerify.substring(7);
+      token = tokenToVerify.substring(7).trim();
     } else {
       // Assume it's a raw token for custom headers
-      token = tokenToVerify;
+      token = tokenToVerify.trim();
     }
     
     if (token) {
