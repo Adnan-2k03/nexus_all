@@ -62,8 +62,6 @@ const corsOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || de
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl requests)
-    // Also explicitly allow Capacitor's local origin and potential Railway internal networking
     if (!origin || origin === 'https://localhost' || origin.startsWith('capacitor://') || origin.includes('up.railway.app') || origin === 'null') {
       return callback(null, true);
     }
@@ -71,8 +69,6 @@ app.use(cors({
     if (corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      // In production, log but allow for debugging if no other policy matches
-      console.log(`🔒 [CORS Debug] Request from origin: ${origin}`);
       callback(null, true);
     }
   },

@@ -20,10 +20,7 @@ export function useAuth() {
           "Accept": "application/json"
         };
         
-        console.log("🔍 [useAuth] Fetching user. Platform:", Capacitor.getPlatform(), "Native:", Capacitor.isNativePlatform(), "HasToken:", !!token);
-
         if (token) {
-          console.log("🔐 [Auth] Attaching JWT token to request");
           headers["Authorization"] = `Bearer ${token}`;
         } else if (Capacitor.isNativePlatform()) {
           console.log("🔐 [Auth] Native platform but no token found, user is unauthenticated");

@@ -31,11 +31,6 @@ export function verifyToken(token: string): any {
 export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   
-  // LOG THE RAW HEADER FOR DEBUGGING
-  if (authHeader) {
-    console.log("🔍 [JWT Middleware] Raw Auth Header:", authHeader);
-  }
-
   if (authHeader && typeof authHeader === 'string') {
     const parts = authHeader.trim().split(/\s+/);
     if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
