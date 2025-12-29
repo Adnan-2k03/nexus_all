@@ -105,6 +105,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Phone Authentication ---
+  app.post("/api/auth/phone/verify-token", async (req, res) => {
+    const { firebaseToken } = req.body;
+    if (!firebaseToken) {
+      return res.status(400).json({ message: "Firebase token required" });
+    }
+
+    try {
+      const decodedToken = await verifyFirebaseToken(firebaseToken);
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid Firebase token" });
+      }
+
+      const phoneNumber = decodedToken.phoneNumber;
+      if (!phoneNumber) {
+        return res.status(400).json({ message: "Phone number not found in token" });
+      }
+
+      // Check if user exists with this phone number
+      const user = await storage.getUserByPhone(phoneNumber);
+      res.json({ userExists: !!user });
+    } catch (error: any) {
+      console.error("Phone token verification error:", error);
+      res.status(401).json({ message: "Token verification failed" });
+    }
+  });
+
+  app.post("/api/auth/phone/login", async (req, res) => {
+    const { firebaseToken } = req.body;
+    if (!firebaseToken) {
+      return res.status(400).json({ message: "Firebase token required" });
+    }
+
+    try {
+      const decodedToken = await verifyFirebaseToken(firebaseToken);
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid Firebase token" });
+      }
+
+      const phoneNumber = decodedToken.phoneNumber;
+      if (!phoneNumber) {
+        return res.status(400).json({ message: "Phone number not found in token" });
+      }
+
+      let user = await storage.getUserByPhone(phoneNumber);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed" });
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ message: "Session save failed" });
+          const token = generateToken(user);
+          res.json({ ...user, token });
+        });
+      });
+    } catch (error: any) {
+      console.error("Phone login error:", error);
+      res.status(401).json({ message: "Authentication failed" });
+    }
+  });
+
+  app.post("/api/auth/phone/register", async (req, res) => {
+    const { firebaseToken, gamertag, firstName, lastName, age } = req.body;
+    if (!firebaseToken) {
+      return res.status(400).json({ message: "Firebase token required" });
+    }
+    if (!gamertag || gamertag.length < 3) {
+      return res.status(400).json({ message: "Gamertag must be at least 3 characters" });
+    }
+
+    try {
+      const decodedToken = await verifyFirebaseToken(firebaseToken);
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid Firebase token" });
+      }
+
+      const phoneNumber = decodedToken.phoneNumber;
+      if (!phoneNumber) {
+        return res.status(400).json({ message: "Phone number not found in token" });
+      }
+
+      // Check if user already exists
+      let user = await storage.getUserByPhone(phoneNumber);
+      if (user) {
+        // User exists, just login
+        req.login(user, (err) => {
+          if (err) return res.status(500).json({ message: "Login failed" });
+          req.session.save((err) => {
+            if (err) return res.status(500).json({ message: "Session save failed" });
+            const token = generateToken(user);
+            res.json({ ...user, token });
+          });
+        });
+        return;
+      }
+
+      // Create new user with phone number
+      user = await storage.createUser({
+        gamertag,
+        phoneNumber,
+        phoneVerified: true,
+        firstName,
+        lastName,
+        age,
+        coins: 100
+      });
+
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed" });
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ message: "Session save failed" });
+          const token = generateToken(user);
+          res.json({ ...user, token });
+        });
+      });
+    } catch (error: any) {
+      console.error("Phone registration error:", error);
+      res.status(400).json({ message: error.message || "Registration failed" });
+    }
+  });
+
   app.post("/api/auth/native-login", async (req, res) => {
     // Detailed logging for debugging session issues
     console.log("🔐 [Auth API] Native login request");

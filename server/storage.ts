@@ -1,6 +1,7 @@
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByPhone(phoneNumber: string): Promise<User | undefined>;
   upsertUserByGoogleId(data: any): Promise<User>;
   claimDailyReward(userId: string): Promise<{ success: boolean; coins: number; message: string }>;
   getAllTournaments(): Promise<any[]>;
@@ -61,6 +62,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByGamertag(gamertag: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.gamertag, gamertag));
+    return user;
+  }
+
+  async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber));
     return user;
   }
 
