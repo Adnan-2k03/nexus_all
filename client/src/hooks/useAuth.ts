@@ -16,22 +16,27 @@ export function useAuth() {
       try {
         const url = getApiUrl("/api/auth/user");
         const token = localStorage.getItem("auth_token");
+        console.log("🔍 [useAuth Query] Checking token - exists:", !!token, "length:", token?.length || 0);
+        
         const headers: Record<string, string> = {
           "Accept": "application/json"
         };
         
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
-          console.log("🔐 [Auth] Token attached to headers:", token.substring(0, 10) + "...");
+          console.log("✅ [useAuth Query] Added Authorization header");
+          console.log("   Header value starts with:", headers["Authorization"].substring(0, 20));
         } else if (Capacitor.isNativePlatform()) {
-          console.log("🔐 [Auth] Native platform but no token found, user is unauthenticated");
+          console.log("⚠️ [useAuth Query] Native platform but no token found");
           return null;
         }
 
+        console.log("📤 [useAuth Query] Sending GET /api/auth/user with headers:", Object.keys(headers));
         const response = await fetch(url, {
           headers,
           credentials: "include",
         });
+        console.log("📥 [useAuth Query] Response status:", response.status);
         
         if (response.status === 401 || !response.ok) {
           // If we get 401 on native, clear the potentially stale token
@@ -85,9 +90,14 @@ export function useAuth() {
 
         if (res.ok && isMounted) {
           const data = await res.json();
+          console.log("📥 [syncToken] Response data keys:", Object.keys(data));
           if (data.token) {
-            console.log("✅ [Auth] Received JWT token, storing locally");
+            console.log("✅ [syncToken] JWT token found in response, storing...");
             localStorage.setItem("auth_token", data.token);
+            const stored = localStorage.getItem("auth_token");
+            console.log("✅ [syncToken] Verified token stored - length:", stored?.length || 0);
+          } else {
+            console.warn("⚠️ [syncToken] No token field in response data");
           }
           console.log("✅ [Auth] Server accepted token, refetching user...");
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
