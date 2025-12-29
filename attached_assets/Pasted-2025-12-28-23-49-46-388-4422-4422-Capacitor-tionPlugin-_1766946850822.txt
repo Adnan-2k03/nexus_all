@@ -1,0 +1,16 @@
+2025-12-28 23:49:46.388  4422-4422  Capacitor/...tionPlugin com.nexusmatch.app                   D  No listeners found for event idTokenChange
+2025-12-28 23:51:38.013  4422-4422  Capacitor/Plugin        com.nexusmatch.app                   V  To native (Capacitor plugin): callbackId: 55438217, pluginId: FirebaseAuthentication, methodName: signInWithGoogle
+2025-12-28 23:51:38.013  4422-4422  Capacitor               com.nexusmatch.app                   V  callback: 55438217, pluginId: FirebaseAuthentication, methodName: signInWithGoogle, methodData: {}
+2025-12-28 23:51:38.308  4422-4422  Capacitor               com.nexusmatch.app                   D  App paused
+2025-12-28 23:51:40.349  4422-5171  FA                      com.nexusmatch.app                   I  Application backgrounded at: timestamp_millis: 1766946098348
+2025-12-28 23:51:41.287  4422-5197  CredManProvService      com.nexusmatch.app                   I  GetCredentialResponse returned from framework
+2025-12-28 23:51:41.289  4422-5175  System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-28 23:51:41.294  4422-5175  CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyAssertion?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-28 23:51:41.316  4422-4422  Capacitor               com.nexusmatch.app                   D  App resumed
+2025-12-28 23:51:41.343  4422-4422  InsetsController        com.nexusmatch.app                   D  hide(ime())
+2025-12-28 23:51:41.343  4422-4422  ImeTracker              com.nexusmatch.app                   I  com.nexusmatch.app:2670bbc7: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+2025-12-28 23:51:41.608  4422-5175  System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-28 23:51:41.613  4422-5175  CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-28 23:51:41.900  4422-5175  FirebaseAuth            com.nexusmatch.app                   D  Notifying id token listeners about user ( kKAqFrq3YUfSigAdFThaeRmDfkD2 ).
+2025-12-28 23:51:41.903  4422-4422  Capacitor/...tionPlugin com.nexusmatch.app                   V  Notifying listeners for event idTokenChange
+2025-12-28 23:51:41.903  4422-4422  Capacitor/...tionPlugin com.nexusmatch.app                   D  No listeners found for event idTokenChange

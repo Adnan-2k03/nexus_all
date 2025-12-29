@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "82903043398",
+    "project_id": "playlink-42bff",
+    "storage_bucket": "playlink-42bff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:82903043398:android:6ddf006a5b7d03c36d6947",
+        "android_client_info": {
+          "package_name": "com.nexusmatch.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "82903043398-49oj8m847lfj6124188jqer2hdhpln85.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nexusmatch.app",
+            "certificate_hash": "72c31cd71d22787f58d09bbde14485d0b6b785e8"
+          }
+        },
+        {
+          "client_id": "82903043398-5hrbsujp6ju4mo33ae212bjl2c1f58cs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "82903043398-5hrbsujp6ju4mo33ae212bjl2c1f58cs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

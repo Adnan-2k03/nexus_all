@@ -1,0 +1,17 @@
+🔐 [Auth API] Body Content: {"token":"eyJhbGciOiJSUzI1NiIsImtpZCI6Ijk4OGQ1YTM3OWI3OGJkZjFlNTBhNDA5MTEzZjJiMGM3NWU0NTJlNDciLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiTUQgQUROQU4gSEFTU0hBRCAyMkJDRTkzNTciLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTDlBS0lwQXEzNWtKcFU0MUNDYzZmQjlITUFqOXJJRHZfaDZfcDd5eGFPcTkyVTBBPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL3BsYXlsaW5rLTQyYmZmIiwiYXVkIjoicGxheWxpbmstNDJiZmYiLCJhdXRoX3RpbWUiOjE3NjcwMTI2MDYsInVzZXJfaWQiOiJQY24zRzZIaTNsaHlleDg3NnAzQUZJaXk5dDQyIiwic3ViIjoiUGNuM0c2SGkzbGh5ZXg4NzZwM0FGSWl5OXQ0MiIsImlhdCI6MTc2NzAxMjYwNiwiZXhwIjoxNzY3MDE2MjA2LCJlbWFpbCI6ImFkbmFuLjIyYmNlOTM1N0B2aXRhcHN0dWRlbnQuYWMuaW4iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExMjIxMDQ0NzYyMTkxMDA1NTM3NyJdLCJlbWFpbCI6WyJhZG5hbi4yMmJjZTkzNTdAdml0YXBzdHVkZW50LmFjLmluIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.VbW7IKL_JREqz-mFR4FBSmWrvFT5e8QMMexP-U4Cth-iRHgmboOAd_sDzyedjAND465A1eGaIux6yoavrhTeAE7wRJ7zdv4IIZygRmp6nSuovf4tjpz3-rW8kSBLdAsMARgo7iYXdSK27S3XMrg0OaK7mOFYJfXXrEk1tu9k4WmURZNRluvjPl2dmOAOt6gZw_d1-K28FJ7evXIIOYPVzk6Hb2FyLQN1_0TCs09Mn3FGN-vYdgLwHqd0GbU3Pemuj9PTEbrTJQCN1jH8aJcfMzZCAHgCUY8pRK7ewQLGwf5hUtTlaFtXfHN8yuFchutT0IoBpD3QpwRu66vZn_hS3A"}
+🔐 [Auth API] Body type: object
+✅ [Session Store] Pool connected to database
+🔐 [Auth API] Token analysis: { hasToken: true, tokenType: 'string', tokenLength: 1208 }
+[Passport] Serializing user: e07d85ef-65b0-49bd-8cfc-33aba1bcde4c
+🔐 [Auth API] Attempting Firebase verification...
+🏁 [Auth API] Authentication complete for: adnan_22bce9357_rpcb
+✅ [Auth API] Token verified for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+12:50:07 PM [express] POST /api/auth/native-login 200 in 208ms :: {"id":"e07d85ef-65b0-49bd-8cfc-33ab…
+👤 [Auth API] Provisioning new user for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+12:50:07 PM [express] GET /api/auth/user 401 in 4ms :: {"message":"Unauthorized"}
+📝 [Auth API] Creating user with gamertag: adnan_22bce9357_rpcb
+🔑 [Auth API] Establishing Passport session for user ID: e07d85ef-65b0-49bd-8cfc-33aba1bcde4c
+✅ [Session Store] Pool connected to database
+[Passport] Serializing user: 40f576f9-9070-4e30-86ba-69cdb274ebb5
+12:50:52 PM [express] POST /api/auth/gamertag-login 200 in 221ms :: {"id":"40f576f9-9070-4e30-86ba-69…
+12:50:52 PM [express] GET /api/auth/user 401 in 3ms :: {"message":"Unauthorized"}
