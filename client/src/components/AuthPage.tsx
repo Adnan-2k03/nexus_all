@@ -16,25 +16,13 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [gamertagInput, setGamertagInput] = useState("");
-  const [passwordInput, setPasswordInput] = useState("");
-  const [isNewUser, setIsNewUser] = useState(false);
 
   const handleGamertagLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (gamertagInput.length < 3) {
       toast({
         title: "Error",
         description: "Gamertag must be at least 3 characters",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (passwordInput.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
         variant: "destructive",
       });
       return;
@@ -46,21 +34,21 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ gamertag: gamertagInput, password: passwordInput, isNewUser }),
+        body: JSON.stringify({ gamertag: gamertagInput }),
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to authenticate" }));
+        const error = await response.json().catch(() => ({ message: "Failed to login" }));
         toast({
           title: "Error",
-          description: error.message || "Failed to authenticate",
+          description: error.message || "Failed to login",
           variant: "destructive",
         });
         return;
       }
 
       const userData = await response.json();
-      console.log("[Auth] Authentication successful:", userData);
+      console.log("[Auth] Gamertag login successful:", userData);
       
       if (userData.token) {
         await AuthStorage.setToken(userData.token);
@@ -72,7 +60,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Authentication failed",
+        description: "Failed to login with gamertag",
         variant: "destructive",
       });
     } finally {
@@ -100,48 +88,20 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 id="gamertag"
                 data-testid="input-gamertag"
                 type="text"
-                placeholder="Enter your gamertag"
+                placeholder="Enter your gamertag (min 3 characters)"
                 value={gamertagInput}
                 onChange={(e) => setGamertagInput(e.target.value)}
                 minLength={3}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                data-testid="input-password"
-                type="password"
-                placeholder="Enter password (min 6 characters)"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                minLength={6}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                id="new-user"
-                data-testid="checkbox-new-user"
-                type="checkbox"
-                checked={isNewUser}
-                onChange={(e) => setIsNewUser(e.target.checked)}
-                className="rounded border border-input"
-              />
-              <Label htmlFor="new-user" className="text-sm cursor-pointer">
-                Creating new account?
-              </Label>
-            </div>
-
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || gamertagInput.length < 3 || passwordInput.length < 6}
+              disabled={isLoading || gamertagInput.length < 3}
               data-testid="button-gamertag-login"
             >
               <Gamepad2 className="mr-2 h-4 w-4" />
-              {isLoading ? "Processing..." : isNewUser ? "Create Account" : "Sign In"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </CardContent>
