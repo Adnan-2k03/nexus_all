@@ -4,6 +4,7 @@ import type { User } from "@shared/schema";
 import { getApiUrl } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
+import { AuthStorage } from "@/lib/storage";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -15,7 +16,7 @@ export function useAuth() {
     queryFn: async () => {
       try {
         const url = getApiUrl("/api/auth/user");
-        const token = localStorage.getItem("auth_token");
+        const token = await AuthStorage.getToken();
         console.log("🔍 [useAuth Query] Checking token - exists:", !!token, "length:", token?.length || 0);
         
         const headers: Record<string, string> = {
@@ -39,10 +40,8 @@ export function useAuth() {
         console.log("📥 [useAuth Query] Response status:", response.status);
         
         if (response.status === 401 || !response.ok) {
-          // If we get 401 on native, clear the potentially stale token
-          if (Capacitor.isNativePlatform()) {
-            localStorage.removeItem("auth_token");
-          }
+          // If we get 401, clear the potentially stale token
+          await AuthStorage.removeToken();
           return null;
         }
         
@@ -94,15 +93,15 @@ export function useAuth() {
           console.log("📥 [syncToken] Response data keys:", Object.keys(data));
           if (data.token) {
             console.log("✅ [syncToken] JWT token found in response, storing...");
-            localStorage.setItem("auth_token", data.token);
-            const stored = localStorage.getItem("auth_token");
+            await AuthStorage.setToken(data.token);
+            const stored = await AuthStorage.getToken();
             console.log("✅ [syncToken] Verified token stored - length:", stored?.length || 0);
           } else {
             console.warn("⚠️ [syncToken] No token field in response data");
           }
           console.log("✅ [Auth] Server accepted token, about to refetch user...");
           // Log before invalidating
-          const tokenBeforeInvalidate = localStorage.getItem("auth_token");
+          const tokenBeforeInvalidate = await AuthStorage.getToken();
           console.log("🔍 [Auth] Token in storage before refetch:", tokenBeforeInvalidate?.substring(0, 20) + "...");
           // Add delay to ensure token is committed before query runs
           await new Promise(resolve => setTimeout(resolve, 200));

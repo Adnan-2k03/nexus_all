@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { AuthStorage } from "@/lib/storage";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -7,7 +8,6 @@ export function getApiUrl(path: string): string {
     return path;
   }
 
-  const token = localStorage.getItem("auth_token");
   const isNative = Capacitor.isNativePlatform();
 
   if (isNative) {
@@ -29,7 +29,7 @@ export async function apiRequest(
   };
 
   // Always check for token on all platforms for resilience
-  const token = localStorage.getItem("auth_token");
+  const token = await AuthStorage.getToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
     console.log("📤 [apiRequest] Adding Authorization header for:", path);
