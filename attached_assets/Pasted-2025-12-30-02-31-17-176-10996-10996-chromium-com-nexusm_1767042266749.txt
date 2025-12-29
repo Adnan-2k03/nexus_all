@@ -1,0 +1,22 @@
+2025-12-30 02:31:17.176 10996-10996 chromium                com.nexusmatch.app                   E  [ERROR:components/page_load_metrics/browser/page_load_metrics_update_dispatcher.cc:179] Invalid first_paint 1.112 s for first_image_paint 1.066 s
+2025-12-30 02:31:17.763 10996-10996 Capacitor/Plugin        com.nexusmatch.app                   V  To native (Capacitor plugin): callbackId: 123297760, pluginId: FirebaseAuthentication, methodName: signInWithGoogle
+2025-12-30 02:31:17.763 10996-10996 Capacitor               com.nexusmatch.app                   V  callback: 123297760, pluginId: FirebaseAuthentication, methodName: signInWithGoogle, methodData: {}
+2025-12-30 02:31:17.902 10996-10996 chromium                com.nexusmatch.app                   E  [ERROR:components/page_load_metrics/browser/page_load_metrics_update_dispatcher.cc:179] Invalid first_paint 1.112 s for first_image_paint 1.066 s
+2025-12-30 02:31:18.323 10996-10996 Capacitor               com.nexusmatch.app                   D  App paused
+2025-12-30 02:31:20.376 10996-11036 FA                      com.nexusmatch.app                   I  Application backgrounded at: timestamp_millis: 1767042078374
+2025-12-30 02:31:22.461 10996-11431 CredManProvService      com.nexusmatch.app                   I  GetCredentialResponse returned from framework
+2025-12-30 02:31:22.462 10996-11055 System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-30 02:31:22.468 10996-11055 CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyAssertion?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-30 02:31:22.482 10996-10996 Capacitor               com.nexusmatch.app                   D  App resumed
+2025-12-30 02:31:22.513 10996-10996 InsetsController        com.nexusmatch.app                   D  hide(ime(), fromIme=false)
+2025-12-30 02:31:22.513 10996-10996 ImeTracker              com.nexusmatch.app                   I  com.nexusmatch.app:c640854c: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+2025-12-30 02:31:23.036 10996-11055 System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-30 02:31:23.042 10996-11055 CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-30 02:31:23.445 10996-11055 FirebaseAuth            com.nexusmatch.app                   D  Notifying id token listeners about user ( Pcn3G6Hi3lhyex876p3AFIiy9t42 ).
+2025-12-30 02:31:23.446 10996-10996 Capacitor/...tionPlugin com.nexusmatch.app                   V  Notifying listeners for event idTokenChange
+2025-12-30 02:31:23.449 10996-10996 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] idTokenChange event triggered [object Object]
+2025-12-30 02:31:23.449 10996-10996 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] Syncing token with backend (length: 1208 )
+2025-12-30 02:31:23.855 10996-10996 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] Fetch response status: 200
+2025-12-30 02:31:23.862 10996-10996 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: ✅ [Auth] Received JWT token, storing locally
+2025-12-30 02:31:23.863 10996-10996 Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: ✅ [Auth] Server accepted token, refetching user...
+2025-12-30 02:31:23.962 10996-10996 chromium                com.nexusmatch.app                   E  [ERROR:components/page_load_metrics/browser/page_load_metrics_update_dispatcher.cc:179] Invalid first_paint 1.112 s for first_image_paint 1.066 s
