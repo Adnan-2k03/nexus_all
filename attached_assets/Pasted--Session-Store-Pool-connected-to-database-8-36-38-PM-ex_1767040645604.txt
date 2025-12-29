@@ -1,0 +1,23 @@
+✅ [Session Store] Pool connected to database
+8:36:38 PM [express] GET /api/feature-flags 200 in 190ms :: []
+🔐 [Auth API] Body type: object
+🔐 [Auth API] Token analysis: { hasToken: true, tokenType: 'string', tokenLength: 1208 }
+🔐 [Auth API] Attempting Firebase verification...
+🔐 [Auth API] Native login request
+🔐 [Auth API] Headers: {"host":"nexusfinalandroid-production.up.railway.app","user-agent":"Mozilla/5.0 (Linux; Android 16; sdk_gphone64_x86_64 Build/BE2A.250530.026.D1; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/143.0.7499.115 Mobile Safari/537.36","content-length":"1220","accept":"application/json","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9","content-type":"application/json","origin":"https://localhost","priority":"u=1, i","referer":"https://localhost/","sec-ch-ua":"\"Android WebView\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"","sec-ch-ua-mobile":"?1","sec-ch-ua-platform":"\"Android\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"cross-site","sec-fetch-storage-access":"active","x-forwarded-for":"49.37.153.222","x-forwarded-host":"nexusfinalandroid-production.up.railway.app","x-forwarded-proto":"https","x-railway-edge":"railway/asia-southeast1-eqsg3a","x-railway-request-id":"sJ6gaWaFRtaCX9WhDcO5xA","x-real-ip":"49.37.153.222","x-request-start":"1767040613958","x-requested-with":"com.nexusmatch.app"}
+🔐 [Auth API] Body Content: {"token":"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzOGVhNmEwNDA4YjBjYzVkYTE4OWRmYzg4ODgyZDBmMWI3ZmJmMGUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiTUQgQUROQU4gSEFTU0hBRCAyMkJDRTkzNTciLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTDlBS0lwQXEzNWtKcFU0MUNDYzZmQjlITUFqOXJJRHZfaDZfcDd5eGFPcTkyVTBBPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL3BsYXlsaW5rLTQyYmZmIiwiYXVkIjoicGxheWxpbmstNDJiZmYiLCJhdXRoX3RpbWUiOjE3NjcwNDA2MTMsInVzZXJfaWQiOiJQY24zRzZIaTNsaHlleDg3NnAzQUZJaXk5dDQyIiwic3ViIjoiUGNuM0c2SGkzbGh5ZXg4NzZwM0FGSWl5OXQ0MiIsImlhdCI6MTc2NzA0MDYxMywiZXhwIjoxNzY3MDQ0MjEzLCJlbWFpbCI6ImFkbmFuLjIyYmNlOTM1N0B2aXRhcHN0dWRlbnQuYWMuaW4iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExMjIxMDQ0NzYyMTkxMDA1NTM3NyJdLCJlbWFpbCI6WyJhZG5hbi4yMmJjZTkzNTdAdml0YXBzdHVkZW50LmFjLmluIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.FQ721A0Yg0soC4drskPsVi2_gjCWFia67rZXFiO3TVbbaiFphZ5QeLvJNvfuoLKcAx2xJ5TKbZ1OrlneRtdJ8IkZSDxMSK8TCKfAKqMdwp5zDbZueSzOQn3aW7VRre_uON3K-7fvimpNlW5ra2lfTKCD9eKebniEwfALvnqbqr95ECRZA67Z23PXRe4GHYn6tgH3uZIUIfAMuSbusNdCI0AtNqnk_-hXQkPHx1rQvP_mv66eLK1VoYhMuAou9mRsu9vNMwUNaYQCbyAPHd-YKkB5LDxO-oNKqL90JlX64Vt4q-_f2Xy8xxu8QNSOQQQiQEz3pOVyyTdq7PFx5C-rRg"}
+✅ [Auth API] Token verified for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+👤 [Auth API] Provisioning new user for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+📝 [Auth API] Creating user with gamertag: adnan_22bce9357_2y76
+🔑 [Auth API] Establishing Passport session for user ID: fb58c1c8-083e-4a72-b249-1f7dfdad245c
+[Passport] Serializing user: fb58c1c8-083e-4a72-b249-1f7dfdad245c
+🏁 [Auth API] Authentication complete for: adnan_22bce9357_2y76
+🎫 [JWT] Generated token for user fb58c1c8-083e-4a72-b249-1f7dfdad245c: eyJhbGciOi...
+🎫 [Auth API] Generated JWT for user: fb58c1c8-083e-4a72-b249-1f7dfdad245c
+8:36:54 PM [express] POST /api/auth/native-login 200 in 349ms :: {"id":"fb58c1c8-083e-4a72-b249-1f7d…
+🔍 [JWT Middleware] GET /api/auth/user - Checking auth headers...
+   Authorization header present: false
+   X-Auth-Token header present: false
+🔍 [Auth API] GET /api/auth/user. Authenticated flag: false req.user present: false
+❌ [Auth API] Unauthorized request to /api/auth/user
+8:36:54 PM [express] GET /api/auth/user 401 in 3ms :: {"message":"Unauthorized"}
