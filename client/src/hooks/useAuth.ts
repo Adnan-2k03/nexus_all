@@ -21,6 +21,9 @@ export function useAuth() {
           const token = localStorage.getItem("auth_token");
           if (token) {
             headers["Authorization"] = `Bearer ${token}`;
+          } else {
+            // If native but no JWT token, we are effectively logged out
+            return null;
           }
         }
 
@@ -30,6 +33,10 @@ export function useAuth() {
         });
         
         if (response.status === 401 || !response.ok) {
+          // If we get 401 on native, clear the potentially stale token
+          if (Capacitor.isNativePlatform()) {
+            localStorage.removeItem("auth_token");
+          }
           return null;
         }
         

@@ -342,9 +342,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ token: "stub-token" });
   });
 
-  app.get("/api/auth/user", (req, res) => {
-    if (req.isAuthenticated()) res.json(req.user);
-    else res.status(401).json({ message: "Unauthorized" });
+  app.get("/api/auth/user", async (req, res) => {
+    // If we have req.user from JWT middleware or session, return it
+    if (req.isAuthenticated() && req.user) {
+      return res.json(req.user);
+    }
+    
+    // Final check for JWT in header manually just in case
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      const { verifyToken } = await import("./googleAuth");
+      const decoded = verifyToken(token);
+      if (decoded && decoded.id) {
+        const user = await storage.getUser(decoded.id);
+        if (user) {
+          return res.json(user);
+        }
+      }
+    }
+
+    res.status(401).json({ message: "Unauthorized" });
   });
 
   app.post("/api/auth/logout", (req, res, next) => {
