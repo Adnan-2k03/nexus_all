@@ -1,0 +1,44 @@
+3
+COPY package*.json ./
+1s
+
+4
+RUN npm ci
+3s
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @codetrix-studio/capacitor-google-auth@3.4.0-rc.4
+npm error Found: @capacitor/core@7.4.4
+npm error node_modules/@capacitor/core
+npm error   @capacitor/core@"^7.4.4" from the root project
+npm error   @capacitor/core@"^7.0.0" from @capacitor-community/admob@7.2.0
+npm error   node_modules/@capacitor-community/admob
+npm error     @capacitor-community/admob@"^7.2.0" from the root project
+npm error   3 more (@capacitor-firebase/authentication, ...)
+npm error
+npm error Could not resolve dependency:
+npm error peer @capacitor/core@"^6.0.0" from @codetrix-studio/capacitor-google-auth@3.4.0-rc.4
+npm error node_modules/@codetrix-studio/capacitor-google-auth
+npm error   @codetrix-studio/capacitor-google-auth@"^3.4.0-rc.4" from the root project
+npm error
+npm error Conflicting peer dependency: @capacitor/core@6.2.1
+npm error node_modules/@capacitor/core
+npm error   peer @capacitor/core@"^6.0.0" from @codetrix-studio/capacitor-google-auth@3.4.0-rc.4
+npm error   node_modules/@codetrix-studio/capacitor-google-auth
+npm error     @codetrix-studio/capacitor-google-auth@"^3.4.0-rc.4" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /root/.npm/_logs/2025-12-29T21_38_47_516Z-eresolve-report.txt
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.7.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+npm notice To update run: npm install -g npm@11.7.0
+npm notice
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-12-29T21_38_47_516Z-debug-0.log
+Build Failed: build daemon returned an error < failed to solve: process "/bin/sh -c npm ci" did not complete successfully: exit code: 1 >

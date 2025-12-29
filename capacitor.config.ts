@@ -15,11 +15,6 @@ const config: CapacitorConfig = {
       skipNativeAuth: false,
       providers: ["google.com"]
     },
-    GoogleAuth: {
-      scopes: ["profile", "email"],
-      serverClientId: "32328109312-3q5q1l1l1l1l1l1l1l1l1l1l1l1l1l1l.apps.googleusercontent.com",
-      forceCodeForRefreshToken: true
-    },
     AdMob: {
       appId: "ca-app-pub-4278995521540923",
       testingDevices: [],

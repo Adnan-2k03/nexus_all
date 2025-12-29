@@ -1,6 +1,5 @@
 import { getAuth, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { Capacitor } from '@capacitor/core';
 import { getApiUrl } from './api';
 
@@ -14,15 +13,16 @@ export async function signInWithGoogleMobile() {
   }
 
   try {
-    // Sign in with Google Auth plugin to get the ID token
-    const googleUser = await GoogleAuth.signIn();
+    // Reverting to @capacitor-firebase/authentication as it is more compatible with the project's Capacitor version
+    // The previous error was likely configuration-based rather than plugin-based
+    const result = await FirebaseAuthentication.signInWithGoogle();
     
-    if (!googleUser.authentication?.idToken) {
+    if (!result.credential?.idToken) {
       throw new Error('No ID token received from Google sign-in');
     }
 
-    // Create Firebase credential using the ID token from Google Auth plugin
-    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+    // Create Firebase credential using the ID token
+    const credential = GoogleAuthProvider.credential(result.credential.idToken);
 
     // Sign in to Firebase Auth
     const auth = getAuth();
