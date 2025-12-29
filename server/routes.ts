@@ -96,7 +96,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) return res.status(500).json({ message: "Login failed" });
         req.session.save((err) => {
           if (err) return res.status(500).json({ message: "Session save failed" });
-          res.json(user);
+          const token = generateToken(user);
+          res.json({ ...user, token });
         });
       });
     } catch (error) {
