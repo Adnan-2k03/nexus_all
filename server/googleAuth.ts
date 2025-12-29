@@ -37,6 +37,12 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
     console.log("🔍 [JWT Middleware] Raw Auth Header:", authHeader);
   }
 
+  // Handle case where req.user might already be set by passport session
+  if (req.user) {
+    console.log("✅ [JWT Middleware] User already authenticated via session:", (req.user as any).id);
+    return next();
+  }
+
   if (authHeader && typeof authHeader === 'string') {
     const parts = authHeader.trim().split(/\s+/);
     if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
@@ -51,6 +57,7 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
             req.user = user;
             // Force Passport-like identification
             (req as any)._passport = { instance: passport, session: { user: user.id } };
+            // Ensure req.isAuthenticated() returns true
             (req as any).isAuthenticated = () => true;
             return next();
           } else {

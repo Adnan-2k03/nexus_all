@@ -187,10 +187,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const jwtToken = generateToken(user);
           console.log("🎫 [Auth API] Generated JWT for user:", user.id);
           
-          // Clear any existing session to force JWT usage on next request if native
-          if (req.headers['user-agent']?.includes('Capacitor')) {
-            req.session.destroy(() => {});
-          }
+          // DO NOT destroy session for Capacitor. Instead, let it be saved.
+          // Native apps will use the JWT token in headers.
 
           res.json({ ...user, token: jwtToken });
         });
@@ -349,11 +347,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ token: "stub-token" });
   });
 
-  app.get("/api/auth/user", async (req, res) => {
+  app.get("/api/auth/user", (req, res) => {
     console.log("🔍 [Auth API] GET /api/auth/user. Authenticated:", req.isAuthenticated());
     
     if (req.isAuthenticated() && req.user) {
       console.log("✅ [Auth API] User authenticated:", (req.user as any).id);
+      return res.json(req.user);
+    }
+
+    // Try one last time to check if req.user exists even if isAuthenticated() is false
+    if (req.user) {
+      console.log("✅ [Auth API] User found on request object:", (req.user as any).id);
       return res.json(req.user);
     }
 
