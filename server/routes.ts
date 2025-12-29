@@ -143,9 +143,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user = await storage.getUser(decodedToken.uid);
       if (!user) {
         console.log("👤 [Auth API] Provisioning new user for UID:", decodedToken.uid);
-        const gamertag = decodedToken.email?.split("@")[0] || `user_${decodedToken.uid.slice(0, 8)}`;
+        let baseGamertag = decodedToken.email?.split("@")[0] || `user_${decodedToken.uid.slice(0, 8)}`;
+        baseGamertag = baseGamertag.replace(/[^a-zA-Z0-9_]/g, "_");
+        
+        // Ensure gamertag is unique by appending random suffix if needed
+        let gamertag = baseGamertag;
+        let attempts = 0;
+        while (attempts < 10) {
+          try {
+            const existingUser = await storage.getUserByGamertag(gamertag);
+            if (!existingUser) break; // Found unique gamertag
+            // Gamertag exists, try with random suffix
+            gamertag = `${baseGamertag}_${Math.random().toString(36).substring(2, 6)}`;
+            attempts++;
+          } catch {
+            break; // Error checking, assume it's available
+          }
+        }
+        
+        console.log("📝 [Auth API] Creating user with gamertag:", gamertag);
         user = await storage.createUser({ 
-          gamertag: gamertag.replace(/[^a-zA-Z0-9_]/g, "_"),
+          gamertag: gamertag,
           coins: 100 
         });
       }
