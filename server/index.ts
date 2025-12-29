@@ -63,7 +63,7 @@ const corsOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || de
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (mobile apps, curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin || origin === 'https://localhost') return callback(null, true);
     
     if (corsOrigins.includes(origin)) {
       callback(null, true);
@@ -80,7 +80,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['set-cookie']
 }));
 
 app.use((req, res, next) => {
