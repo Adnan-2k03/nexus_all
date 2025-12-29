@@ -55,16 +55,10 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
   if (tokenToVerify && typeof tokenToVerify === 'string') {
     let token: string | null = null;
     
-    // Log token length for debugging
-    if (path === "/api/auth/user") {
-      console.log(`🔍 [JWT Middleware] Token length: ${tokenToVerify.length}`);
-    }
-
     // Handle Bearer token format
     if (tokenToVerify.toLowerCase().startsWith('bearer ')) {
       token = tokenToVerify.substring(7).trim();
     } else {
-      // Assume it's a raw token for custom headers
       token = tokenToVerify.trim();
     }
     
@@ -85,7 +79,7 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
             
             // Ensure login method exists
             (req as any).login = function(user: any, done: any) {
-              if (done) done(null);
+              if (typeof done === 'function') done(null);
             };
 
             // Override isAuthenticated
@@ -99,6 +93,8 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
         } catch (error) {
           console.error("❌ [JWT Middleware] User lookup failed:", error);
         }
+      } else {
+        console.warn("❌ [JWT Middleware] Invalid or expired token");
       }
     }
   }
