@@ -192,15 +192,18 @@ function Router() {
   };
 
   const handleAuthSuccess = () => {
-    // Invalidate auth query to refetch user data without page reload
-    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-    setShowAuthPage(false);
-    
-    // Check if there's a pending invite code from pre-login attempt
-    const pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
-    if (pendingInviteCode) {
-      setLocation(`/join-channel/${pendingInviteCode}`);
-    }
+    // Give the token a moment to settle in storage before refetching
+    setTimeout(() => {
+      // Invalidate auth query to refetch user data without page reload
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setShowAuthPage(false);
+      
+      // Check if there's a pending invite code from pre-login attempt
+      const pendingInviteCode = sessionStorage.getItem('pendingInviteCode');
+      if (pendingInviteCode) {
+        setLocation(`/join-channel/${pendingInviteCode}`);
+      }
+    }, 300);
   };
 
   const handleBackToLanding = () => {
