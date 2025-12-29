@@ -40,10 +40,13 @@ export function useAuth() {
     let isMounted = true;
     let listener: any = null;
 
-    const syncToken = async (token: string) => {
-      if (!isMounted) return;
+    const syncToken = async (token: string | null | undefined) => {
+      if (!isMounted || !token) {
+        console.log("🔐 [Auth] Skipping sync: token is empty or component unmounted");
+        return;
+      }
       try {
-        console.log("🔐 [Auth] Syncing token with backend...");
+        console.log("🔐 [Auth] Syncing token with backend (length:", token.length, ")");
         const url = getApiUrl("/api/auth/native-login");
         const res = await fetch(url, {
           method: "POST",
@@ -55,6 +58,8 @@ export function useAuth() {
         if (res.ok && isMounted) {
           console.log("✅ [Auth] Server accepted token, refetching user...");
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        } else {
+          console.error("❌ [Auth] Server sync failed:", res.status);
         }
       } catch (err) {
         console.error("❌ [Auth] Sync error:", err);
@@ -63,32 +68,33 @@ export function useAuth() {
 
     const setupListener = async () => {
       try {
-        console.log("🔐 [Auth] Setting up idTokenChange listener...");
+        console.log("🔐 [Auth] Initializing Firebase Auth listeners...");
+        
         // Register listener
         listener = await FirebaseAuthentication.addListener('idTokenChange', (change) => {
-          console.log("🔐 [Auth] idTokenChange event received!", {
+          console.log("🔐 [Auth] idTokenChange event triggered", {
             hasToken: !!change.token,
-            tokenPrefix: change.token ? change.token.substring(0, 10) : 'none'
+            tokenType: typeof change.token
           });
+          
           if (change.token) {
             syncToken(change.token);
           } else {
-            console.log("🔐 [Auth] Token is null, user signed out");
+            console.log("🔐 [Auth] No token in event, clearing user");
             queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           }
         });
-        console.log("✅ [Auth] Listener registered successfully");
+        
+        console.log("✅ [Auth] Native listener attached");
 
-        // Immediate check to catch early events
-        console.log("🔐 [Auth] Performing initial token check...");
+        // Immediate check
         const currentToken = await FirebaseAuthentication.getIdToken();
-        console.log("🔐 [Auth] Initial token result:", {
+        console.log("🔐 [Auth] Initial check result:", {
           hasToken: !!currentToken.token,
-          tokenPrefix: currentToken.token ? currentToken.token.substring(0, 10) : 'none'
+          tokenType: typeof currentToken.token
         });
         
-        if (currentToken.token && isMounted) {
-          console.log("🔐 [Auth] Initial check found active session, syncing...");
+        if (currentToken.token) {
           syncToken(currentToken.token);
         }
       } catch (err) {
