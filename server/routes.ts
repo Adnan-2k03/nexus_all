@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession, generateToken, jwtAuthMiddleware, verifyToken } from "./googleAuth";
 import { devAuthMiddleware, ensureDevUser } from "./devAuth";
@@ -87,11 +88,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- Gamertag Login ---
   app.post("/api/auth/gamertag-login", async (req, res) => {
-    const { gamertag } = req.body;
+    const { gamertag, password, isNewUser } = req.body;
     if (!gamertag || gamertag.length < 3) return res.status(400).json({ message: "Gamertag must be at least 3 characters" });
+    if (!password || password.length < 6) return res.status(400).json({ message: "Password must be at least 6 characters" });
+    
     try {
       let user = await storage.getUserByGamertag(gamertag);
-      if (!user) user = await storage.createUser({ gamertag, coins: 100 });
+      
+      if (isNewUser) {
+        // Registration: create new user
+        if (user) return res.status(400).json({ message: "Gamertag already taken" });
+        const passwordHash = await bcrypt.hash(password, 10);
+        user = await storage.createUser({ gamertag, passwordHash, coins: 100 });
+      } else {
+        // Login: verify existing user
+        if (!user) return res.status(401).json({ message: "Invalid gamertag or password" });
+        if (!user.passwordHash) return res.status(401).json({ message: "Invalid gamertag or password" });
+        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+        if (!passwordMatch) return res.status(401).json({ message: "Invalid gamertag or password" });
+      }
+      
       req.login(user, (err) => {
         if (err) return res.status(500).json({ message: "Login failed" });
         req.session.save((err) => {
