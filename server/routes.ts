@@ -103,14 +103,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- Native Login (Firebase Token) ---
   app.post("/api/auth/native-login", async (req, res) => {
+    // Log the entire body for debugging
+    console.log("🔐 [Auth API] Request body received:", JSON.stringify(req.body));
+    
     const { token } = req.body;
-    console.log("🔐 [Auth API] Native login attempt received", {
+    console.log("🔐 [Auth API] Native login attempt details:", {
       hasToken: !!token,
+      tokenType: typeof token,
       tokenLength: token?.length
     });
 
     if (!token) {
-      console.warn("⚠️ [Auth API] No token provided in request");
+      console.warn("⚠️ [Auth API] No token provided in request body");
       return res.status(400).json({ message: "Firebase token required" });
     }
     try {

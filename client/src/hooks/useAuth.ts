@@ -48,18 +48,26 @@ export function useAuth() {
       try {
         console.log("🔐 [Auth] Syncing token with backend (length:", token.length, ")");
         const url = getApiUrl("/api/auth/native-login");
+        
+        // Ensure we're sending a clean string token
+        const tokenString = String(token).trim();
+        
         const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
           credentials: "include",
-          body: JSON.stringify({ token })
+          body: JSON.stringify({ token: tokenString })
         });
 
         if (res.ok && isMounted) {
           console.log("✅ [Auth] Server accepted token, refetching user...");
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         } else {
-          console.error("❌ [Auth] Server sync failed:", res.status);
+          const errorText = await res.text();
+          console.error("❌ [Auth] Server sync failed:", res.status, errorText);
         }
       } catch (err) {
         console.error("❌ [Auth] Sync error:", err);
