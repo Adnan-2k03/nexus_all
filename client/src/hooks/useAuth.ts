@@ -22,6 +22,7 @@ export function useAuth() {
         
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
+          console.log("🔐 [Auth] Token attached to headers:", token.substring(0, 10) + "...");
         } else if (Capacitor.isNativePlatform()) {
           console.log("🔐 [Auth] Native platform but no token found, user is unauthenticated");
           return null;

@@ -33,6 +33,10 @@ export function verifyToken(token: string): any {
 export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   
+  if (authHeader) {
+    console.log("🔍 [JWT Middleware] Raw Auth Header:", authHeader);
+  }
+
   if (authHeader && typeof authHeader === 'string') {
     const parts = authHeader.trim().split(/\s+/);
     if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
@@ -60,6 +64,8 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
     } else {
       console.warn("⚠️ [JWT Middleware] Invalid Authorization header format:", authHeader);
     }
+  } else if (authHeader) {
+    console.warn("⚠️ [JWT Middleware] Authorization header type:", typeof authHeader, "Value snippet:", String(authHeader).substring(0, 20));
   }
   next();
 };
