@@ -55,10 +55,27 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
           if (user) {
             console.log("✅ [JWT Middleware] Authenticated user:", user.id);
             req.user = user;
-            // Force Passport-like identification
+            
+            // Force Passport-like identification for compatibility with all middleware
             (req as any)._passport = { instance: passport, session: { user: user.id } };
-            // Ensure req.isAuthenticated() returns true
-            (req as any).isAuthenticated = () => true;
+            
+            // Critical fix: Override isAuthenticated to always return true for JWT users
+            // Using Object.defineProperty to bypass TypeScript and ensure it works at runtime
+            Object.defineProperty(req, 'isAuthenticated', {
+              value: function() { return true; },
+              configurable: true,
+              enumerable: true
+            });
+            
+            (req as any)._jwtAuthenticated = true; 
+            
+            // Ensure login/logout methods exist
+            (req as any).login = function(user: any, options: any, cb?: any) {
+              if (typeof options === 'function') cb = options;
+              if (cb) cb(null);
+              return Promise.resolve();
+            };
+            
             return next();
           } else {
             console.warn("⚠️ [JWT Middleware] User ID in token not found in database:", decoded.id);

@@ -28,11 +28,10 @@ export async function apiRequest(
     "Content-Type": "application/json",
   };
 
-  if (Capacitor.isNativePlatform()) {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+  // Always check for token on all platforms for resilience
+  const token = localStorage.getItem("auth_token");
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const res = await fetch(url, {

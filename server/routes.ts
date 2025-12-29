@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, getSession, generateToken, jwtAuthMiddleware } from "./googleAuth";
+import { setupAuth, isAuthenticated, getSession, generateToken, jwtAuthMiddleware, verifyToken } from "./googleAuth";
 import { devAuthMiddleware, ensureDevUser } from "./devAuth";
 import { insertMatchRequestSchema } from "@shared/schema";
 import { z } from "zod";
@@ -348,17 +348,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/user", (req, res) => {
-    console.log("🔍 [Auth API] GET /api/auth/user. Authenticated:", req.isAuthenticated());
+    // Manual header check for extra resilience on some mobile platforms
+    const authHeader = req.headers.authorization || req.headers.Authorization;
     
-    if (req.isAuthenticated() && req.user) {
-      console.log("✅ [Auth API] User authenticated:", (req.user as any).id);
-      return res.json(req.user);
+    if (authHeader && typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+      const token = authHeader.substring(7);
+      const decoded = verifyToken(token);
+      if (decoded && decoded.id) {
+        return storage.getUser(decoded.id).then(user => {
+          if (user) {
+            console.log("✅ [Auth API] User authenticated via manual JWT check in route:", user.id);
+            // Ensure compatibility
+            req.user = user;
+            return res.json(user);
+          }
+          console.warn("❌ [Auth API] Manual JWT check: User not found in database:", decoded.id);
+          return res.status(401).json({ message: "Unauthorized" });
+        }).catch((err) => {
+          console.error("❌ [Auth API] Manual JWT check error:", err);
+          return res.status(401).json({ message: "Unauthorized" });
+        });
+      }
     }
 
-    // Try one last time to check if req.user exists even if isAuthenticated() is false
-    if (req.user) {
-      console.log("✅ [Auth API] User found on request object:", (req.user as any).id);
-      return res.json(req.user);
+    const isAuthed = (typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || 
+                     (req as any).isAuthenticated === true || 
+                     (req as any)._jwtAuthenticated === true;
+    
+    console.log("🔍 [Auth API] GET /api/auth/user. Authenticated flag:", isAuthed, "req.user present:", !!req.user);
+    
+    if (req.user || isAuthed) {
+      const finalUser = req.user || (req as any).user;
+      if (finalUser) {
+        console.log("✅ [Auth API] User authenticated:", finalUser.id);
+        return res.json(finalUser);
+      }
     }
 
     console.warn("❌ [Auth API] Unauthorized request to /api/auth/user");

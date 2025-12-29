@@ -1,0 +1,37 @@
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+✅ Firebase Admin SDK initialized successfully
+🔄 [Database] Connection attempt 1/15...
+✅ [Database] Connection established successfully
+🔐 [PRODUCTION MODE] Authentication is ENABLED
+🔄 [Session Store] Initializing PostgreSQL session store...
+🍪 [Session Config]
+   Environment: production
+   Cross-Origin: YES
+   Cookie sameSite: lax
+   Cookie secure: false
+[OAuth Debug] Callback URL: https://nexusfinalandroid-production.up.railway.app/api/auth/google/callback
+[OAuth Debug] Client ID: 200246678955-teb86qn...
+[OAuth Debug] Client Secret exists: true
+[OAuth Debug] Client Secret length: 35
+8:06:59 PM [express] serving on port 8080
+  ~ user_game_profiles › match_history       rename table
+🔐 [Auth API] Native login request
+🔐 [Auth API] Headers: {"host":"nexusfinalandroid-production.up.railway.app","user-agent":"Mozilla/5.0 (Linux; Android 16; sdk_gphone64_x86_64 Build/BE2A.250530.026.D1; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/143.0.7499.115 Mobile Safari/537.36","content-length":"1220","accept":"application/json","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9","content-type":"application/json","origin":"https://localhost","priority":"u=1, i","referer":"https://localhost/","sec-ch-ua":"\"Android WebView\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"","sec-ch-ua-mobile":"?1","sec-ch-ua-platform":"\"Android\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"cross-site","sec-fetch-storage-access":"active","x-forwarded-for":"49.37.153.222","x-forwarded-host":"nexusfinalandroid-production.up.railway.app","x-forwarded-proto":"https","x-railway-edge":"railway/asia-southeast1-eqsg3a","x-railway-request-id":"Kk2C7qjRSFmEs131V7rehQ","x-real-ip":"49.37.153.222","x-request-start":"1767038868123","x-requested-with":"com.nexusmatch.app"}
+🔐 [Auth API] Body Content: {"token":"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzOGVhNmEwNDA4YjBjYzVkYTE4OWRmYzg4ODgyZDBmMWI3ZmJmMGUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiTUQgQUROQU4gSEFTU0hBRCAyMkJDRTkzNTciLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTDlBS0lwQXEzNWtKcFU0MUNDYzZmQjlITUFqOXJJRHZfaDZfcDd5eGFPcTkyVTBBPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL3BsYXlsaW5rLTQyYmZmIiwiYXVkIjoicGxheWxpbmstNDJiZmYiLCJhdXRoX3RpbWUiOjE3NjcwMzg4NjYsInVzZXJfaWQiOiJQY24zRzZIaTNsaHlleDg3NnAzQUZJaXk5dDQyIiwic3ViIjoiUGNuM0c2SGkzbGh5ZXg4NzZwM0FGSWl5OXQ0MiIsImlhdCI6MTc2NzAzODg2NiwiZXhwIjoxNzY3MDQyNDY2LCJlbWFpbCI6ImFkbmFuLjIyYmNlOTM1N0B2aXRhcHN0dWRlbnQuYWMuaW4iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExMjIxMDQ0NzYyMTkxMDA1NTM3NyJdLCJlbWFpbCI6WyJhZG5hbi4yMmJjZTkzNTdAdml0YXBzdHVkZW50LmFjLmluIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.6jZ0TlkQkAnX4DG2U5tsumBP_u8JxjU6i7eQ4F2E9mTy08Zlj3qPYpCZJ2wIYKWlniXMULVlQTTS41ADhRIN8B3vTwGmQoZbFgfwhF0Tbkkymw_VFwxTCsisvlqaoOU9UIx0q7sTxHHMRoUreO3Cnup61DGUvWpL0b-U4QV-Vhc7v8oD2EGBYKGZ_YIGTP7De1QOMLmbHMzsa1CSsvfIkjAwMBZphotzTF5HILJ2uGifWDuc6gvV2WzfllA4jw_eBS3d-YLMv2lnQTGWr77nSfghZoPEIcsdelyAAnJi7ijn-Wg2LWAKp_oDz_C-8O-tRhD6uRGsilvZ96pQ8ZxtnQ"}
+🔐 [Auth API] Body type: object
+🔐 [Auth API] Token analysis: { hasToken: true, tokenType: 'string', tokenLength: 1208 }
+🔐 [Auth API] Attempting Firebase verification...
+✅ [Auth API] Token verified for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+👤 [Auth API] Provisioning new user for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+📝 [Auth API] Creating user with gamertag: adnan_22bce9357_dnd0
+🔑 [Auth API] Establishing Passport session for user ID: 59fdb95b-6662-4516-a009-a25b40a984cd
+✅ [Session Store] Pool connected to database
+[Passport] Serializing user: 59fdb95b-6662-4516-a009-a25b40a984cd
+🏁 [Auth API] Authentication complete for: adnan_22bce9357_dnd0
+🎫 [JWT] Generated token for user 59fdb95b-6662-4516-a009-a25b40a984cd: eyJhbGciOi...
+🎫 [Auth API] Generated JWT for user: 59fdb95b-6662-4516-a009-a25b40a984cd
+8:07:48 PM [express] POST /api/auth/native-login 200 in 340ms :: {"id":"59fdb95b-6662-4516-a009-a25b…
+🔍 [Auth API] GET /api/auth/user. Authenticated: false
+❌ [Auth API] Unauthorized request to /api/auth/user
+8:07:48 PM [express] GET /api/auth/user 401 in 7ms :: {"message":"Unauthorized"}

@@ -1,0 +1,26 @@
+    V  callback: 9533432, pluginId: AdMob, methodName: hideBanner, methodData: {}
+2025-12-30 01:39:46.757  6569-6569  Capacitor/AdMob         com.nexusmatch.app                   V  Notifying listeners for event bannerAdSizeChanged
+2025-12-30 01:39:46.757  6569-6569  Capacitor/AdMob         com.nexusmatch.app                   D  No listeners found for event bannerAdSizeChanged
+2025-12-30 01:39:46.759  6569-6569  Capacitor/Console       com.nexusmatch.app                   I  File:  - Line 333 - Msg: undefined
+2025-12-30 01:39:46.827  6569-6820  ProfileInstaller        com.nexusmatch.app                   D  Installing profile for com.nexusmatch.app
+2025-12-30 01:39:48.684  6569-6569  Capacitor/Plugin        com.nexusmatch.app                   V  To native (Capacitor plugin): callbackId: 9533433, pluginId: FirebaseAuthentication, methodName: signInWithGoogle
+2025-12-30 01:39:48.685  6569-6569  Capacitor               com.nexusmatch.app                   V  callback: 9533433, pluginId: FirebaseAuthentication, methodName: signInWithGoogle, methodData: {}
+2025-12-30 01:39:49.305  6569-6569  Capacitor               com.nexusmatch.app                   D  App paused
+2025-12-30 01:39:51.349  6569-6605  FA                      com.nexusmatch.app                   I  Application backgrounded at: timestamp_millis: 1767038989347
+2025-12-30 01:39:51.357  6569-6575  .nexusmatch.app         com.nexusmatch.app                   I  Background concurrent mark compact GC freed 14MB AllocSpace bytes, 101(4156KB) LOS objects, 49% free, 8061KB/15MB, paused 389us,1.805ms total 191.160ms
+2025-12-30 01:39:51.360  6569-6576  BpBinder                com.nexusmatch.app                   I  onLastStrongRef automatically unlinking death recipients: 
+2025-12-30 01:39:53.623  6569-6836  CredManProvService      com.nexusmatch.app                   I  GetCredentialResponse returned from framework
+2025-12-30 01:39:53.630  6569-6621  System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-30 01:39:53.642  6569-6621  CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyAssertion?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-30 01:39:53.652  6569-6569  Capacitor               com.nexusmatch.app                   D  App resumed
+2025-12-30 01:39:53.690  6569-6569  InsetsController        com.nexusmatch.app                   D  hide(ime(), fromIme=false)
+2025-12-30 01:39:53.690  6569-6569  ImeTracker              com.nexusmatch.app                   I  com.nexusmatch.app:ddd0d616: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+2025-12-30 01:39:54.257  6569-6621  System                  com.nexusmatch.app                   W  Ignoring header X-Firebase-Locale because its value was null.
+2025-12-30 01:39:54.267  6569-6621  CapacitorCookies        com.nexusmatch.app                   I  Getting cookies at: 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyA5vK9XMg_tBiGXyu4jEZFHZyFPfwj_17U'
+2025-12-30 01:39:54.664  6569-6621  FirebaseAuth            com.nexusmatch.app                   D  Notifying id token listeners about user ( Pcn3G6Hi3lhyex876p3AFIiy9t42 ).
+2025-12-30 01:39:54.667  6569-6569  Capacitor/...tionPlugin com.nexusmatch.app                   V  Notifying listeners for event idTokenChange
+2025-12-30 01:39:54.673  6569-6569  Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] idTokenChange event triggered [object Object]
+2025-12-30 01:39:54.673  6569-6569  Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] Syncing token with backend (length: 1208 )
+2025-12-30 01:39:55.076  6569-6569  Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: 🔐 [Auth] Fetch response status: 200
+2025-12-30 01:39:55.078  6569-6569  Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: ✅ [Auth] Received JWT token, storing locally
+2025-12-30 01:39:55.078  6569-6569  Capacitor/Console       com.nexusmatch.app                   I  File: https://localhost/assets/index-Sp5IVXtw.js - Line 596 - Msg: ✅ [Auth] Server accepted token, refetching user...
