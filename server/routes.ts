@@ -185,6 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           console.log("🏁 [Auth API] Authentication complete for:", user?.gamertag);
           const jwtToken = generateToken(user);
+          console.log("🎫 [Auth API] Sending JWT to client:", jwtToken.substring(0, 10) + "...");
           res.json({ ...user, token: jwtToken });
         });
       });

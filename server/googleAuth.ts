@@ -17,7 +17,9 @@ declare global {
 }
 
 export function generateToken(user: SelectUser): string {
-  return jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "30d" });
+  const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "30d" });
+  console.log(`🎫 [JWT] Generated token for user ${user.id}: ${token.substring(0, 10)}...`);
+  return token;
 }
 
 export function verifyToken(token: string): any {
