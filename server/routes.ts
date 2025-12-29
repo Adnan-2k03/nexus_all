@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, getSession } from "./googleAuth";
+import { setupAuth, isAuthenticated, getSession, generateToken, jwtAuthMiddleware } from "./googleAuth";
 import { devAuthMiddleware, ensureDevUser } from "./devAuth";
 import { insertMatchRequestSchema } from "@shared/schema";
 import { z } from "zod";
@@ -59,6 +59,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("\n🔐 [PRODUCTION MODE] Authentication is ENABLED");
     await setupAuth(app);
   }
+
+  // Use JWT middleware for native app support
+  app.use(jwtAuthMiddleware);
 
   // --- Admin Login ---
   app.post("/api/admin/login", async (req, res) => {
@@ -181,7 +184,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(500).json({ message: "Session save failed" });
           }
           console.log("🏁 [Auth API] Authentication complete for:", user?.gamertag);
-          res.json(user);
+          const jwtToken = generateToken(user);
+          res.json({ ...user, token: jwtToken });
         });
       });
     } catch (error: any) {

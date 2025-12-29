@@ -14,7 +14,18 @@ export function useAuth() {
     retry: false,
     queryFn: async () => {
       try {
-        const response = await fetch(getApiUrl("/api/auth/user"), {
+        const url = getApiUrl("/api/auth/user");
+        const headers: Record<string, string> = {};
+        
+        if (Capacitor.isNativePlatform()) {
+          const token = localStorage.getItem("auth_token");
+          if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+          }
+        }
+
+        const response = await fetch(url, {
+          headers,
           credentials: "include",
         });
         
@@ -52,7 +63,6 @@ export function useAuth() {
         // Ensure we're sending a clean string token
         const tokenString = String(token).trim();
         
-        // Use apiRequest for more robust request handling
         const res = await fetch(url, {
           method: "POST",
           headers: { 
@@ -60,13 +70,17 @@ export function useAuth() {
             "Accept": "application/json"
           },
           body: JSON.stringify({ token: tokenString }),
-          // VERY IMPORTANT: ensure credentials are included for session cookie
           credentials: "include"
         });
 
         console.log("🔐 [Auth] Fetch response status:", res.status);
 
         if (res.ok && isMounted) {
+          const data = await res.json();
+          if (data.token) {
+            console.log("✅ [Auth] Received JWT token, storing locally");
+            localStorage.setItem("auth_token", data.token);
+          }
           console.log("✅ [Auth] Server accepted token, refetching user...");
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         } else {

@@ -1,21 +1,53 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
-import type { Express, RequestHandler } from "express";
+import type { Express, RequestHandler, Request, Response, NextFunction } from "express";
 import connectPg from "connect-pg-simple";
 import pg from "pg";
 import { storage } from "./storage";
+import jwt from "jsonwebtoken";
+import { type User as SelectUser } from "@shared/schema";
 
-const hasGoogleAuth = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
-if (!hasGoogleAuth) {
-  console.warn("⚠️  Google OAuth is disabled - GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET not set");
-  console.warn("⚠️  Authentication features will not be available");
+declare global {
+  namespace Express {
+    interface User extends SelectUser {}
+  }
 }
 
-if (!process.env.SESSION_SECRET) {
-  console.warn("⚠️  SESSION_SECRET not set - using default for development only");
+export function generateToken(user: SelectUser): string {
+  return jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "30d" });
 }
+
+export function verifyToken(token: string): any {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return null;
+  }
+}
+
+export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    const decoded = verifyToken(token);
+    if (decoded && decoded.id) {
+      try {
+        const user = await storage.getUser(decoded.id);
+        if (user) {
+          req.user = user;
+          // Mock passport functions for JWT users
+          (req as any).isAuthenticated = () => true;
+        }
+      } catch (error) {
+        console.error("JWT Auth user lookup failed:", error);
+      }
+    }
+  }
+  next();
+};
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -96,6 +128,7 @@ export function getSession() {
 }
 
 export async function setupAuth(app: Express) {
+  const hasGoogleAuth = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
