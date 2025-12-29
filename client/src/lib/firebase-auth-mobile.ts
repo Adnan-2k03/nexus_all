@@ -1,6 +1,6 @@
 import { getAuth, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { GoogleAuth } from '@capacitor/google-auth';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { Capacitor } from '@capacitor/core';
 import { getApiUrl } from './api';
 
@@ -14,9 +14,6 @@ export async function signInWithGoogleMobile() {
   }
 
   try {
-    // Initialize Google Auth for native platform
-    // Note: configuration is typically read from capacitor.config.ts or strings.xml
-    
     // Sign in with Google Auth plugin to get the ID token
     const googleUser = await GoogleAuth.signIn();
     
