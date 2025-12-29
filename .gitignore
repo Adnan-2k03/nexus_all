@@ -9,7 +9,6 @@ coverage/
 # Production
 dist/
 build/
-android/
 
 # Misc
 .DS_Store
@@ -22,10 +21,17 @@ android/
 *~
 
 # Capacitor/Android
-android/gradle.properties
+# We want to push the android folder to GitHub so it can be cloned and run in Android Studio
+# android/
+android/app/build/
+android/.gradle/
 android/local.properties
-*.keystore
-*.jks
+android/gradle.properties
+android/captures/
+android/*.keystore
+android/*.jks
+android/app/*.keystore
+android/app/*.jks
 
 # Node
 npm-debug.log*
@@ -37,3 +43,14 @@ yarn-error.log*
 .vscode/
 *.swp
 *.swo
+
+# Project specific
+attached_assets/
+video\ demonstration/
+Capstone\ Project\ Proposal*.docx
+A-Real-Time-Player-Finding-System*.pdf
+content-*.md
+image_*.png
+server/vite.ts
+client/src/main.tsx
+vercel.json
