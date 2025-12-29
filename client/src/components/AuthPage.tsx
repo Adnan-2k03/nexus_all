@@ -9,11 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gamepad2, Phone, Shield } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
-import { registerUserSchema, type User } from "@shared/schema";
+import { type User } from "@shared/schema";
 import { getApiUrl } from "@/lib/api";
-import { z } from "zod";
-type RegisterUser = z.infer<typeof registerUserSchema>;
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import { AuthStorage } from "@/lib/storage";
+import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth";
 
 interface AuthPageProps {
   onAuthSuccess: () => void;
@@ -31,11 +31,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [firebaseToken, setFirebaseToken] = useState<string>("");
   const [gamertagInput, setGamertagInput] = useState("");
 
-  const [phoneRegisterData, setPhoneRegisterData] = useState<RegisterUser>({
+  const [phoneRegisterData, setPhoneRegisterData] = useState({
     gamertag: "",
     firstName: "",
     lastName: "",
-    age: undefined,
+    age: undefined as number | undefined,
   });
 
   const handleGamertagLogin = async (e: React.FormEvent) => {
@@ -61,6 +61,10 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
       const userData = await response.json();
       console.log("[Auth] Gamertag login successful:", userData);
+      
+      if (userData.token) {
+        await AuthStorage.setToken(userData.token);
+      }
       
       // Wait a moment for session to settle
       setTimeout(() => {
@@ -224,6 +228,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
           throw new Error(error.message || "Login failed");
         }
 
+        const loginData = await loginResponse.json();
+        if (loginData.token) {
+          await AuthStorage.setToken(loginData.token);
+        }
+
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
@@ -271,6 +280,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Registration failed");
+      }
+
+      const regData = await response.json();
+      if (regData.token) {
+        await AuthStorage.setToken(regData.token);
       }
 
       toast({
