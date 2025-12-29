@@ -348,41 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/user", (req, res) => {
-    // Manual header check for extra resilience on some mobile platforms
-    const authHeader = req.headers.authorization || req.headers.Authorization;
-    
-    if (authHeader && typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
-      const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-      if (decoded && decoded.id) {
-        return storage.getUser(decoded.id).then(user => {
-          if (user) {
-            console.log("✅ [Auth API] User authenticated via manual JWT check in route:", user.id);
-            // Ensure compatibility
-            req.user = user;
-            return res.json(user);
-          }
-          console.warn("❌ [Auth API] Manual JWT check: User not found in database:", decoded.id);
-          return res.status(401).json({ message: "Unauthorized" });
-        }).catch((err) => {
-          console.error("❌ [Auth API] Manual JWT check error:", err);
-          return res.status(401).json({ message: "Unauthorized" });
-        });
-      }
-    }
-
+    // Check for user in req.user (set by passport or JWT middleware)
+    const user = req.user || (req as any).user;
     const isAuthed = (typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || 
-                     (req as any).isAuthenticated === true || 
                      (req as any)._jwtAuthenticated === true;
     
-    console.log("🔍 [Auth API] GET /api/auth/user. Authenticated flag:", isAuthed, "req.user present:", !!req.user);
+    console.log("🔍 [Auth API] GET /api/auth/user. Authenticated flag:", isAuthed, "req.user present:", !!user);
     
-    if (req.user || isAuthed) {
-      const finalUser = req.user || (req as any).user;
-      if (finalUser) {
-        console.log("✅ [Auth API] User authenticated:", finalUser.id);
-        return res.json(finalUser);
-      }
+    if (user && isAuthed) {
+      console.log("✅ [Auth API] User authenticated:", user.id);
+      return res.json(user);
     }
 
     console.warn("❌ [Auth API] Unauthorized request to /api/auth/user");
