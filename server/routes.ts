@@ -343,8 +343,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/user", async (req, res) => {
+    console.log("🔍 [Auth API] GET /api/auth/user");
+    console.log("🔍 [Auth API] Headers:", JSON.stringify(req.headers));
+    
     // If we have req.user from JWT middleware or session, return it
     if (req.isAuthenticated() && req.user) {
+      console.log("✅ [Auth API] User authenticated via session/JWT middleware:", req.user.id);
       return res.json(req.user);
     }
     
@@ -352,16 +356,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
+      console.log("🔍 [Auth API] Manual JWT check for token:", token.substring(0, 10) + "...");
       const { verifyToken } = await import("./googleAuth");
       const decoded = verifyToken(token);
       if (decoded && decoded.id) {
         const user = await storage.getUser(decoded.id);
         if (user) {
+          console.log("✅ [Auth API] User authenticated via manual JWT check:", user.id);
           return res.json(user);
         }
       }
     }
 
+    console.warn("❌ [Auth API] Unauthorized request to /api/auth/user");
     res.status(401).json({ message: "Unauthorized" });
   });
 

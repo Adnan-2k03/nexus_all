@@ -40,6 +40,8 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
           req.user = user;
           // Mock passport functions for JWT users
           (req as any).isAuthenticated = () => true;
+          (req as any)._passport = { instance: passport };
+          return next();
         }
       } catch (error) {
         console.error("JWT Auth user lookup failed:", error);
