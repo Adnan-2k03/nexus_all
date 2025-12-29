@@ -101,34 +101,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // --- Native Login (Firebase Token) ---
   app.post("/api/auth/native-login", async (req, res) => {
-    // Log the entire body for debugging
-    console.log("🔐 [Auth API] Request body received:", JSON.stringify(req.body));
+    // Detailed logging for debugging session issues
+    console.log("🔐 [Auth API] Native login request");
+    console.log("🔐 [Auth API] Headers:", JSON.stringify(req.headers));
     
-    const { token } = req.body;
-    console.log("🔐 [Auth API] Native login attempt details:", {
+    // Check if the body is an empty object but might be raw
+    console.log("🔐 [Auth API] Body Content:", JSON.stringify(req.body));
+    console.log("🔐 [Auth API] Body type:", typeof req.body);
+    
+    let body = req.body;
+    
+    // If the body is empty or not parsed, it might be due to content-type issues or stream not being handled
+    // But since we have express.json(), it should be there. 
+    // Let's add a fallback check for the token.
+    
+    const token = body?.token;
+    
+    console.log("🔐 [Auth API] Token analysis:", {
       hasToken: !!token,
       tokenType: typeof token,
       tokenLength: token?.length
     });
 
     if (!token) {
-      console.warn("⚠️ [Auth API] No token provided in request body");
+      console.warn("⚠️ [Auth API] Missing token in body. Body keys found:", Object.keys(body || {}));
       return res.status(400).json({ message: "Firebase token required" });
     }
+    
     try {
-      console.log("🔐 [Auth API] Verifying token...");
+      console.log("🔐 [Auth API] Attempting Firebase verification...");
       const decodedToken = await verifyFirebaseToken(token);
+      
       if (!decodedToken) {
-        console.error("❌ [Auth API] Token verification returned null");
+        console.error("❌ [Auth API] verifyFirebaseToken returned null");
         return res.status(401).json({ message: "Invalid Firebase token" });
       }
       
-      console.log("✅ [Auth API] Token verified for user:", decodedToken.uid);
+      console.log("✅ [Auth API] Token verified for UID:", decodedToken.uid);
+      
       let user = await storage.getUser(decodedToken.uid);
       if (!user) {
-        console.log("👤 [Auth API] Creating new user for UID:", decodedToken.uid);
+        console.log("👤 [Auth API] Provisioning new user for UID:", decodedToken.uid);
         const gamertag = decodedToken.email?.split("@")[0] || `user_${decodedToken.uid.slice(0, 8)}`;
         user = await storage.createUser({ 
           gamertag: gamertag.replace(/[^a-zA-Z0-9_]/g, "_"),
@@ -136,23 +150,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log("🔑 [Auth API] Initiating passport login for user ID:", user.id);
+      console.log("🔑 [Auth API] Establishing Passport session for user ID:", user.id);
       req.login(user, (err) => {
         if (err) {
-          console.error("❌ [Auth API] req.login error:", err);
+          console.error("❌ [Auth API] Passport login error:", err);
           return res.status(500).json({ message: "Login failed" });
         }
+        
         req.session.save((err) => {
           if (err) {
             console.error("❌ [Auth API] Session save error:", err);
             return res.status(500).json({ message: "Session save failed" });
           }
-          console.log("🏁 [Auth API] Native login successful for:", user?.gamertag);
+          console.log("🏁 [Auth API] Authentication complete for:", user?.gamertag);
           res.json(user);
         });
       });
     } catch (error: any) {
-      console.error("❌ [Auth API] Native login critical failure:", error);
+      console.error("❌ [Auth API] Critical failure:", error.message || error);
       res.status(401).json({ message: "Authentication failed" });
     }
   });

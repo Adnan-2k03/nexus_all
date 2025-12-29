@@ -52,15 +52,19 @@ export function useAuth() {
         // Ensure we're sending a clean string token
         const tokenString = String(token).trim();
         
+        // Use apiRequest for more robust request handling
         const res = await fetch(url, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
             "Accept": "application/json"
           },
-          credentials: "include",
-          body: JSON.stringify({ token: tokenString })
+          body: JSON.stringify({ token: tokenString }),
+          // VERY IMPORTANT: ensure credentials are included for session cookie
+          credentials: "include"
         });
+
+        console.log("🔐 [Auth] Fetch response status:", res.status);
 
         if (res.ok && isMounted) {
           console.log("✅ [Auth] Server accepted token, refetching user...");

@@ -48,6 +48,10 @@ async function waitForDatabase(maxRetries = 30, initialDelayMs = 3000): Promise<
 
 const app = express();
 
+// Middleware for parsing JSON and URL-encoded bodies MUST come before routes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: false }));
+
 // CORS configuration for split deployment (Vercel frontend + Railway backend)
 const isDev = process.env.NODE_ENV === 'development';
 const defaultOrigins = isDev 
@@ -78,10 +82,6 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
-// Increase body size limit to handle large image uploads (base64)
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: false }));
 
 app.use((req, res, next) => {
   const start = Date.now();
