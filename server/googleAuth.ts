@@ -32,9 +32,15 @@ export function verifyToken(token: string): any {
 
 export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
+  const customHeader = (req.headers['x-auth-token'] || req.headers['X-Auth-Token']) as string;
   
-  if (authHeader) {
-    console.log("🔍 [JWT Middleware] Raw Auth Header:", authHeader);
+  // Log for debugging native app token issues
+  const method = req.method;
+  const path = req.path;
+  if (path === "/api/auth/user") {
+    console.log(`🔍 [JWT Middleware] ${method} ${path} - Checking auth headers...`);
+    console.log(`   Authorization header present: ${!!authHeader}`);
+    console.log(`   X-Auth-Token header present: ${!!customHeader}`);
   }
 
   // Handle case where req.user might already be set by passport session
@@ -43,17 +49,27 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
     return next();
   }
 
-  if (authHeader && typeof authHeader === 'string') {
-    const parts = authHeader.trim().split(/\s+/);
-    if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
-      const token = parts[1];
-      console.log("🔍 [JWT Middleware] Verifying token snippet:", token.substring(0, 10) + "...");
+  // Try Authorization header first, then custom header
+  const tokenToVerify = authHeader || customHeader;
+  
+  if (tokenToVerify && typeof tokenToVerify === 'string') {
+    let token: string | null = null;
+    
+    // Handle Bearer token format
+    if (tokenToVerify.toLowerCase().startsWith('bearer ')) {
+      token = tokenToVerify.substring(7);
+    } else {
+      // Assume it's a raw token for custom headers
+      token = tokenToVerify;
+    }
+    
+    if (token) {
       const decoded = verifyToken(token);
       if (decoded && decoded.id) {
         try {
           const user = await storage.getUser(decoded.id);
           if (user) {
-            console.log("✅ [JWT Middleware] Authenticated user:", user.id);
+            console.log("✅ [JWT Middleware] Authenticated user via token:", user.id);
             req.user = user;
             
             // Force Passport-like identification for compatibility with all middleware
@@ -83,15 +99,10 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
         } catch (error) {
           console.error("❌ [JWT Middleware] User lookup failed:", error);
         }
-      } else {
-        console.warn("⚠️ [JWT Middleware] Token verification failed or no ID in payload. Token snippet:", token.substring(0, 10));
       }
-    } else {
-      console.warn("⚠️ [JWT Middleware] Invalid Authorization header format:", authHeader);
     }
-  } else if (authHeader) {
-    console.warn("⚠️ [JWT Middleware] Authorization header type:", typeof authHeader, "Value snippet:", String(authHeader).substring(0, 20));
   }
+  
   next();
 };
 
