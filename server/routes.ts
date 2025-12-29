@@ -189,22 +189,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user already exists
-      let user = await storage.getUserByPhone(phoneNumber);
-      if (user) {
+      let existingUser = await storage.getUserByPhone(phoneNumber);
+      if (existingUser) {
         // User exists, just login
-        req.login(user, (err) => {
+        const userToLogin = existingUser;
+        req.login(userToLogin, (err) => {
           if (err) return res.status(500).json({ message: "Login failed" });
           req.session.save((err) => {
             if (err) return res.status(500).json({ message: "Session save failed" });
-            const token = generateToken(user);
-            res.json({ ...user, token });
+            const token = generateToken(userToLogin);
+            res.json({ ...userToLogin, token });
           });
         });
         return;
       }
 
       // Create new user with phone number
-      user = await storage.createUser({
+      const newUser = await storage.createUser({
         gamertag,
         phoneNumber,
         phoneVerified: true,
@@ -214,12 +215,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         coins: 100
       });
 
-      req.login(user, (err) => {
+      req.login(newUser, (err) => {
         if (err) return res.status(500).json({ message: "Login failed" });
         req.session.save((err) => {
           if (err) return res.status(500).json({ message: "Session save failed" });
-          const token = generateToken(user);
-          res.json({ ...user, token });
+          const token = generateToken(newUser);
+          res.json({ ...newUser, token });
         });
       });
     } catch (error: any) {
