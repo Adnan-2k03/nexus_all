@@ -32,6 +32,9 @@ export async function apiRequest(
   const token = localStorage.getItem("auth_token");
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+    console.log("📤 [apiRequest] Adding Authorization header for:", path);
+  } else {
+    console.log("⚠️ [apiRequest] No token found for:", path);
   }
 
   const res = await fetch(url, {
@@ -40,6 +43,8 @@ export async function apiRequest(
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  console.log(`📥 [apiRequest] ${method} ${path} - Status:`, res.status);
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));

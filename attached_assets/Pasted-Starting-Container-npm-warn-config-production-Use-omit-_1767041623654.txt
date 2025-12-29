@@ -1,0 +1,92 @@
+Starting Container
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 db:push
+> NODE_OPTIONS='--max-old-space-size=1024' tsx node_modules/drizzle-kit/bin.cjs push --config drizzle.config.ts
+Reading config file '/app/drizzle.config.ts'
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[⣟] Pulling schema from database...
+[⡿] Pulling schema from database...
+[⢿] Pulling schema from database...
+[⣻] Pulling schema from database...
+[⣽] Pulling schema from database...
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[⣟] Pulling schema from database...
+[⡿] Pulling schema from database...
+[⢿] Pulling schema from database...
+  ~ group_members › match_history            rename table
+  ~ tournament_matches › match_history       rename table
+[⣻] Pulling schema from database...
+[✓] Pulling schema from database...
+Is match_history table created or renamed from another table?
+❯ + match_history                            create table
+  ~ connection_requests › match_history      rename table
+  ~ game_profiles › match_history            rename table
+  ~ group_voice_channels › match_history     rename table
+  ~ group_voice_invites › match_history      rename table
+  ~ group_voice_members › match_history      rename table
+  ~ hidden_matches › match_history           rename table
+  ~ match_connections › match_history        rename table
+  ~ chat_messages › match_history            rename table
+  ~ portfolio_pages › match_history          rename table
+  ~ phone_verification_codes › match_history rename table
+  ~ push_subscriptions › match_history       rename table
+  ~ notifications › match_history            rename table
+  ~ voice_channels › match_history           rename table
+  ~ voice_participants › match_history       rename table
+  ~ subscriptions › match_history            rename table
+  ~ user_credits › match_history             rename table
+  ~ portfolio_boosts › match_history         rename table
+  ~ group_messages › match_history           rename table
+  ~ feedback_channels › match_history        rename table
+  ~ channel_members › match_history          rename table
+  ~ feedback_messages › match_history        rename table
+  ~ groups › match_history                   rename table
+  ~ feature_flags › match_history            rename table
+Stopping Container
+Starting Container
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+✅ Firebase Admin SDK initialized successfully
+🔄 [Database] Connection attempt 1/15...
+✅ [Database] Connection established successfully
+🔐 [PRODUCTION MODE] Authentication is ENABLED
+🔄 [Session Store] Initializing PostgreSQL session store...
+🍪 [Session Config]
+   Environment: production
+   Cross-Origin: YES
+   Cookie sameSite: lax
+   Cookie secure: false
+[OAuth Debug] Callback URL: https://nexusfinalandroid-production.up.railway.app/api/auth/google/callback
+[OAuth Debug] Client ID: 200246678955-teb86qn...
+[OAuth Debug] Client Secret exists: true
+[OAuth Debug] Client Secret length: 35
+8:51:47 PM [express] serving on port 8080
+  ~ user_game_profiles › match_history       rename table
+✅ [Session Store] Pool connected to database
+8:52:27 PM [express] GET /api/feature-flags 200 in 203ms :: []
+🔐 [Auth API] Native login request
+🔐 [Auth API] Headers: {"host":"nexusfinalandroid-production.up.railway.app","user-agent":"Mozilla/5.0 (Linux; Android 16; sdk_gphone64_x86_64 Build/BE2A.250530.026.D1; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/143.0.7499.115 Mobile Safari/537.36","content-length":"1220","accept":"application/json","accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9","content-type":"application/json","origin":"https://localhost","priority":"u=1, i","referer":"https://localhost/","sec-ch-ua":"\"Android WebView\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"","sec-ch-ua-mobile":"?1","sec-ch-ua-platform":"\"Android\"","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"cross-site","sec-fetch-storage-access":"active","x-forwarded-for":"49.37.153.222","x-forwarded-host":"nexusfinalandroid-production.up.railway.app","x-forwarded-proto":"https","x-railway-edge":"railway/asia-southeast1-eqsg3a","x-railway-request-id":"A6mN-NTDTbSjBvMb0ubPiw","x-real-ip":"49.37.153.222","x-request-start":"1767041595627","x-requested-with":"com.nexusmatch.app"}
+🔐 [Auth API] Body Content: {"token":"eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzOGVhNmEwNDA4YjBjYzVkYTE4OWRmYzg4ODgyZDBmMWI3ZmJmMGUiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiTUQgQUROQU4gSEFTU0hBRCAyMkJDRTkzNTciLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTDlBS0lwQXEzNWtKcFU0MUNDYzZmQjlITUFqOXJJRHZfaDZfcDd5eGFPcTkyVTBBPXM5Ni1jIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL3BsYXlsaW5rLTQyYmZmIiwiYXVkIjoicGxheWxpbmstNDJiZmYiLCJhdXRoX3RpbWUiOjE3NjcwNDE1OTQsInVzZXJfaWQiOiJQY24zRzZIaTNsaHlleDg3NnAzQUZJaXk5dDQyIiwic3ViIjoiUGNuM0c2SGkzbGh5ZXg4NzZwM0FGSWl5OXQ0MiIsImlhdCI6MTc2NzA0MTU5NCwiZXhwIjoxNzY3MDQ1MTk0LCJlbWFpbCI6ImFkbmFuLjIyYmNlOTM1N0B2aXRhcHN0dWRlbnQuYWMuaW4iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjExMjIxMDQ0NzYyMTkxMDA1NTM3NyJdLCJlbWFpbCI6WyJhZG5hbi4yMmJjZTkzNTdAdml0YXBzdHVkZW50LmFjLmluIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.ugipWVMt-hdhEckX9gv9_rB-_WwZwnMos3E_1lIoQELRo3wSXhdniFjjJUzBiiz8l1NP3reIrl7jVP4ea5C7E9vK7s9Saka8l7NVM3F41bJTDvzgckDveR_oiueywpzyFuqpXy-6jJFrIhDrdB0QXv4P8bPtoeMOQ23o94uGGb-z-Gs8nJ8H-IJx-jxYxFf7tMTS414aLi86g2Ra9ONThZDBhuqCFcP9qpPVEPDh-5qKe6ZoRizmEtCkV0-wuRAnzT7g1EdWaSH3MR_2DilAseuECN__Rye3c_Pr8GB9Hk39ZsEVmN-jDtLrYl_0iUnCOq9-BrbH-mvK71n3ZuDU4A"}
+🔐 [Auth API] Body type: object
+🔐 [Auth API] Token analysis: { hasToken: true, tokenType: 'string', tokenLength: 1208 }
+🔐 [Auth API] Attempting Firebase verification...
+✅ [Auth API] Token verified for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+👤 [Auth API] Provisioning new user for UID: Pcn3G6Hi3lhyex876p3AFIiy9t42
+📝 [Auth API] Creating user with gamertag: adnan_22bce9357_hwjd
+🔑 [Auth API] Establishing Passport session for user ID: 7c88697b-82dc-4742-95db-77a7ca01e3ed
+✅ [Session Store] Pool connected to database
+[Passport] Serializing user: 7c88697b-82dc-4742-95db-77a7ca01e3ed
+🏁 [Auth API] Authentication complete for: adnan_22bce9357_hwjd
+🎫 [JWT] Generated token for user 7c88697b-82dc-4742-95db-77a7ca01e3ed: eyJhbGciOi...
+🎫 [Auth API] Generated JWT for user: 7c88697b-82dc-4742-95db-77a7ca01e3ed
+8:53:16 PM [express] POST /api/auth/native-login 200 in 420ms :: {"id":"7c88697b-82dc-4742-95db-77a7…
+🔍 [JWT Middleware] GET /api/auth/user - Checking auth headers...
+   Authorization header present: false
+   X-Auth-Token header present: false
+🔍 [Auth API] GET /api/auth/user. Authenticated flag: false req.user present: false
+❌ [Auth API] Unauthorized request to /api/auth/user
+8:53:16 PM [express] GET /api/auth/user 401 in 8ms :: {"message":"Unauthorized"}

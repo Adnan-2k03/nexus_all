@@ -52,6 +52,7 @@ export function useAuth() {
         }
         return null;
       } catch (error) {
+        console.error("❌ [useAuth Query] Error:", error);
         return null;
       }
     },
@@ -94,18 +95,17 @@ export function useAuth() {
           if (data.token) {
             console.log("✅ [syncToken] JWT token found in response, storing...");
             localStorage.setItem("auth_token", data.token);
-            // Wait a tick to ensure localStorage write completes
-            await new Promise(resolve => setTimeout(resolve, 100));
             const stored = localStorage.getItem("auth_token");
             console.log("✅ [syncToken] Verified token stored - length:", stored?.length || 0);
-            console.log("✅ [syncToken] All localStorage keys:", Object.keys(localStorage));
           } else {
             console.warn("⚠️ [syncToken] No token field in response data");
           }
           console.log("✅ [Auth] Server accepted token, about to refetch user...");
           // Log before invalidating
           const tokenBeforeInvalidate = localStorage.getItem("auth_token");
-          console.log("🔍 [Auth] Token in localStorage before refetch:", tokenBeforeInvalidate?.substring(0, 20) + "...");
+          console.log("🔍 [Auth] Token in storage before refetch:", tokenBeforeInvalidate?.substring(0, 20) + "...");
+          // Add delay to ensure token is committed before query runs
+          await new Promise(resolve => setTimeout(resolve, 200));
           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           console.log("✅ [Auth] User refetch queued");
         } else {
