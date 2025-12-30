@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getApiUrl } from "@/lib/api";
+import { AuthStorage } from "@/lib/storage";
 import type { User } from "@shared/schema";
 import { useLayout } from "@/contexts/LayoutContext";
 
@@ -148,11 +149,14 @@ export function Discover({ currentUserId }: DiscoverProps) {
     queryKey: ['/api/users', queryUrl],
     queryFn: async () => {
       console.log("🚀 [Discover] Fetching users with URL:", getApiUrl('/api/users?' + queryParams.toString()));
+      const token = await AuthStorage.getToken();
+      console.log("🎫 [Discover] Current token:", token ? token.substring(0, 10) + "..." : "NONE");
+      
       const response = await fetch(getApiUrl('/api/users?' + queryParams.toString()), {
         headers: {
           'Accept': 'application/json',
           'Cache-Control': 'no-cache',
-          'Authorization': `Bearer ${await AuthStorage.getToken()}`
+          'Authorization': token ? `Bearer ${token}` : ""
         },
         credentials: "include",
       });
