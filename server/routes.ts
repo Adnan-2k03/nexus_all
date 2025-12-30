@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finalConditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
       }
 
-      console.log("🔍 [Discover API] Query conditions:", JSON.stringify(finalConditions));
+      console.log("🔍 [Discover API] Building query with", finalConditions.length, "conditions");
       
       const results = await db.select()
         .from(users)
