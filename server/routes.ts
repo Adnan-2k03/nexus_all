@@ -99,20 +99,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.createUser({ gamertag, coins: 100 });
       }
       
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Login failed:", err);
-          return res.status(500).json({ message: "Login failed" });
-        }
-        req.session.save((err) => {
-          if (err) {
-            console.error("Session save failed:", err);
-            return res.status(500).json({ message: "Session save failed" });
-          }
-          const token = generateToken(user);
-          res.json({ ...user, token });
-        });
-      });
+      const token = generateToken(user);
+      res.json({ ...user, token });
     } catch (error) {
       console.error("Gamertag login error:", error);
       res.status(500).json({ message: "Internal server error" });
