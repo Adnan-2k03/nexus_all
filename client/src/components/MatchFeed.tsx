@@ -294,17 +294,14 @@ export function MatchFeed({
 
   const lfgMatches = transformedMatches.filter(match => {
     if (match.matchType !== 'lfg') return false;
+    // Don't filter by duration on the frontend if we want to see everything or handle it differently
     if (!filterMatches(match)) return false;
-    // Show only short-term by default, or only long-term when toggle is enabled
-    const targetDuration = showLongTerm ? 'long-term' : 'short-term';
-    return match.duration === targetDuration;
+    return true;
   });
   const lfoMatches = transformedMatches.filter(match => {
     if (match.matchType !== 'lfo') return false;
     if (!filterMatches(match)) return false;
-    // Show only short-term by default, or only long-term when toggle is enabled
-    const targetDuration = showLongTerm ? 'long-term' : 'short-term';
-    return match.duration === targetDuration;
+    return true;
   });
 
   // Separate matches into "Your Posts" and "Other Posts"

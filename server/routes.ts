@@ -536,12 +536,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/notifications", authMiddleware, async (req, res) => res.json([]));
-  app.get("/api/feature-flags", (req, res) => res.json([]));
-  app.get("/api/hidden-matches", authMiddleware, async (req, res) => res.json([]));
-  app.get("/api/user/connections", authMiddleware, async (req, res) => res.json([]));
-  app.get("/api/user/tasks", authMiddleware, async (req, res) => res.json([]));
-  app.get("/api/notifications/unread-count", authMiddleware, async (req, res) => res.json({ count: 0 }));
+  // --- Users Discover ---
+  app.get("/api/users", authMiddleware, async (req: any, res) => {
+    try {
+      const { page = 1, limit = 9, search, gender, language, game, latitude, longitude, maxDistance } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
+      const currentUserId = req.user.id;
+
+      let query = db.select().from(users);
+      const conditions = [];
+
+      // Exclude current user from discover
+      conditions.push(dbEq(users.id, currentUserId)); // We'll use not(eq) in the final query
+
+      if (search) {
+        conditions.push(or(
+          sql`${users.gamertag} ILIKE ${'%' + search + '%'}`,
+          sql`${users.firstName} ILIKE ${'%' + search + '%'}`,
+          sql`${users.lastName} ILIKE ${'%' + search + '%'}`
+        ));
+      }
+      if (gender && gender !== 'all') conditions.push(dbEq(users.gender, gender));
+      if (language && language !== 'all') conditions.push(dbEq(users.language, language));
+      if (game && game !== 'all') {
+        conditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
+      }
+
+      // Distance filtering if coordinates provided
+      if (latitude && longitude && maxDistance && maxDistance !== 'global') {
+        // Simple distance approximation or just placeholder for now
+        // In a real app we'd use PostGIS or Haversine formula
+      }
+
+      // Build final where clause
+      let finalConditions = [sql`${users.id} != ${currentUserId}`];
+      if (search) finalConditions.push(or(
+        sql`${users.gamertag} ILIKE ${'%' + search + '%'}`,
+        sql`${users.firstName} ILIKE ${'%' + search + '%'}`,
+        sql`${users.lastName} ILIKE ${'%' + search + '%'}`
+      ));
+      if (gender && gender !== 'all') finalConditions.push(dbEq(users.gender, gender));
+      if (language && language !== 'all') finalConditions.push(dbEq(users.language, language));
+      if (game && game !== 'all') finalConditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
+
+      const results = await db.select()
+        .from(users)
+        .where(and(...finalConditions))
+        .limit(Number(limit))
+        .offset(offset)
+        .orderBy(dbDesc(users.createdAt));
+
+      const [totalRow] = await db.select({ count: sql`count(*)` })
+        .from(users)
+        .where(and(...finalConditions));
+      
+      const total = Number(totalRow?.count || 0);
+
+      res.json({
+        users: results,
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
+      });
+    } catch (error) {
+      console.error("Discover error:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/hidden-matches", authMiddleware, async (req: any, res) => {
+    // Return empty array for now as requested by frontend
+    res.json([]);
+  });
+
+  app.get("/api/connection-requests", authMiddleware, async (req: any, res) => {
+    // Stub for connection requests
+    res.json([]);
+  });
+
+  app.post("/api/connection-requests", authMiddleware, async (req: any, res) => {
+    // Stub for creating connection request
+    res.json({ success: true });
+  });
+
+  app.get("/api/match-connections", authMiddleware, async (req: any, res) => {
+    // Stub for match connections
+    res.json([]);
+  });
+
+  app.post("/api/match-connections", authMiddleware, async (req: any, res) => {
+    // Stub for match connections
+    res.json({ success: true });
+  });
 
   const httpServer = createServer(app);
   
