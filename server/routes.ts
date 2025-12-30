@@ -113,6 +113,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedGamertag = gamertag.toLowerCase();
       let user = await storage.getUserByGamertag(normalizedGamertag);
       
+      // For adnan (admin), validate against admin password
+      if (normalizedGamertag === "adnan") {
+        if (password !== process.env.ADMIN_PASSWORD) {
+          return res.status(401).json({ message: "Invalid password" });
+        }
+      }
+      // For other users, they just need a password (at least 6 chars)
+      else {
+        if (password.length < 6) {
+          return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
+      }
+      
       if (!user) {
         // Create new user if doesn't exist
         const isAdnan = normalizedGamertag === "adnan";
