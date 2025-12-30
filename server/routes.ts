@@ -570,13 +570,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Build final where clause
       let finalConditions = [sql`${users.id} != ${currentUserId}`];
-      if (search) finalConditions.push(or(
-        sql`${users.gamertag} ILIKE ${'%' + search + '%'}`,
-        sql`${users.firstName} ILIKE ${'%' + search + '%'}`,
-        sql`${users.lastName} ILIKE ${'%' + search + '%'}`
-      ));
-      if (gender && gender !== 'all') finalConditions.push(dbEq(users.gender, gender));
-      if (language && language !== 'all') finalConditions.push(dbEq(users.language, language));
+      if (search) {
+        const searchPattern = `%${search}%`;
+        finalConditions.push(or(
+          sql`${users.gamertag} ILIKE ${searchPattern}`,
+          sql`${users.firstName} ILIKE ${searchPattern}`,
+          sql`${users.lastName} ILIKE ${searchPattern}`
+        ));
+      }
+      if (gender && gender !== 'all') finalConditions.push(eq(users.gender, gender as any));
+      if (language && language !== 'all') finalConditions.push(eq(users.language, language as string));
       if (game && game !== 'all') finalConditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
 
       const results = await db.select()
@@ -584,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(and(...finalConditions))
         .limit(Number(limit))
         .offset(offset)
-        .orderBy(dbDesc(users.createdAt));
+        .orderBy(desc(users.createdAt));
 
       const [totalRow] = await db.select({ count: sql`count(*)` })
         .from(users)
