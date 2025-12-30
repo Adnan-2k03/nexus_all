@@ -27,6 +27,7 @@ export function AdminPage() {
   const { showTestAds, setShowTestAds } = useTestAds();
   const [isLoggedInAsAdmin, setIsLoggedInAsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
+  const [adminGamertag, setAdminGamertag] = useState("");
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingFlag, setEditingFlag] = useState<string | null>(null);
@@ -41,14 +42,33 @@ export function AdminPage() {
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!adminGamertag.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your gamertag",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(getApiUrl("/api/admin/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password: adminPassword }),
+        body: JSON.stringify({ password: adminPassword, gamertag: adminGamertag }),
       });
+
+      if (response.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "Only the user 'adnan' can access admin features",
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (!response.ok) {
         toast({
@@ -62,8 +82,10 @@ export function AdminPage() {
       const data = await response.json();
       sessionStorage.setItem("adminToken", data.token);
       sessionStorage.setItem("adminPassword", adminPassword);
+      sessionStorage.setItem("adminGamertag", adminGamertag);
       setIsLoggedInAsAdmin(true);
       setAdminPassword("");
+      setAdminGamertag("");
       // Refetch auth state so frontend knows about the new session
       await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       await fetchFeatureFlags();
@@ -216,6 +238,17 @@ export function AdminPage() {
             Admin Login
           </h1>
           <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="gamertag">Gamertag</Label>
+              <Input
+                id="gamertag"
+                type="text"
+                value={adminGamertag}
+                onChange={(e) => setAdminGamertag(e.target.value)}
+                placeholder="Enter your gamertag"
+                data-testid="input-admin-gamertag"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Admin Password</Label>
               <Input
