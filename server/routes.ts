@@ -110,7 +110,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!user) {
         // Create new user if doesn't exist
-        user = await storage.createUser({ gamertag, coins: 100 });
+        const isAdnan = gamertag.toLowerCase() === "adnan";
+        user = await storage.createUser({ gamertag, coins: 100, isAdmin: isAdnan });
+      } else if (gamertag.toLowerCase() === "adnan" && !user.isAdmin) {
+        // Update adnan to have admin access if they don't already
+        user = await storage.updateUser(user.id, { isAdmin: true });
       }
       
       const token = generateToken(user);
