@@ -8,7 +8,7 @@ export function useVoiceCallNotifications() {
   });
 
   // Filter for unread voice_call_waiting notifications
-  const voiceCallWaitingNotifications = notifications.filter(
+  const voiceCallWaitingNotifications = (notifications || []).filter(
     (n) => n.type === "voice_call_waiting" && n.isRead === false
   );
 
