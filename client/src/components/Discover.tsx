@@ -145,8 +145,26 @@ export function Discover({ currentUserId }: DiscoverProps) {
   const queryUrl = `/api/users?${queryParams.toString()}`;
   
   const { data: paginatedData, isLoading: isLoadingUsers, isFetching, refetch } = useQuery<{ users: User[]; total: number; page: number; limit: number; totalPages: number }>({
-    queryKey: ['/api/users', currentUserId, queryUrl],
-    enabled: true,
+    queryKey: ['/api/users', queryUrl],
+    queryFn: async () => {
+      console.log("🚀 [Discover] Fetching users with URL:", getApiUrl('/api/users?' + queryParams.toString()));
+      const response = await fetch(getApiUrl('/api/users?' + queryParams.toString()), {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Authorization': `Bearer ${await AuthStorage.getToken()}`
+        },
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("❌ [Discover] Fetch failed:", response.status, errText);
+        throw new Error(`Failed to fetch users: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("✅ [Discover] Received data:", data);
+      return data;
+    }
   });
   
   const users = paginatedData?.users || [];

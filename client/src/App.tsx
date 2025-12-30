@@ -644,6 +644,28 @@ function Router() {
               );
             }}
           </Route>
+          <Route path="/discover">
+            {() => {
+              if (currentPage !== "search") {
+                setCurrentPage("search");
+              }
+              return (
+                <div className="min-h-screen relative">
+                  {user && user.gamertag && (
+                    <GameNavigation
+                      currentPage="search"
+                      onNavigate={handleNavigation}
+                      user={mapUserForComponents(user)}
+                      onLogout={handleLogout}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    {renderMainContent()}
+                  </div>
+                </div>
+              );
+            }}
+          </Route>
           <Route path="/earn">
             {() => {
               if (currentPage !== "earn") {

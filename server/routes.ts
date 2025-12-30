@@ -536,37 +536,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // --- Users Discover ---
-  app.get("/api/users", authMiddleware, async (req: any, res) => {
+  app.get("/api/users", jwtAuthMiddleware, authMiddleware, async (req: any, res) => {
     try {
-      const { page = 1, limit = 9, search, gender, language, game, latitude, longitude, maxDistance } = req.query;
-      const offset = (Number(page) - 1) * Number(limit);
       const currentUserId = req.user.id;
+      console.log(`🔍 [Discover API] Request from user ${currentUserId}`);
+      
+      const { page = 1, limit = 9, search, gender, language, game } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
 
-      let query = db.select().from(users);
-      const conditions = [];
-
-      // Exclude current user from discover
-      conditions.push(dbEq(users.id, currentUserId)); // We'll use not(eq) in the final query
-
-      if (search) {
-        conditions.push(or(
-          sql`${users.gamertag} ILIKE ${'%' + search + '%'}`,
-          sql`${users.firstName} ILIKE ${'%' + search + '%'}`,
-          sql`${users.lastName} ILIKE ${'%' + search + '%'}`
-        ));
-      }
-      if (gender && gender !== 'all') conditions.push(dbEq(users.gender, gender));
-      if (language && language !== 'all') conditions.push(dbEq(users.language, language));
-      if (game && game !== 'all') {
-        conditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
-      }
-
-      // Distance filtering if coordinates provided
-      if (latitude && longitude && maxDistance && maxDistance !== 'global') {
-        // Simple distance approximation or just placeholder for now
-        // In a real app we'd use PostGIS or Haversine formula
-      }
+      console.log("🔍 [Discover API] Query Params:", { page, limit, search, gender, language, game });
 
       // Build final where clause
       let finalConditions = [sql`${users.id} != ${currentUserId}`];
@@ -580,14 +558,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (gender && gender !== 'all') finalConditions.push(eq(users.gender, gender as any));
       if (language && language !== 'all') finalConditions.push(eq(users.language, language as string));
-      if (game && game !== 'all') finalConditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
+      
+      if (game && game !== 'all') {
+        finalConditions.push(sql`${users.preferredGames} @> ARRAY[${game}]::varchar[]`);
+      }
 
+      console.log("🔍 [Discover API] Query conditions:", JSON.stringify(finalConditions));
+      
       const results = await db.select()
         .from(users)
         .where(and(...finalConditions))
         .limit(Number(limit))
         .offset(offset)
         .orderBy(desc(users.createdAt));
+
+      console.log(`🔍 [Discover API] Found ${results.length} users`);
 
       const [totalRow] = await db.select({ count: sql`count(*)` })
         .from(users)

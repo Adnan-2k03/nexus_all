@@ -86,6 +86,11 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
             (req as any).isAuthenticated = () => true;
             (req as any)._jwtAuthenticated = true; 
             
+            // Sync with session if available
+            if (req.session) {
+              (req.session as any).passport = { user: user.id };
+            }
+            
             return next();
           } else {
             console.warn("⚠️ [JWT Middleware] User ID in token not found in database:", decoded.id);
@@ -185,6 +190,13 @@ export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
+  app.use((req, res, next) => {
+    const isAuthed = req.isAuthenticated();
+    if (isAuthed && req.user) {
+      (req as any)._jwtAuthenticated = true;
+    }
+    next();
+  });
   app.use(passport.session());
 
   if (hasGoogleAuth) {
