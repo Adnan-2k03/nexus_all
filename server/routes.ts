@@ -109,13 +109,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!password) return res.status(401).json({ message: "Password required" });
     
     try {
-      let user = await storage.getUserByGamertag(gamertag);
+      // Normalize gamertag to lowercase for consistency
+      const normalizedGamertag = gamertag.toLowerCase();
+      let user = await storage.getUserByGamertag(normalizedGamertag);
       
       if (!user) {
         // Create new user if doesn't exist
-        const isAdnan = gamertag.toLowerCase() === "adnan";
-        user = await storage.createUser({ gamertag, coins: 100, isAdmin: isAdnan });
-      } else if (gamertag.toLowerCase() === "adnan") {
+        const isAdnan = normalizedGamertag === "adnan";
+        user = await storage.createUser({ gamertag: normalizedGamertag, coins: 100, isAdmin: isAdnan });
+      } else if (normalizedGamertag === "adnan") {
         // Always ensure adnan has admin access
         user = await storage.updateUser(user.id, { isAdmin: true });
       }
