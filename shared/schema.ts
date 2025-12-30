@@ -40,6 +40,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   gamertag: varchar("gamertag").unique().notNull(),
+  passwordHash: varchar("password_hash"),
   bio: text("bio"),
   location: varchar("location"),
   latitude: real("latitude"),
