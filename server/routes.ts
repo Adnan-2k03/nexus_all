@@ -102,8 +102,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- Gamertag Login (Dev Mode Only) ---
   app.post("/api/auth/gamertag-login", async (req, res) => {
-    const { gamertag } = req.body;
+    const { gamertag, password } = req.body;
     if (!gamertag || gamertag.length < 3) return res.status(400).json({ message: "Gamertag must be at least 3 characters" });
+    
+    // Require password for login
+    if (!password) return res.status(401).json({ message: "Password required" });
     
     try {
       let user = await storage.getUserByGamertag(gamertag);
@@ -112,13 +115,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create new user if doesn't exist
         const isAdnan = gamertag.toLowerCase() === "adnan";
         user = await storage.createUser({ gamertag, coins: 100, isAdmin: isAdnan });
-      } else if (gamertag.toLowerCase() === "adnan" && !user.isAdmin) {
-        // Update adnan to have admin access if they don't already
+      } else if (gamertag.toLowerCase() === "adnan") {
+        // Always ensure adnan has admin access
         user = await storage.updateUser(user.id, { isAdmin: true });
       }
       
       const token = generateToken(user);
-      res.json({ ...user, token });
+      // Fetch fresh user data to ensure isAdmin is current
+      const freshUser = await storage.getUser(user.id);
+      res.json({ ...freshUser, token });
     } catch (error) {
       console.error("Gamertag login error:", error);
       res.status(500).json({ message: "Internal server error" });
