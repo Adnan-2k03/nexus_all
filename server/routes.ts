@@ -19,7 +19,7 @@ import { hmsService, generateRoomName } from "./services/hms-service";
 import { verifyFirebaseToken, isPhoneAuthConfigured } from "./services/firebase-admin";
 import { sendPhoneCodeSchema, verifyPhoneCodeSchema, phoneRegisterSchema, registerUserSchema, creditTransactions, feedback as feedbackTable, hobbies, Hobby, InsertHobby } from "@shared/schema";
 import { db } from "./db";
-import { eq as dbEq, desc as dbDesc, eq, and, desc, or } from "drizzle-orm";
+import { eq as dbEq, desc as dbDesc, eq, and, desc, or, sql } from "drizzle-orm";
 import { users, tournaments, tournamentParticipants, tournamentMessages } from "@shared/schema";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -547,14 +547,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("🔍 [Discover API] Query Params:", { page, limit, search, gender, language, game });
 
       // Build final where clause
-      let finalConditions = [sql`${users.id} != ${currentUserId}`];
+      let finalConditions: any[] = [sql`${users.id} != ${currentUserId}`];
       if (search) {
         const searchPattern = `%${search}%`;
-        finalConditions.push(or(
+        const searchCondition = or(
           sql`${users.gamertag} ILIKE ${searchPattern}`,
           sql`${users.firstName} ILIKE ${searchPattern}`,
           sql`${users.lastName} ILIKE ${searchPattern}`
-        ));
+        );
+        if (searchCondition) {
+          finalConditions.push(searchCondition);
+        }
       }
       if (gender && gender !== 'all') finalConditions.push(eq(users.gender, gender as any));
       if (language && language !== 'all') finalConditions.push(eq(users.language, language as string));
@@ -567,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const results = await db.select()
         .from(users)
-        .where(and(...finalConditions))
+        .where(and(...finalConditions.filter(Boolean)))
         .limit(Number(limit))
         .offset(offset)
         .orderBy(desc(users.createdAt));
@@ -576,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [totalRow] = await db.select({ count: sql`count(*)` })
         .from(users)
-        .where(and(...finalConditions));
+        .where(and(...finalConditions.filter(Boolean)));
       
       const total = Number(totalRow?.count || 0);
 
