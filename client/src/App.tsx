@@ -212,16 +212,30 @@ function Router() {
 
   const handleLogout = async () => {
     try {
+      // Import AuthStorage for clearing token
+      const { AuthStorage } = await import("./lib/storage");
+      
       // Clear admin token if present
       sessionStorage.removeItem("adminToken");
       
-      // Use fetch with getApiUrl to ensure it hits the backend, even in cross-origin deployments
-      const response = await fetch(getApiUrl("/api/logout"), {
-        method: "GET",
-        credentials: "include",
-      });
+      // Clear JWT token from all storage locations BEFORE logout
+      await AuthStorage.removeToken();
       
-      // Redirect to home page after logout, whether successful or not
+      // Invalidate auth cache
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Use fetch with getApiUrl to ensure it hits the backend, even in cross-origin deployments
+      try {
+        const response = await fetch(getApiUrl("/api/auth/logout"), {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (logoutError) {
+        console.error("Logout API error:", logoutError);
+        // Continue with redirect even if logout fails
+      }
+      
+      // Redirect to home page after logout
       window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
