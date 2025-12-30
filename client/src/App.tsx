@@ -196,6 +196,12 @@ function Router() {
     setTimeout(() => {
       // Invalidate auth query to refetch user data without page reload
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      // Clear all user-related queries to fetch fresh data for new user
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/connections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/connection-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
       setShowAuthPage(false);
       
       // Check if there's a pending invite code from pre-login attempt

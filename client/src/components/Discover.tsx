@@ -145,7 +145,7 @@ export function Discover({ currentUserId }: DiscoverProps) {
   const queryUrl = `/api/users?${queryParams.toString()}`;
   
   const { data: paginatedData, isLoading: isLoadingUsers, isFetching, refetch } = useQuery<{ users: User[]; total: number; page: number; limit: number; totalPages: number }>({
-    queryKey: [queryUrl],
+    queryKey: ['/api/users', currentUserId, queryUrl],
     enabled: true,
   });
   
