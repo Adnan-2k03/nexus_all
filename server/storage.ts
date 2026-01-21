@@ -61,7 +61,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByGamertag(gamertag: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.gamertag})`, gamertag.toLowerCase()));
+    const [user] = await db.select().from(users).where(eq(users.gamertag, gamertag));
     return user;
   }
 
