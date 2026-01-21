@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, getSession, generateToken, jwtAuthMiddleware, verifyToken } from "./googleAuth";
 import { devAuthMiddleware, ensureDevUser } from "./devAuth";

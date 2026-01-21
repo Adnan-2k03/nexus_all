@@ -29,6 +29,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
+    if (!auth) return;
     const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
       size: 'invisible',
     });
@@ -38,7 +39,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recaptchaVerifier) return;
+    if (!recaptchaVerifier || !auth) return;
 
     setIsLoading(true);
     try {
