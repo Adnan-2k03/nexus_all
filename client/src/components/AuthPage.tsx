@@ -201,7 +201,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             !confirmationResult ? (
               <form onSubmit={handleSendCode} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number (with country code)</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -211,6 +211,9 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                     required
                   />
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Include your country code (e.g., +1 for USA, +44 for UK, +91 for India).
+                </p>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   <Phone className="mr-2 h-4 w-4" />
                   {isLoading ? "Sending..." : "Send Verification Code"}
