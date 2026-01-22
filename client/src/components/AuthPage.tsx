@@ -34,7 +34,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     // Ensure recaptcha-container exists before initializing
     const initVerifier = () => {
       const container = document.getElementById('recaptcha-container');
-      if (container && !recaptchaVerifier) {
+      if (container && !recaptchaVerifier && auth) {
         try {
           const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             size: 'invisible',
