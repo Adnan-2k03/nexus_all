@@ -53,11 +53,11 @@ app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com https://pagead2.googlesyndication.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.google.com https://*.googlesyndication.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' wss: https:; " +
+    "connect-src 'self' wss: https: https://*.googleapis.com https://*.firebaseio.com; " +
     "frame-src 'self' https://www.google.com https://*.firebaseapp.com; " +
     "object-src 'none';"
   );
