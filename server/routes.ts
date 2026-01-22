@@ -204,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Phone login error:", error);
-      res.status(401).json({ message: "Authentication failed" });
+      res.status(401).json({ message: "Authentication failed", error: error.message });
     }
   });
 
