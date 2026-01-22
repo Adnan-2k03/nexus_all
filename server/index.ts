@@ -48,6 +48,22 @@ async function waitForDatabase(maxRetries = 30, initialDelayMs = 3000): Promise<
 
 const app = express();
 
+// Content Security Policy middleware
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com https://pagead2.googlesyndication.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: https:; " +
+    "connect-src 'self' wss: https:; " +
+    "frame-src 'self' https://www.google.com https://*.firebaseapp.com; " +
+    "object-src 'none';"
+  );
+  next();
+});
+
 // Middleware for parsing JSON and URL-encoded bodies MUST come before routes
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: false }));

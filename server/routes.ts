@@ -32,6 +32,14 @@ const DEV_MODE = process.env.AUTH_DISABLED === "true";
 const authMiddleware = DEV_MODE ? devAuthMiddleware : isAuthenticated;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.get("/api/feature-flags", (req, res) => {
+    res.json({
+      phoneAuthEnabled: true,
+      googleAuthEnabled: !!process.env.GOOGLE_CLIENT_ID,
+      adsEnabled: true
+    });
+  });
+
   // Serve service worker and manifest (must be before authentication)
   app.get('/sw.js', (req, res) => {
     const swPath = path.join(__dirname, '../public/sw.js');
