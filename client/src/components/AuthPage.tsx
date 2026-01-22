@@ -29,27 +29,39 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
-    if (!auth) return;
-    try {
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {
-          console.log("reCAPTCHA solved");
-        }
-      });
-      setRecaptchaVerifier(verifier);
-      return () => {
+    if (!auth || typeof window === 'undefined') return;
+    
+    // Ensure recaptcha-container exists before initializing
+    const initVerifier = () => {
+      const container = document.getElementById('recaptcha-container');
+      if (container && !recaptchaVerifier) {
         try {
-          if (verifier) {
-            verifier.clear();
-          }
+          const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible',
+            callback: () => console.log("reCAPTCHA solved")
+          });
+          setRecaptchaVerifier(verifier);
+          console.log("reCAPTCHA initialized successfully");
+        } catch (e) {
+          console.error("reCAPTCHA init error:", e);
+        }
+      }
+    };
+
+    // Try immediately and also after a short delay to ensure DOM is ready
+    initVerifier();
+    const timer = setTimeout(initVerifier, 1000);
+    
+    return () => {
+      clearTimeout(timer);
+      if (recaptchaVerifier) {
+        try {
+          recaptchaVerifier.clear();
         } catch (e) {
           console.error("Error clearing verifier:", e);
         }
-      };
-    } catch (e) {
-      console.error("Error initializing RecaptchaVerifier:", e);
-    }
+      }
+    };
   }, [auth]);
 
   const handleSendCode = async (e: React.FormEvent) => {
@@ -61,14 +73,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
     setIsLoading(true);
     try {
+      // Final attempt to initialize if still missing
       let verifier = recaptchaVerifier;
       if (!verifier) {
-        console.log("Initializing RecaptchaVerifier on demand");
         verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => {
-            console.log("reCAPTCHA solved (on-demand)");
-          }
+          size: 'invisible'
         });
         setRecaptchaVerifier(verifier);
       }
@@ -86,8 +95,6 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         message = "Invalid phone number format. Use +[country code][number].";
       } else if (error.code === 'auth/too-many-requests') {
         message = "Too many requests. Please try again later.";
-      } else if (error.code === 'auth/network-request-failed') {
-        message = "Network error. Please check your internet connection.";
       }
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
