@@ -40,7 +40,9 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
       setRecaptchaVerifier(verifier);
       return () => {
         try {
-          verifier.clear();
+          if (verifier) {
+            verifier.clear();
+          }
         } catch (e) {
           console.error("Error clearing verifier:", e);
         }
@@ -48,19 +50,31 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     } catch (e) {
       console.error("Error initializing RecaptchaVerifier:", e);
     }
-  }, []);
+  }, [auth]);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recaptchaVerifier || !auth) {
+    if (!auth) {
       toast({ title: "Error", description: "Authentication not initialized. Please refresh.", variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
     try {
+      let verifier = recaptchaVerifier;
+      if (!verifier) {
+        console.log("Initializing RecaptchaVerifier on demand");
+        verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            console.log("reCAPTCHA solved (on-demand)");
+          }
+        });
+        setRecaptchaVerifier(verifier);
+      }
+
       console.log("Sending code to:", phoneNumber);
-      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier);
       setConfirmationResult(confirmation);
       toast({ title: "OTP Sent", description: "Please check your phone for the verification code." });
     } catch (error: any) {
@@ -72,6 +86,8 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         message = "Invalid phone number format. Use +[country code][number].";
       } else if (error.code === 'auth/too-many-requests') {
         message = "Too many requests. Please try again later.";
+      } else if (error.code === 'auth/network-request-failed') {
+        message = "Network error. Please check your internet connection.";
       }
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
