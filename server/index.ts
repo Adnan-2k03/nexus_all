@@ -57,7 +57,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "connect-src 'self' wss: https: https://*.googleapis.com https://*.firebaseio.com https://fonts.googleapis.com https://fonts.gstatic.com; " +
+    "connect-src 'self' wss: https: https://*.googleapis.com https://*.firebaseio.com https://fonts.googleapis.com https://fonts.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com; " +
     "frame-src 'self' https://www.google.com https://*.firebaseapp.com; " +
     "object-src 'none';"
   );
