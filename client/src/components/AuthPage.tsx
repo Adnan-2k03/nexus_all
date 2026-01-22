@@ -30,25 +30,50 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
   useEffect(() => {
     if (!auth) return;
-    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-    });
-    setRecaptchaVerifier(verifier);
-    return () => verifier.clear();
+    try {
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          console.log("reCAPTCHA solved");
+        }
+      });
+      setRecaptchaVerifier(verifier);
+      return () => {
+        try {
+          verifier.clear();
+        } catch (e) {
+          console.error("Error clearing verifier:", e);
+        }
+      };
+    } catch (e) {
+      console.error("Error initializing RecaptchaVerifier:", e);
+    }
   }, []);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recaptchaVerifier || !auth) return;
+    if (!recaptchaVerifier || !auth) {
+      toast({ title: "Error", description: "Authentication not initialized. Please refresh.", variant: "destructive" });
+      return;
+    }
 
     setIsLoading(true);
     try {
+      console.log("Sending code to:", phoneNumber);
       const confirmation = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
       setConfirmationResult(confirmation);
       toast({ title: "OTP Sent", description: "Please check your phone for the verification code." });
     } catch (error: any) {
-      console.error("Phone auth error:", error);
-      toast({ title: "Error", description: error.message || "Failed to send code", variant: "destructive" });
+      console.error("Phone auth error details:", error);
+      let message = "Failed to send code";
+      if (error.code === 'auth/captcha-check-failed') {
+        message = "CAPTCHA check failed. Ensure your domain is whitelisted in Firebase console.";
+      } else if (error.code === 'auth/invalid-phone-number') {
+        message = "Invalid phone number format. Use +[country code][number].";
+      } else if (error.code === 'auth/too-many-requests') {
+        message = "Too many requests. Please try again later.";
+      }
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
