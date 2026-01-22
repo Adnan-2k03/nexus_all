@@ -1,0 +1,20 @@
+sw.js:59 Connecting to 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap' violates the following Content Security Policy directive: "connect-src 'self' wss://*.100ms.live https://*.100ms.live wss://*.livekit.cloud https://*.livekit.cloud https://*.railway.app wss://*.railway.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://www.googleapis.com https://apis.google.com https://www.google.com https://www.gstatic.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com". The action has been blocked.
+
+sw.js:59 Fetch API cannot load https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap. Refused to connect because it violates the document's Content Security Policy.
+The FetchEvent for "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" resulted in a network error response: the promise was rejected.
+sw.js:85 Uncaught (in promise) Error: No cached content available
+    at sw.js:85:15
+lockdown-install.js:1 SES Removing unpermitted intrinsics
+(index):1 Loading the script 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4278995521540923' violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://apis.google.com https://www.googletagmanager.com". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.
+(index):22 
+ GET https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap net::ERR_FAILED
+index-BvEt2OwG.js:48 ❌ [AuthStorage] No token found in any storage
+index-BvEt2OwG.js:596 AdMob is only available on native platforms
+index-BvEt2OwG.js:596 App open ads are only available on native platforms
+index-BvEt2OwG.js:1479 [PWA] Service Worker registered successfully: https://nexusfinal-android.vercel.app/
+index-BvEt2OwG.js:596 
+ GET https://nexusfinalandroid-production.up.railway.app/api/auth/user 401 (Unauthorized)
+index-BvEt2OwG.js:48 🗑️ [AuthStorage] Removing token...
+index-BvEt2OwG.js:48 ✅ [AuthStorage] Token cleared from all storage
+﻿
+
