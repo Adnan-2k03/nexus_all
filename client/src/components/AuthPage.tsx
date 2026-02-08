@@ -231,6 +231,26 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
     }
   };
 
+  const handleDevLogin = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(getApiUrl("/api/auth/dev-login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Dev login failed");
+
+      const userData = await response.json();
+      onAuthSuccess();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-4">
       <div id="recaptcha-container"></div>
@@ -244,7 +264,25 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             {authMode === "phone" ? "Sign in with your phone number" : "Enter your gamertag to get started"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <Button 
+            variant="outline" 
+            className="w-full bg-green-600 hover:bg-green-700 text-white border-none"
+            onClick={handleDevLogin}
+            disabled={isLoading}
+          >
+            Quick Dev Login (Click to Start)
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+          
           {authMode === "phone" ? (
             !confirmationResult ? (
               <form onSubmit={handleSendCode} className="space-y-4">

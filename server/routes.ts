@@ -74,6 +74,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Use JWT middleware for native app support
   app.use(jwtAuthMiddleware);
 
+  // --- Dev Login ---
+  app.post("/api/auth/dev-login", async (req, res) => {
+    try {
+      let user = await storage.getUser("dev-user");
+      if (!user) {
+        user = await storage.upsertUser({
+          id: "dev-user",
+          gamertag: "dev_player",
+          coins: 1000,
+          xp: 0,
+          level: 1,
+        });
+      }
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed" });
+        req.session.save((err) => {
+          if (err) return res.status(500).json({ message: "Session save failed" });
+          res.json(user);
+        });
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // --- Admin Login ---
   app.post("/api/admin/login", async (req, res) => {
     const { password, gamertag } = req.body;
