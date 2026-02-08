@@ -1,8 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { AuthStorage } from "@/lib/storage";
-import Constants from 'expo-constants';
 
-const API_BASE_URL = Constants.expoConfig?.extra?.VITE_API_URL || '';
+const API_BASE_URL = (typeof window !== 'undefined' && (window as any).EXPO_VITE_API_URL) || '';
 
 export function getApiUrl(path: string): string {
   if (path.startsWith('http')) {
