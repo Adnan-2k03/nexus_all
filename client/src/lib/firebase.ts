@@ -1,12 +1,13 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import Constants from 'expo-constants';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_WEB_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: Constants.expoConfig?.extra?.VITE_FIREBASE_WEB_API_KEY,
+  authDomain: `${Constants.expoConfig?.extra?.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: Constants.expoConfig?.extra?.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${Constants.expoConfig?.extra?.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+  appId: Constants.expoConfig?.extra?.VITE_FIREBASE_APP_ID,
 };
 
 const isConfigured = !!(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);

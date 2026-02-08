@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from './useAuth';
 import type { User } from '@shared/schema';
+import Constants from 'expo-constants';
 
 type WebSocketMessage = {
   type: string;
@@ -17,7 +18,7 @@ export function useWebSocket() {
   const typedUser = user as User | undefined;
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const apiUrl = Constants.expoConfig?.extra?.VITE_API_URL || '';
     
     let wsUrl: string;
     if (apiUrl) {

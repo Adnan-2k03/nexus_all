@@ -25,6 +25,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "VITE_API_URL": "https://nexusfinalandroid-production.up.railway.app",
+      "VITE_FIREBASE_WEB_API_KEY": "dummy",
+      "VITE_FIREBASE_PROJECT_ID": "dummy",
+      "VITE_FIREBASE_APP_ID": "dummy"
     }
   }
 }
