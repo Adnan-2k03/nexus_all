@@ -33,11 +33,12 @@ const authMiddleware = DEV_MODE ? devAuthMiddleware : isAuthenticated;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/feature-flags", (req, res) => {
-    res.json({
-      phoneAuthEnabled: true,
-      googleAuthEnabled: !!process.env.GOOGLE_CLIENT_ID,
-      adsEnabled: true
-    });
+    res.json([
+      { featureName: "phone_auth", isEnabled: true },
+      { featureName: "google_auth", isEnabled: !!process.env.GOOGLE_CLIENT_ID },
+      { featureName: "ads", isEnabled: true },
+      { featureName: "voice_channels", isEnabled: true }
+    ]);
   });
 
   // Serve service worker and manifest (must be before authentication)
