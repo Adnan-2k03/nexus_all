@@ -20,7 +20,9 @@ export function useFeatureFlags() {
           credentials: "include",
         });
         if (response.ok) {
-          return await response.json();
+          const data = await response.json();
+          // Ensure we always return an array
+          return Array.isArray(data) ? data : [];
         }
       } catch (error) {
         console.error("Failed to fetch feature flags:", error);
