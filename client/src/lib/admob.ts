@@ -1,7 +1,7 @@
 import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents, RewardInterstitialAdOptions, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
-const isNative = Capacitor.isNativePlatform();
+const isNative = typeof Capacitor !== 'undefined' && !!Capacitor.isNativePlatform && (typeof Capacitor.isNativePlatform === 'function' ? Capacitor.isNativePlatform() : !!Capacitor.isNativePlatform);
 
 // AdMob Configuration
 // Use Google's test ad units for development/testing

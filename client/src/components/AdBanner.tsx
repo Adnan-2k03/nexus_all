@@ -10,17 +10,27 @@ export function AdBanner({ visible = true }: AdBannerProps) {
   const { showTestAds } = useTestAds();
 
   useEffect(() => {
-    // Only show ads on native mobile platforms
-    if (!isAdMobAvailable()) return;
-
-    if (visible) {
-      showBannerAd();
-    } else {
-      hideBannerAd();
+    // Check if AdMob is available and it's a native platform
+    const checkNative = () => {
+      try {
+        return typeof isAdMobAvailable === 'function' && isAdMobAvailable();
+      } catch (e) {
+        return false;
+      }
+    };
+    
+    if (checkNative()) {
+      if (visible) {
+        showBannerAd();
+      } else {
+        hideBannerAd();
+      }
     }
     
     return () => {
-      hideBannerAd();
+      if (checkNative()) {
+        hideBannerAd();
+      }
     };
   }, [visible]);
 
