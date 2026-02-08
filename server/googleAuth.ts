@@ -337,6 +337,22 @@ export async function setupAuth(app: Express) {
   });
   }
 
+  app.post("/api/auth/logout", (req: any, res) => {
+    req.logout((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          console.error("Session destroy error:", destroyErr);
+        }
+        res.clearCookie("connect.sid");
+        res.json({ success: true, message: "Logged out successfully" });
+      });
+    });
+  });
+
   app.get("/api/logout", (req: any, res) => {
     req.logout(() => {
       res.redirect("/");

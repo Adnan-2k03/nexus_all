@@ -122,6 +122,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("   All routes will use a mock development user");
     app.use(devAuthMiddleware);
     await ensureDevUser();
+
+    // Add logout route for dev mode as well
+    app.post("/api/auth/logout", (req: any, res) => {
+      // In dev mode we just clear session if it exists, 
+      // although middleware always sets req.user
+      if (req.session) {
+        req.session.destroy(() => {
+          res.clearCookie("connect.sid");
+          res.json({ success: true });
+        });
+      } else {
+        res.json({ success: true });
+      }
+    });
   } else {
     console.log("\n🔐 [PRODUCTION MODE] Authentication is ENABLED");
     await setupAuth(app);
