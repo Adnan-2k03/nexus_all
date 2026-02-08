@@ -77,24 +77,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Dev Login ---
   app.post("/api/auth/dev-login", async (req, res) => {
     try {
-      let user = await storage.getUser("dev-user");
+      console.log("[Dev Login] Attempting login for dev-user");
+      // Use case-insensitive search or exact match for dev_player
+      let user = await storage.getUserByGamertag("dev_player");
+      
       if (!user) {
-        user = await storage.upsertUser({
-          id: "dev-user",
+        console.log("[Dev Login] Creating new dev-user");
+        // Create user without manual ID - let DB handle it via gen_random_uuid()
+        user = await storage.createUser({
           gamertag: "dev_player",
           coins: 1000,
           xp: 0,
           level: 1,
         });
       }
-      req.login(user, (err) => {
-        if (err) return res.status(500).json({ message: "Login failed" });
-        req.session.save((err) => {
-          if (err) return res.status(500).json({ message: "Session save failed" });
+      
+      if (!user) {
+        throw new Error("Could not find or create dev-user");
+      }
+
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("[Dev Login] Passport login error:", loginErr);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[Dev Login] Session save error:", saveErr);
+            return res.status(500).json({ message: "Session save failed" });
+          }
+          console.log("[Dev Login] Success");
           res.json(user);
         });
       });
     } catch (error) {
+      console.error("[Dev Login] Unexpected error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
