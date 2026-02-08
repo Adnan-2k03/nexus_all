@@ -37,6 +37,9 @@
       ],
       "@shared/*": [
         "./shared/*"
+      ],
+      "@assets/*": [
+        "./client/src/assets/*"
       ]
     }
   },
