@@ -32,13 +32,69 @@ const DEV_MODE = process.env.AUTH_DISABLED === "true";
 const authMiddleware = DEV_MODE ? devAuthMiddleware : isAuthenticated;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  app.get("/api/feature-flags", (req, res) => {
-    res.json([
-      { featureName: "phone_auth", isEnabled: true },
-      { featureName: "google_auth", isEnabled: !!process.env.GOOGLE_CLIENT_ID },
-      { featureName: "ads", isEnabled: true },
-      { featureName: "voice_channels", isEnabled: true }
-    ]);
+  app.get("/api/feature-flags", async (req: any, res) => {
+    try {
+      const flags = await storage.getAllFeatureFlags();
+      res.json(flags);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/api/feature-flags/:featureName", async (req: any, res) => {
+    try {
+      const flag = await storage.getFeatureFlag(req.params.featureName);
+      if (!flag) return res.status(404).json({ message: "Feature flag not found" });
+      res.json(flag);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.patch("/api/feature-flags/:featureName", async (req: any, res) => {
+    try {
+      const updated = await storage.updateFeatureFlag(req.params.featureName, req.body);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.post("/api/admin/init-flags", async (req: any, res) => {
+    try {
+      const defaultFlags = [
+        {
+          featureName: "tournaments",
+          isEnabled: true,
+          filters: { creation: true, joining: true, advancedFilters: true, hide: false, lock: false },
+          description: "Control tournament features - creation, joining, filtering, visibility",
+        },
+        {
+          featureName: "voice_channels",
+          isEnabled: true,
+          filters: { creation: true, joining: true, groupChannels: true, hide: false, lock: false },
+          description: "Control voice channel features - creation, joining, group channels",
+        },
+        {
+          featureName: "groups",
+          isEnabled: true,
+          filters: { creation: true, messaging: true, voice: true, hide: false, lock: false },
+          description: "Control group features - creation, messaging, voice",
+        },
+      ];
+
+      for (const flag of defaultFlags) {
+        const existing = await storage.getFeatureFlag(flag.featureName);
+        if (!existing) {
+          await storage.createFeatureFlag(flag as any);
+        }
+      }
+
+      const allFlags = await storage.getAllFeatureFlags();
+      res.json({ message: "Feature flags initialized", flags: allFlags });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
   });
 
   // Serve service worker and manifest (must be before authentication)
@@ -78,12 +134,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/dev-login", async (req, res) => {
     try {
       console.log("[Dev Login] Attempting login for dev-user");
-      // Use case-insensitive search or exact match for dev_player
       let user = await storage.getUserByGamertag("dev_player");
       
       if (!user) {
         console.log("[Dev Login] Creating new dev-user");
-        // Create user without manual ID - let DB handle it via gen_random_uuid()
         user = await storage.createUser({
           gamertag: "dev_player",
           coins: 1000,
@@ -107,6 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(500).json({ message: "Session save failed" });
           }
           console.log("[Dev Login] Success");
+          res.setHeader('Content-Type', 'application/json');
           res.json(user);
         });
       });

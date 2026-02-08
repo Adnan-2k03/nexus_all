@@ -255,3 +255,17 @@ export const feedback = pgTable("feedback", {
   message: text("message").notNull(),
   createdAt: timestamp("created_at").defaultNow()
 });
+
+export const featureFlags = pgTable("feature_flags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  featureName: varchar("feature_name").unique().notNull(),
+  isEnabled: boolean("is_enabled").default(true),
+  filters: jsonb("filters").default({}),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by"),
+});
+
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type InsertFeatureFlag = typeof featureFlags.$inferInsert;
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({ id: true, updatedAt: true, updatedBy: true });

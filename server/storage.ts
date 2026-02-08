@@ -30,8 +30,12 @@ export interface IStorage {
   completeTask(userId: string, taskId: string): Promise<{ success: boolean; message: string }>;
   rewardAdCredit(userId: string): Promise<{ success: boolean; balance: number; message: string }>;
   deductCredits(userId: string, amount: number, transactionType: string): Promise<{ success: boolean; balance: number }>;
+  getFeatureFlag(featureName: string): Promise<FeatureFlag | undefined>;
+  getAllFeatureFlags(): Promise<FeatureFlag[]>;
+  createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
+  updateFeatureFlag(featureName: string, data: Partial<FeatureFlag>): Promise<FeatureFlag>;
 }
-import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts, tasks, userTasks, Task, creditTransactions, matchRequests } from "@shared/schema";
+import { User, InsertUser, Tournament, InsertTournament, TournamentParticipant, TournamentParticipantWithUser, users, tournaments, tournamentParticipants, tournamentMessages, hobbies, Hobby, InsertHobby, tournamentTeams, tournamentTeamMembers, userSettings, matchHistory, teamLayouts, tasks, userTasks, Task, creditTransactions, matchRequests, featureFlags, FeatureFlag, InsertFeatureFlag } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, or } from "drizzle-orm";
 
@@ -483,6 +487,29 @@ export class DatabaseStorage implements IStorage {
 
       return { success: true, balance: newBalance };
     });
+  }
+
+  async getFeatureFlag(featureName: string): Promise<FeatureFlag | undefined> {
+    const [flag] = await db.select().from(featureFlags).where(eq(featureFlags.featureName, featureName));
+    return flag;
+  }
+
+  async getAllFeatureFlags(): Promise<FeatureFlag[]> {
+    return db.select().from(featureFlags);
+  }
+
+  async createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const [newFlag] = await db.insert(featureFlags).values(flag).returning();
+    return newFlag;
+  }
+
+  async updateFeatureFlag(featureName: string, data: Partial<FeatureFlag>): Promise<FeatureFlag> {
+    const [updated] = await db.update(featureFlags)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(featureFlags.featureName, featureName))
+      .returning();
+    if (!updated) throw new Error("Feature flag not found");
+    return updated;
   }
 }
 
