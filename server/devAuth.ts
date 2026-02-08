@@ -212,6 +212,11 @@ export const devAuthMiddleware: RequestHandler = async (req: any, res, next) => 
     });
   }
   
+  // If the request path is logout, don't re-attach the dev user
+  if (req.path === "/api/auth/logout") {
+    return next();
+  }
+
   try {
     const user = await storage.getUser(DEV_USER_ID);
     if (user) {

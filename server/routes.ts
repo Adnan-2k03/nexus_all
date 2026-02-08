@@ -127,12 +127,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.post("/api/auth/logout", (req: any, res) => {
       // In dev mode we just clear session if it exists, 
       // although middleware always sets req.user
+      // Explicitly unset req.user if it was set by devAuthMiddleware
+      req.user = undefined;
+      if (req.isAuthenticated) {
+        req.isAuthenticated = () => false;
+      }
+
       if (req.session) {
         req.session.destroy(() => {
           res.clearCookie("connect.sid");
           res.json({ success: true });
         });
       } else {
+        res.clearCookie("connect.sid");
         res.json({ success: true });
       }
     });
