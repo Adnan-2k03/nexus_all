@@ -63,6 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (DEV_MODE) {
     console.log("\n🔓 [DEV MODE] Authentication is DISABLED for development");
     console.log("   All routes will use a mock development user");
+    app.use(devAuthMiddleware);
     await ensureDevUser();
   } else {
     console.log("\n🔐 [PRODUCTION MODE] Authentication is ENABLED");
@@ -111,6 +112,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Gamertag Login (Dev Mode Only) ---
   app.post("/api/auth/gamertag-login", async (req, res) => {
     const { gamertag, password } = req.body;
+    
+    // In dev mode with auth disabled, allow login without password
+    if (DEV_MODE && !password && gamertag) {
+      const normalizedGamertag = gamertag.toLowerCase();
+      let user = await storage.getUserByGamertag(normalizedGamertag);
+      if (!user) {
+        user = await storage.createUser({ gamertag: normalizedGamertag, coins: 100, isAdmin: normalizedGamertag === "adnan" });
+      }
+      const token = generateToken(user);
+      return res.json({ ...user, token });
+    }
+
     if (!gamertag || gamertag.length < 3) return res.status(400).json({ message: "Gamertag must be at least 3 characters" });
     
     // Require password for login

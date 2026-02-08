@@ -43,6 +43,11 @@ export const jwtAuthMiddleware = async (req: Request, res: Response, next: NextF
     console.log(`   X-Auth-Token header present: ${!!customHeader}`);
   }
 
+  // Development mode: bypass JWT check if auth is disabled
+  if (process.env.AUTH_DISABLED === "true") {
+    return next();
+  }
+
   // Handle case where req.user might already be set by passport session
   if (req.user) {
     console.log("✅ [JWT Middleware] User already authenticated via session:", (req.user as any).id);

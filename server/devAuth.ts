@@ -212,9 +212,21 @@ export const devAuthMiddleware: RequestHandler = async (req: any, res, next) => 
     });
   }
   
-  const user = await storage.getUser(DEV_USER_ID);
-  req.user = user;
-  req.isAuthenticated = () => true;
+  try {
+    const user = await storage.getUser(DEV_USER_ID);
+    if (user) {
+      req.user = user;
+      // Critical for Passport-based routes
+      (req as any)._passport = { 
+        instance: { _strategies: {} }, 
+        session: { user: user.id } 
+      };
+      req.isAuthenticated = () => true;
+      (req as any)._jwtAuthenticated = true;
+    }
+  } catch (error) {
+    console.error("[DEV AUTH] Error setting dev user:", error);
+  }
   
   next();
 };
