@@ -12,7 +12,7 @@ export interface FeatureFlag {
 }
 
 export function useFeatureFlags() {
-  const { data: flags = [] } = useQuery<FeatureFlag[]>({
+  const { data: flags = [], isLoading } = useQuery<FeatureFlag[]>({
     queryKey: ['/api/feature-flags'],
     queryFn: async () => {
       try {
@@ -34,22 +34,25 @@ export function useFeatureFlags() {
   });
 
   const isFeatureVisible = (featureName: string): boolean => {
-    if (!Array.isArray(flags)) return true;
-    const flag = flags.find((f) => f.featureName === featureName);
+    if (isLoading) return true;
+    const flagsArray = Array.isArray(flags) ? flags : [];
+    const flag = flagsArray.find((f) => f && f.featureName === featureName);
     if (!flag) return true; // Show by default if not configured
     return flag.isEnabled && !flag.filters?.hide;
   };
 
   const isFeatureEnabled = (featureName: string): boolean => {
-    if (!Array.isArray(flags)) return true;
-    const flag = flags.find((f) => f.featureName === featureName);
+    if (isLoading) return true;
+    const flagsArray = Array.isArray(flags) ? flags : [];
+    const flag = flagsArray.find((f) => f && f.featureName === featureName);
     if (!flag) return true;
     return flag.isEnabled;
   };
 
   const isFeatureLocked = (featureName: string): boolean => {
-    if (!Array.isArray(flags)) return true;
-    const flag = flags.find((f) => f.featureName === featureName);
+    if (isLoading) return false;
+    const flagsArray = Array.isArray(flags) ? flags : [];
+    const flag = flagsArray.find((f) => f && f.featureName === featureName);
     if (!flag) return false;
     return flag.filters?.lock === true;
   };
