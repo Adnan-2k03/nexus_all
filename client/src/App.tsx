@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { View, Text, ActivityIndicator } from "react-native";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
